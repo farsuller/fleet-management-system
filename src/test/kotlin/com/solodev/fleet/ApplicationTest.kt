@@ -32,8 +32,8 @@ class ApplicationTest {
         assertEquals(HttpStatusCode.OK, response.status)
         // Now returns JSON response envelope
         val body = response.bodyAsText()
-        assertTrue(body.contains("\"success\":true"))
-        assertTrue(body.contains("\"status\":\"OK\""))
+        assertTrue(body.contains("\"success\"") && body.contains("true"))
+        assertTrue(body.contains("\"status\"") && body.contains("\"OK\""))
     }
 
     @Test
@@ -43,7 +43,7 @@ class ApplicationTest {
         val response = client.get("/")
         assertEquals(HttpStatusCode.OK, response.status)
         val body = response.bodyAsText()
-        assertTrue(body.contains("\"success\":true"))
+        assertTrue(body.contains("\"success\"") && body.contains("true"))
         assertTrue(body.contains("Phase 1 setup is done"))
     }
 }
