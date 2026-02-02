@@ -23,13 +23,13 @@
 <tr>
 <td>
 <div class="infoBox" id="tests">
-<div class="counter">1</div>
+<div class="counter">2</div>
 <p>tests</p>
 </div>
 </td>
 <td>
 <div class="infoBox" id="failures">
-<div class="counter">0</div>
+<div class="counter">2</div>
 <p>failures</p>
 </div>
 </td>
@@ -41,7 +41,7 @@
 </td>
 <td>
 <div class="infoBox" id="duration">
-<div class="counter">1.255s</div>
+<div class="counter">1.360s</div>
 <p>duration</p>
 </div>
 </td>
@@ -50,8 +50,8 @@
 </div>
 </td>
 <td>
-<div class="infoBox success" id="successRate">
-<div class="percent">100%</div>
+<div class="infoBox failures" id="successRate">
+<div class="percent">0%</div>
 <p>successful</p>
 </div>
 </td>
@@ -61,12 +61,106 @@
 <div class="tab-container">
 <ul class="tabLinks">
 <li>
+<a href="#">Failed tests</a>
+</li>
+<li>
 <a href="#">Tests</a>
 </li>
 <li>
 <a href="#">Standard output</a>
 </li>
 </ul>
+<div class="tab">
+<h2>Failed tests</h2>
+<div class="test">
+<a name="testHealthEndpoint"></a>
+<h3 class="failures">testHealthEndpoint</h3>
+<span class="code">
+<pre>java.lang.AssertionError: Expected value to be true.
+	at org.junit.Assert.fail(Assert.java:89)
+	at kotlin.test.junit.JUnitAsserter.fail(JUnitSupport.kt:56)
+	at kotlin.test.Asserter$DefaultImpls.assertTrue(Assertions.kt:694)
+	at kotlin.test.junit.JUnitAsserter.assertTrue(JUnitSupport.kt:30)
+	at kotlin.test.Asserter$DefaultImpls.assertTrue(Assertions.kt:704)
+	at kotlin.test.junit.JUnitAsserter.assertTrue(JUnitSupport.kt:30)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertTrue(Assertions.kt:44)
+	at kotlin.test.AssertionsKt.assertTrue(Unknown Source)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertTrue$default(Assertions.kt:42)
+	at kotlin.test.AssertionsKt.assertTrue$default(Unknown Source)
+	at com.example.ApplicationTest$testHealthEndpoint$1.invokeSuspend(ApplicationTest.kt:35)
+	at _COROUTINE._BOUNDARY._(CoroutineDebugging.kt:42)
+	at io.ktor.server.testing.TestApplicationKt.runTestApplication(TestApplication.kt:412)
+	at io.ktor.server.testing.TestApplicationKt$testApplication$1.invokeSuspend(TestApplication.kt:395)
+	at io.ktor.test.dispatcher.TestCommonKt$runTestWithRealTime$1.invokeSuspend(TestCommon.kt:38)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$1.invokeSuspend(TestBuilders.kt:318)
+Caused by: java.lang.AssertionError: Expected value to be true.
+	at org.junit.Assert.fail(Assert.java:89)
+	at kotlin.test.junit.JUnitAsserter.fail(JUnitSupport.kt:56)
+	at kotlin.test.Asserter$DefaultImpls.assertTrue(Assertions.kt:694)
+	at kotlin.test.junit.JUnitAsserter.assertTrue(JUnitSupport.kt:30)
+	at kotlin.test.Asserter$DefaultImpls.assertTrue(Assertions.kt:704)
+	at kotlin.test.junit.JUnitAsserter.assertTrue(JUnitSupport.kt:30)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertTrue(Assertions.kt:44)
+	at kotlin.test.AssertionsKt.assertTrue(Unknown Source)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertTrue$default(Assertions.kt:42)
+	at kotlin.test.AssertionsKt.assertTrue$default(Unknown Source)
+	at com.example.ApplicationTest$testHealthEndpoint$1.invokeSuspend(ApplicationTest.kt:35)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:101)
+	at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:113)
+	at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:89)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:589)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:832)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:720)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:707)
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="testRootEndpoint"></a>
+<h3 class="failures">testRootEndpoint</h3>
+<span class="code">
+<pre>java.lang.AssertionError: Expected value to be true.
+	at org.junit.Assert.fail(Assert.java:89)
+	at kotlin.test.junit.JUnitAsserter.fail(JUnitSupport.kt:56)
+	at kotlin.test.Asserter$DefaultImpls.assertTrue(Assertions.kt:694)
+	at kotlin.test.junit.JUnitAsserter.assertTrue(JUnitSupport.kt:30)
+	at kotlin.test.Asserter$DefaultImpls.assertTrue(Assertions.kt:704)
+	at kotlin.test.junit.JUnitAsserter.assertTrue(JUnitSupport.kt:30)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertTrue(Assertions.kt:44)
+	at kotlin.test.AssertionsKt.assertTrue(Unknown Source)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertTrue$default(Assertions.kt:42)
+	at kotlin.test.AssertionsKt.assertTrue$default(Unknown Source)
+	at com.example.ApplicationTest$testRootEndpoint$1.invokeSuspend(ApplicationTest.kt:46)
+	at _COROUTINE._BOUNDARY._(CoroutineDebugging.kt:42)
+	at io.ktor.server.testing.TestApplicationKt.runTestApplication(TestApplication.kt:412)
+	at io.ktor.server.testing.TestApplicationKt$testApplication$1.invokeSuspend(TestApplication.kt:395)
+	at io.ktor.test.dispatcher.TestCommonKt$runTestWithRealTime$1.invokeSuspend(TestCommon.kt:38)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$1.invokeSuspend(TestBuilders.kt:318)
+Caused by: java.lang.AssertionError: Expected value to be true.
+	at org.junit.Assert.fail(Assert.java:89)
+	at kotlin.test.junit.JUnitAsserter.fail(JUnitSupport.kt:56)
+	at kotlin.test.Asserter$DefaultImpls.assertTrue(Assertions.kt:694)
+	at kotlin.test.junit.JUnitAsserter.assertTrue(JUnitSupport.kt:30)
+	at kotlin.test.Asserter$DefaultImpls.assertTrue(Assertions.kt:704)
+	at kotlin.test.junit.JUnitAsserter.assertTrue(JUnitSupport.kt:30)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertTrue(Assertions.kt:44)
+	at kotlin.test.AssertionsKt.assertTrue(Unknown Source)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertTrue$default(Assertions.kt:42)
+	at kotlin.test.AssertionsKt.assertTrue$default(Unknown Source)
+	at com.example.ApplicationTest$testRootEndpoint$1.invokeSuspend(ApplicationTest.kt:46)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:101)
+	at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:113)
+	at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:89)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:589)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:832)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:720)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:707)
+</pre>
+</span>
+</div>
+</div>
 <div class="tab">
 <h2>Tests</h2>
 <table>
@@ -78,36 +172,41 @@
 </tr>
 </thead>
 <tr>
-<td class="success">testRoot</td>
-<td class="success">1.255s</td>
-<td class="success">passed</td>
+<td class="failures">testHealthEndpoint</td>
+<td class="failures">1.327s</td>
+<td class="failures">failed</td>
+</tr>
+<tr>
+<td class="failures">testRootEndpoint</td>
+<td class="failures">0.033s</td>
+<td class="failures">failed</td>
 </tr>
 </table>
 </div>
 <div class="tab">
 <h2>Standard output</h2>
 <span class="code">
-<pre>2026-02-02 13:18:26.812 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - No ktor.deployment.watch patterns specified, automatic reload is not active.
-2026-02-02 13:18:26.853 [DefaultDispatcher-worker-2 @call-context#3] INFO  i.m.c.i.push.PushMeterRegistry - publishing metrics for LoggingMeterRegistry every 1m
-2026-02-02 13:18:26.900 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Connecting to Database at: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1
-2026-02-02 13:18:26.900 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Using Username: root
-2026-02-02 13:18:26.901 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Using Password: ***
-2026-02-02 13:18:26.912 [DefaultDispatcher-worker-2 @call-context#3] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
-2026-02-02 13:18:27.045 [DefaultDispatcher-worker-2 @call-context#3] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:test user=ROOT
-2026-02-02 13:18:27.047 [DefaultDispatcher-worker-2 @call-context#3] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
-2026-02-02 13:18:27.280 [DefaultDispatcher-worker-2 @call-context#3] INFO  org.flywaydb.core.FlywayExecutor - Database: jdbc:h2:mem:test (H2 2.2)
-2026-02-02 13:18:27.303 [DefaultDispatcher-worker-2 @call-context#3] INFO  o.f.c.i.s.JdbcTableSchemaHistory - Schema history table &quot;PUBLIC&quot;.&quot;flyway_schema_history&quot; does not exist yet
-2026-02-02 13:18:27.305 [DefaultDispatcher-worker-2 @call-context#3] INFO  o.f.core.internal.command.DbValidate - Successfully validated 0 migrations (execution time 00:00.008s)
-2026-02-02 13:18:27.305 [DefaultDispatcher-worker-2 @call-context#3] WARN  o.f.core.internal.command.DbValidate - No migrations found. Are your locations set up correctly?
-2026-02-02 13:18:27.312 [DefaultDispatcher-worker-2 @call-context#3] INFO  o.f.c.i.s.JdbcTableSchemaHistory - Creating Schema History table &quot;PUBLIC&quot;.&quot;flyway_schema_history&quot; ...
-2026-02-02 13:18:27.344 [DefaultDispatcher-worker-2 @call-context#3] INFO  o.f.core.internal.command.DbMigrate - Current version of schema &quot;PUBLIC&quot;: &lt;&lt; Empty Schema &gt;&gt;
-2026-02-02 13:18:27.347 [DefaultDispatcher-worker-2 @call-context#3] INFO  o.f.core.internal.command.DbMigrate - Schema &quot;PUBLIC&quot; is up to date. No migration necessary.
-2026-02-02 13:18:27.371 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Connecting to Database at: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1
-2026-02-02 13:18:27.371 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Database connected and migrated successfully.
-2026-02-02 13:18:27.390 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Application started in 0.587 seconds.
-2026-02-02 13:18:27.390 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Application started: io.ktor.server.application.Application@38e7c1f7
-2026-02-02 13:18:27.393 [DefaultDispatcher-worker-3 @coroutine#4] INFO  io.ktor.test - Responding at http://localhost:80
-2026-02-02 13:18:27.393 [DefaultDispatcher-worker-3 @coroutine#4] INFO  io.ktor.test - Responding at https://localhost:443
+<pre>2026-02-02 13:38:12.777 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - No ktor.deployment.watch patterns specified, automatic reload is not active.
+2026-02-02 13:38:12.834 [DefaultDispatcher-worker-2 @call-context#3] INFO  i.m.c.i.push.PushMeterRegistry - publishing metrics for LoggingMeterRegistry every 1m
+2026-02-02 13:38:12.901 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Connecting to Database at: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1
+2026-02-02 13:38:12.901 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Using Username: root
+2026-02-02 13:38:12.902 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Using Password: ***
+2026-02-02 13:38:12.912 [DefaultDispatcher-worker-2 @call-context#3] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-02-02 13:38:13.058 [DefaultDispatcher-worker-2 @call-context#3] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:test user=ROOT
+2026-02-02 13:38:13.060 [DefaultDispatcher-worker-2 @call-context#3] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-02-02 13:38:13.291 [DefaultDispatcher-worker-2 @call-context#3] INFO  org.flywaydb.core.FlywayExecutor - Database: jdbc:h2:mem:test (H2 2.2)
+2026-02-02 13:38:13.317 [DefaultDispatcher-worker-2 @call-context#3] INFO  o.f.c.i.s.JdbcTableSchemaHistory - Schema history table &quot;PUBLIC&quot;.&quot;flyway_schema_history&quot; does not exist yet
+2026-02-02 13:38:13.318 [DefaultDispatcher-worker-2 @call-context#3] INFO  o.f.core.internal.command.DbValidate - Successfully validated 0 migrations (execution time 00:00.008s)
+2026-02-02 13:38:13.318 [DefaultDispatcher-worker-2 @call-context#3] WARN  o.f.core.internal.command.DbValidate - No migrations found. Are your locations set up correctly?
+2026-02-02 13:38:13.327 [DefaultDispatcher-worker-2 @call-context#3] INFO  o.f.c.i.s.JdbcTableSchemaHistory - Creating Schema History table &quot;PUBLIC&quot;.&quot;flyway_schema_history&quot; ...
+2026-02-02 13:38:13.368 [DefaultDispatcher-worker-2 @call-context#3] INFO  o.f.core.internal.command.DbMigrate - Current version of schema &quot;PUBLIC&quot;: &lt;&lt; Empty Schema &gt;&gt;
+2026-02-02 13:38:13.371 [DefaultDispatcher-worker-2 @call-context#3] INFO  o.f.core.internal.command.DbMigrate - Schema &quot;PUBLIC&quot; is up to date. No migration necessary.
+2026-02-02 13:38:13.394 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Connecting to Database at: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1
+2026-02-02 13:38:13.394 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Database connected and migrated successfully.
+2026-02-02 13:38:13.409 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Application started in 0.648 seconds.
+2026-02-02 13:38:13.410 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Application started: io.ktor.server.application.Application@3ddd64e7
+2026-02-02 13:38:13.411 [DefaultDispatcher-worker-1 @coroutine#4] INFO  io.ktor.test - Responding at http://localhost:80
+2026-02-02 13:38:13.411 [DefaultDispatcher-worker-1 @coroutine#4] INFO  io.ktor.test - Responding at https://localhost:443
 </pre>
 </span>
 </div>
@@ -119,7 +218,7 @@
 <input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
 </label>
 </div>Generated by 
-<a href="https://www.gradle.org">Gradle 8.14.3</a> at Feb 2, 2026, 1:18:27 PM</p>
+<a href="https://www.gradle.org">Gradle 8.14.3</a> at Feb 2, 2026, 1:38:13 PM</p>
 </div>
 </div>
 </body>

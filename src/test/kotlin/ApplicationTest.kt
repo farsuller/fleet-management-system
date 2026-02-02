@@ -7,6 +7,7 @@ import io.ktor.server.config.*
 import io.ktor.server.testing.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class ApplicationTest {
 
@@ -24,11 +25,25 @@ class ApplicationTest {
     }
 
     @Test
-    fun testRoot() = testApplication {
+    fun testHealthEndpoint() = testApplication {
         configureH2()
         application { module() }
         val response = client.get("/health")
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals("OK", response.bodyAsText())
+        // Now returns JSON response envelope
+        val body = response.bodyAsText()
+        assertTrue(body.contains("\"success\":true"))
+        assertTrue(body.contains("\"status\":\"OK\""))
+    }
+
+    @Test
+    fun testRootEndpoint() = testApplication {
+        configureH2()
+        application { module() }
+        val response = client.get("/")
+        assertEquals(HttpStatusCode.OK, response.status)
+        val body = response.bodyAsText()
+        assertTrue(body.contains("\"success\":true"))
+        assertTrue(body.contains("Phase 1 setup is done"))
     }
 }
