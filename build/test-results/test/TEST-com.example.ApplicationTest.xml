@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.ApplicationTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-02-02T05:18:26.287Z" hostname="RENZO-2022" time="1.255">
+  <properties/>
+  <testcase name="testRoot" classname="com.example.ApplicationTest" time="1.255"/>
+  <system-out><![CDATA[2026-02-02 13:18:26.812 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - No ktor.deployment.watch patterns specified, automatic reload is not active.
+2026-02-02 13:18:26.853 [DefaultDispatcher-worker-2 @call-context#3] INFO  i.m.c.i.push.PushMeterRegistry - publishing metrics for LoggingMeterRegistry every 1m
+2026-02-02 13:18:26.900 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Connecting to Database at: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1
+2026-02-02 13:18:26.900 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Using Username: root
+2026-02-02 13:18:26.901 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Using Password: ***
+2026-02-02 13:18:26.912 [DefaultDispatcher-worker-2 @call-context#3] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-02-02 13:18:27.045 [DefaultDispatcher-worker-2 @call-context#3] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:test user=ROOT
+2026-02-02 13:18:27.047 [DefaultDispatcher-worker-2 @call-context#3] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-02-02 13:18:27.280 [DefaultDispatcher-worker-2 @call-context#3] INFO  org.flywaydb.core.FlywayExecutor - Database: jdbc:h2:mem:test (H2 2.2)
+2026-02-02 13:18:27.303 [DefaultDispatcher-worker-2 @call-context#3] INFO  o.f.c.i.s.JdbcTableSchemaHistory - Schema history table "PUBLIC"."flyway_schema_history" does not exist yet
+2026-02-02 13:18:27.305 [DefaultDispatcher-worker-2 @call-context#3] INFO  o.f.core.internal.command.DbValidate - Successfully validated 0 migrations (execution time 00:00.008s)
+2026-02-02 13:18:27.305 [DefaultDispatcher-worker-2 @call-context#3] WARN  o.f.core.internal.command.DbValidate - No migrations found. Are your locations set up correctly?
+2026-02-02 13:18:27.312 [DefaultDispatcher-worker-2 @call-context#3] INFO  o.f.c.i.s.JdbcTableSchemaHistory - Creating Schema History table "PUBLIC"."flyway_schema_history" ...
+2026-02-02 13:18:27.344 [DefaultDispatcher-worker-2 @call-context#3] INFO  o.f.core.internal.command.DbMigrate - Current version of schema "PUBLIC": << Empty Schema >>
+2026-02-02 13:18:27.347 [DefaultDispatcher-worker-2 @call-context#3] INFO  o.f.core.internal.command.DbMigrate - Schema "PUBLIC" is up to date. No migration necessary.
+2026-02-02 13:18:27.371 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Connecting to Database at: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1
+2026-02-02 13:18:27.371 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Database connected and migrated successfully.
+2026-02-02 13:18:27.390 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Application started in 0.587 seconds.
+2026-02-02 13:18:27.390 [DefaultDispatcher-worker-2 @call-context#3] INFO  io.ktor.test - Application started: io.ktor.server.application.Application@38e7c1f7
+2026-02-02 13:18:27.393 [DefaultDispatcher-worker-3 @coroutine#4] INFO  io.ktor.test - Responding at http://localhost:80
+2026-02-02 13:18:27.393 [DefaultDispatcher-worker-3 @coroutine#4] INFO  io.ktor.test - Responding at https://localhost:443
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
