@@ -15,8 +15,9 @@ class ApplicationTest {
         environment {
             config =
                     MapApplicationConfig(
-                            "storage.jdbcUrl" to "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1",
-                            "storage.username" to "root",
+                            "storage.jdbcUrl" to
+                                    "jdbc:h2:mem:test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
+                            "storage.username" to "sa",
                             "storage.password" to "",
                             "storage.driverClassName" to "org.h2.Driver",
                             "storage.maximumPoolSize" to "2"

@@ -12,6 +12,14 @@ application {
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=true")
 }
 
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    kotlinOptions {
+        jvmTarget = "21"
+        allWarningsAsErrors = false
+        freeCompilerArgs = listOf("-Xjvm-default=all")
+    }
+}
+
 dependencies {
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
@@ -30,6 +38,7 @@ dependencies {
     implementation(libs.exposed.core)
     implementation(libs.exposed.jdbc)
     implementation(libs.exposed.java.time)
+    implementation(libs.exposed.json)
     implementation(libs.hikaricp)
     implementation(libs.postgresql)
     
