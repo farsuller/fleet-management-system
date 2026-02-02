@@ -42,11 +42,26 @@ fun Application.configureDatabases() {
 
     val dataSource = HikariDataSource(hikariConfig)
 
+    // H2 Compatibility: Define gen_random_uuid() for tests
+    if (jdbcUrl.startsWith("jdbc:h2:")) {
+        try {
+            dataSource.connection.use { conn ->
+                conn.createStatement()
+                        .execute(
+                                "CREATE ALIAS IF NOT EXISTS gen_random_uuid FOR \"java.util.UUID.randomUUID\""
+                        )
+            }
+        } catch (e: Exception) {
+            log.warn("Failed to create H2 alias for gen_random_uuid", e)
+        }
+    }
+
     // Run Flyway Migrations
     val flyway =
             Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").load()
 
     try {
+        flyway.repair()
         flyway.migrate()
     } catch (e: Exception) {
         log.error("Flyway migration failed", e)

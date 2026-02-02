@@ -1,5 +1,9 @@
 package com.solodev.fleet
 
+import com.solodev.fleet.modules.infrastructure.persistence.RentalRepositoryImpl
+import com.solodev.fleet.modules.infrastructure.persistence.VehicleRepositoryImpl
+import com.solodev.fleet.modules.rentals.infrastructure.http.rentalRoutes
+import com.solodev.fleet.modules.vehicles.infrastructure.http.vehicleRoutes
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.requestId
 import io.ktor.server.application.*
@@ -14,27 +18,28 @@ import io.ktor.server.routing.*
  * - Health check ("/health"): Liveness probe for container orchestration.
  */
 fun Application.configureRouting() {
+
+        // Initialize the repository
+        val vehicleRepo = VehicleRepositoryImpl()
+        val rentalRepo = RentalRepositoryImpl()
+
         routing {
+                vehicleRoutes(vehicleRepo)
+
+                rentalRoutes(rentalRepo)
+
                 get("/") {
                         call.respond(
-                                ApiResponse(
-                                        success = true,
-                                        data =
-                                                mapOf(
-                                                        "message" to "Phase 1 setup is done",
-                                                        "version" to "0.0.1",
-                                                        "architecture" to
-                                                                "Modular Monolith with Clean Architecture"
-                                                ),
-                                        requestId = call.requestId
+                                ApiResponse.success(
+                                        mapOf("message" to "Fleet Management API v1"),
+                                        call.requestId
                                 )
                         )
                 }
 
                 get("/health") {
                         call.respond(
-                                ApiResponse(
-                                        success = true,
+                                ApiResponse.success(
                                         data = mapOf("status" to "OK"),
                                         requestId = call.requestId
                                 )

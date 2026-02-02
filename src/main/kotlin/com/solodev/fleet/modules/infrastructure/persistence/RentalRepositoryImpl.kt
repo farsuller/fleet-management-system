@@ -12,44 +12,43 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.greaterEq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.lessEq
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
-/**
- * PostgreSQL implementation of RentalRepository using Exposed ORM.
- */
+/** PostgreSQL implementation of RentalRepository using Exposed ORM. */
 class RentalRepositoryImpl : RentalRepository {
 
     private suspend fun <T> dbQuery(block: suspend () -> T): T =
-        newSuspendedTransaction(Dispatchers.IO) { block() }
+            newSuspendedTransaction(Dispatchers.IO) { block() }
 
-    private fun ResultRow.toRental() = Rental(
-        id = RentalId(this[RentalsTable.id].value.toString()),
-        rentalNumber = this[RentalsTable.rentalNumber],
-        customerId = CustomerId(this[RentalsTable.customerId].value.toString()),
-        vehicleId = VehicleId(this[RentalsTable.vehicleId].value.toString()),
-        status = RentalStatus.valueOf(this[RentalsTable.status]),
-        startDate = this[RentalsTable.startDate],
-        endDate = this[RentalsTable.endDate],
-        actualStartDate = this[RentalsTable.actualStartDate],
-        actualEndDate = this[RentalsTable.actualEndDate],
-        dailyRateCents = this[RentalsTable.dailyRateCents],
-        totalAmountCents = this[RentalsTable.totalAmountCents],
-        currencyCode = this[RentalsTable.currencyCode],
-        startOdometerKm = this[RentalsTable.startOdometerKm],
-        endOdometerKm = this[RentalsTable.endOdometerKm],
-        pickupLocation = this[RentalsTable.pickupLocation],
-        dropoffLocation = this[RentalsTable.dropoffLocation],
-        notes = this[RentalsTable.notes]
-    )
+    private fun ResultRow.toRental() =
+            Rental(
+                    id = RentalId(this[RentalsTable.id].value.toString()),
+                    rentalNumber = this[RentalsTable.rentalNumber],
+                    customerId = CustomerId(this[RentalsTable.customerId].value.toString()),
+                    vehicleId = VehicleId(this[RentalsTable.vehicleId].value.toString()),
+                    status = RentalStatus.valueOf(this[RentalsTable.status]),
+                    startDate = this[RentalsTable.startDate],
+                    endDate = this[RentalsTable.endDate],
+                    actualStartDate = this[RentalsTable.actualStartDate],
+                    actualEndDate = this[RentalsTable.actualEndDate],
+                    dailyRateCents = this[RentalsTable.dailyRateCents],
+                    totalAmountCents = this[RentalsTable.totalAmountCents],
+                    currencyCode = this[RentalsTable.currencyCode],
+                    startOdometerKm = this[RentalsTable.startOdometerKm],
+                    endOdometerKm = this[RentalsTable.endOdometerKm],
+                    pickupLocation = this[RentalsTable.pickupLocation],
+                    dropoffLocation = this[RentalsTable.dropoffLocation],
+                    notes = this[RentalsTable.notes]
+            )
 
     override suspend fun findById(id: RentalId): Rental? = dbQuery {
         RentalsTable.select { RentalsTable.id eq UUID.fromString(id.value) }
-            .map { it.toRental() }
-            .singleOrNull()
+                .map { it.toRental() }
+                .singleOrNull()
     }
 
     override suspend fun findByRentalNumber(rentalNumber: String): Rental? = dbQuery {
         RentalsTable.select { RentalsTable.rentalNumber eq rentalNumber }
-            .map { it.toRental() }
-            .singleOrNull()
+                .map { it.toRental() }
+                .singleOrNull()
     }
 
     override suspend fun save(rental: Rental): Rental = dbQuery {
@@ -106,31 +105,38 @@ class RentalRepositoryImpl : RentalRepository {
     }
 
     override suspend fun findByCustomerId(customerId: CustomerId): List<Rental> = dbQuery {
-        RentalsTable.select { RentalsTable.customerId eq UUID.fromString(customerId.value) }
-            .map { it.toRental() }
+        RentalsTable.select { RentalsTable.customerId eq UUID.fromString(customerId.value) }.map {
+            it.toRental()
+        }
     }
 
     override suspend fun findByVehicleId(vehicleId: VehicleId): List<Rental> = dbQuery {
-        RentalsTable.select { RentalsTable.vehicleId eq UUID.fromString(vehicleId.value) }
-            .map { it.toRental() }
+        RentalsTable.select { RentalsTable.vehicleId eq UUID.fromString(vehicleId.value) }.map {
+            it.toRental()
+        }
+    }
+
+    override suspend fun findAll(): List<Rental> = dbQuery {
+        RentalsTable.selectAll().map { it.toRental() }
     }
 
     override suspend fun findConflictingRentals(
-        vehicleId: VehicleId,
-        startDate: Instant,
-        endDate: Instant
+            vehicleId: VehicleId,
+            startDate: Instant,
+            endDate: Instant
     ): List<Rental> = dbQuery {
         RentalsTable.select {
             (RentalsTable.vehicleId eq UUID.fromString(vehicleId.value)) and
-            (RentalsTable.status inList listOf(RentalStatus.RESERVED.name, RentalStatus.ACTIVE.name)) and
-            (RentalsTable.startDate lessEq endDate) and
-            (RentalsTable.endDate greaterEq startDate)
-        }.map { it.toRental() }
+                    (RentalsTable.status inList
+                            listOf(RentalStatus.RESERVED.name, RentalStatus.ACTIVE.name)) and
+                    (RentalsTable.startDate lessEq endDate) and
+                    (RentalsTable.endDate greaterEq startDate)
+        }
+                .map { it.toRental() }
     }
 
     override suspend fun findByStatus(status: RentalStatus): List<Rental> = dbQuery {
-        RentalsTable.select { RentalsTable.status eq status.name }
-            .map { it.toRental() }
+        RentalsTable.select { RentalsTable.status eq status.name }.map { it.toRental() }
     }
 
     override suspend fun deleteById(id: RentalId): Boolean = dbQuery {
@@ -139,46 +145,48 @@ class RentalRepositoryImpl : RentalRepository {
     }
 }
 
-/**
- * PostgreSQL implementation of CustomerRepository using Exposed ORM.
- */
+/** PostgreSQL implementation of CustomerRepository using Exposed ORM. */
 class CustomerRepositoryImpl : CustomerRepository {
 
     private suspend fun <T> dbQuery(block: suspend () -> T): T =
-        newSuspendedTransaction(Dispatchers.IO) { block() }
+            newSuspendedTransaction(Dispatchers.IO) { block() }
 
-    private fun ResultRow.toCustomer() = Customer(
-        id = CustomerId(this[CustomersTable.id].value.toString()),
-        userId = this[CustomersTable.userId],
-        firstName = this[CustomersTable.firstName],
-        lastName = this[CustomersTable.lastName],
-        email = this[CustomersTable.email],
-        phone = this[CustomersTable.phone],
-        driverLicenseNumber = this[CustomersTable.driverLicenseNumber],
-        driverLicenseExpiry = this[CustomersTable.driverLicenseExpiry].atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
-        address = this[CustomersTable.address],
-        city = this[CustomersTable.city],
-        state = this[CustomersTable.state],
-        postalCode = this[CustomersTable.postalCode],
-        country = this[CustomersTable.country]
-    )
+    private fun ResultRow.toCustomer() =
+            Customer(
+                    id = CustomerId(this[CustomersTable.id].value.toString()),
+                    userId = this[CustomersTable.userId],
+                    firstName = this[CustomersTable.firstName],
+                    lastName = this[CustomersTable.lastName],
+                    email = this[CustomersTable.email],
+                    phone = this[CustomersTable.phone],
+                    driverLicenseNumber = this[CustomersTable.driverLicenseNumber],
+                    driverLicenseExpiry =
+                            this[CustomersTable.driverLicenseExpiry]
+                                    .atStartOfDay()
+                                    .toInstant(java.time.ZoneOffset.UTC),
+                    address = this[CustomersTable.address],
+                    city = this[CustomersTable.city],
+                    state = this[CustomersTable.state],
+                    postalCode = this[CustomersTable.postalCode],
+                    country = this[CustomersTable.country]
+            )
 
     override suspend fun findById(id: CustomerId): Customer? = dbQuery {
         CustomersTable.select { CustomersTable.id eq UUID.fromString(id.value) }
-            .map { it.toCustomer() }
-            .singleOrNull()
+                .map { it.toCustomer() }
+                .singleOrNull()
     }
 
     override suspend fun findByEmail(email: String): Customer? = dbQuery {
         CustomersTable.select { CustomersTable.email eq email }
-            .map { it.toCustomer() }
-            .singleOrNull()
+                .map { it.toCustomer() }
+                .singleOrNull()
     }
 
     override suspend fun findByDriverLicense(licenseNumber: String): Customer? = dbQuery {
         CustomersTable.select { CustomersTable.driverLicenseNumber eq licenseNumber }
-            .map { it.toCustomer() }
-            .singleOrNull()
+                .map { it.toCustomer() }
+                .singleOrNull()
     }
 
     override suspend fun save(customer: Customer): Customer = dbQuery {
@@ -195,7 +203,11 @@ class CustomerRepositoryImpl : CustomerRepository {
                 it[email] = customer.email
                 it[phone] = customer.phone
                 it[driverLicenseNumber] = customer.driverLicenseNumber
-                it[driverLicenseExpiry] = java.time.LocalDate.ofInstant(customer.driverLicenseExpiry, java.time.ZoneOffset.UTC)
+                it[driverLicenseExpiry] =
+                        java.time.LocalDate.ofInstant(
+                                customer.driverLicenseExpiry,
+                                java.time.ZoneOffset.UTC
+                        )
                 it[address] = customer.address
                 it[city] = customer.city
                 it[state] = customer.state
@@ -212,7 +224,11 @@ class CustomerRepositoryImpl : CustomerRepository {
                 it[email] = customer.email
                 it[phone] = customer.phone
                 it[driverLicenseNumber] = customer.driverLicenseNumber
-                it[driverLicenseExpiry] = java.time.LocalDate.ofInstant(customer.driverLicenseExpiry, java.time.ZoneOffset.UTC)
+                it[driverLicenseExpiry] =
+                        java.time.LocalDate.ofInstant(
+                                customer.driverLicenseExpiry,
+                                java.time.ZoneOffset.UTC
+                        )
                 it[address] = customer.address
                 it[city] = customer.city
                 it[state] = customer.state
@@ -231,7 +247,8 @@ class CustomerRepositoryImpl : CustomerRepository {
     }
 
     override suspend fun deleteById(id: CustomerId): Boolean = dbQuery {
-        val deletedCount = CustomersTable.deleteWhere { CustomersTable.id eq UUID.fromString(id.value) }
+        val deletedCount =
+                CustomersTable.deleteWhere { CustomersTable.id eq UUID.fromString(id.value) }
         deletedCount > 0
     }
 }

@@ -19,7 +19,21 @@ data class ApiResponse<T>(
         val data: T? = null,
         val error: ErrorDetail? = null,
         val requestId: String
-)
+) {
+        companion object {
+                // Factory for successful responses
+                fun <T> success(data: T, requestId: String) =
+                        ApiResponse(success = true, data = data, requestId = requestId)
+
+                // Factory for error responses
+                fun error(code: String, message: String, requestId: String) =
+                        ApiResponse<Unit>(
+                                success = false,
+                                error = ErrorDetail(code, message),
+                                requestId = requestId
+                        )
+        }
+}
 
 /**
  * Error details included in failed API responses.

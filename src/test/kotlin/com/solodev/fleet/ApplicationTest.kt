@@ -15,11 +15,10 @@ class ApplicationTest {
         environment {
             config =
                     MapApplicationConfig(
-                            "storage.jdbcUrl" to
-                                    "jdbc:h2:mem:test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
-                            "storage.username" to "sa",
-                            "storage.password" to "",
-                            "storage.driverClassName" to "org.h2.Driver",
+                            "storage.jdbcUrl" to "jdbc:postgresql://127.0.0.1:5435/fleet_test",
+                            "storage.username" to "fleet_user",
+                            "storage.password" to "secret_123",
+                            "storage.driverClassName" to "org.postgresql.Driver",
                             "storage.maximumPoolSize" to "2"
                     )
         }
@@ -45,6 +44,6 @@ class ApplicationTest {
         assertEquals(HttpStatusCode.OK, response.status)
         val body = response.bodyAsText()
         assertTrue(body.contains("\"success\"") && body.contains("true"))
-        assertTrue(body.contains("Phase 1 setup is done"))
+        assertTrue(body.contains("Fleet Management API v1"))
     }
 }
