@@ -29,26 +29,26 @@ object RentalsTable : UUIDTable("rentals") {
     val customerId = reference("customer_id", CustomersTable, onDelete = ReferenceOption.RESTRICT)
     val vehicleId = reference("vehicle_id", VehiclesTable, onDelete = ReferenceOption.RESTRICT)
     val status = varchar("status", 20)
-    
+
     // Rental period
     val startDate = timestamp("start_date")
     val endDate = timestamp("end_date")
     val actualStartDate = timestamp("actual_start_date").nullable()
     val actualEndDate = timestamp("actual_end_date").nullable()
-    
+
     // Pricing
     val dailyRateCents = integer("daily_rate_cents")
     val totalAmountCents = integer("total_amount_cents")
-    val currencyCode = varchar("currency_code", 3).default("USD")
-    
+    val currencyCode = varchar("currency_code", 3).default("PHP")
+
     // Odometer
     val startOdometerKm = integer("start_odometer_km").nullable()
     val endOdometerKm = integer("end_odometer_km").nullable()
-    
+
     // Locations
     val pickupLocation = varchar("pickup_location", 255).nullable()
     val dropoffLocation = varchar("dropoff_location", 255).nullable()
-    
+
     // Metadata
     val notes = text("notes").nullable()
     val createdByUserId = uuid("created_by_user_id").nullable()
@@ -59,7 +59,8 @@ object RentalsTable : UUIDTable("rentals") {
 
 /** Exposed table definition for rental periods (for double-booking prevention). */
 object RentalPeriodsTable : UUIDTable("rental_periods") {
-    val rentalId = reference("rental_id", RentalsTable, onDelete = ReferenceOption.CASCADE).uniqueIndex()
+    val rentalId =
+            reference("rental_id", RentalsTable, onDelete = ReferenceOption.CASCADE).uniqueIndex()
     val vehicleId = reference("vehicle_id", VehiclesTable, onDelete = ReferenceOption.RESTRICT)
     val status = varchar("status", 20)
     // Note: period TSTZRANGE is handled by PostgreSQL trigger, not directly by Exposed
@@ -71,7 +72,7 @@ object RentalChargesTable : UUIDTable("rental_charges") {
     val chargeType = varchar("charge_type", 50)
     val description = text("description")
     val amountCents = integer("amount_cents")
-    val currencyCode = varchar("currency_code", 3).default("USD")
+    val currencyCode = varchar("currency_code", 3).default("PHP")
     val chargedAt = timestamp("charged_at")
     val chargedByUserId = uuid("charged_by_user_id").nullable()
 }
@@ -81,7 +82,7 @@ object RentalPaymentsTable : UUIDTable("rental_payments") {
     val rentalId = reference("rental_id", RentalsTable, onDelete = ReferenceOption.CASCADE)
     val paymentMethod = varchar("payment_method", 50)
     val amountCents = integer("amount_cents")
-    val currencyCode = varchar("currency_code", 3).default("USD")
+    val currencyCode = varchar("currency_code", 3).default("PHP")
     val transactionReference = varchar("transaction_reference", 255).nullable()
     val status = varchar("status", 20)
     val paidAt = timestamp("paid_at").nullable()

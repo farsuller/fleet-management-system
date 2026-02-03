@@ -21,7 +21,7 @@ object VehiclesTable : UUIDTable("vehicles") {
     val fuelType = varchar("fuel_type", 20).nullable()
     val transmission = varchar("transmission", 20).nullable()
     val dailyRateCents = integer("daily_rate_cents").nullable()
-    val currencyCode = varchar("currency_code", 3).default("USD")
+    val currencyCode = varchar("currency_code", 3).default("PHP")
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
     val version = long("version").default(0)

@@ -106,6 +106,14 @@ Deliver the **Presentation/Web Adapter** layer (HTTP APIs) for each domain. Thes
 - `POST /v1/accounting/ledger/post` - Post to ledger (idempotent)
 - `GET /v1/accounting/ledger` - Query ledger entries
 
+#### 5. **Users & Staff API**
+- `POST /v1/users/register` - User registration
+- `GET /v1/users/me` - Get current user profile
+- `GET /v1/users` - List users (paginated)
+- `PATCH /v1/users/{id}` - Update user details
+- `DELETE /v1/users/{id}` - Deactivate user
+- `GET /v1/users/{id}/profile` - Get staff profile
+
 ---
 
 ## Verification
