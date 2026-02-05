@@ -29,16 +29,16 @@ fun Application.configureDatabases() {
     log.info("Using Password: ${password.take(2)}***${password.takeLast(2)}")
 
     val hikariConfig =
-            HikariConfig().apply {
-                this.jdbcUrl = jdbcUrl
-                this.username = username
-                this.password = password
-                this.driverClassName = driverClassName
-                this.maximumPoolSize = maximumPoolSize
-                isAutoCommit = false
-                transactionIsolation = "TRANSACTION_REPEATABLE_READ"
-                validate()
-            }
+        HikariConfig().apply {
+            this.jdbcUrl = jdbcUrl
+            this.username = username
+            this.password = password
+            this.driverClassName = driverClassName
+            this.maximumPoolSize = maximumPoolSize
+            isAutoCommit = false
+            transactionIsolation = "TRANSACTION_REPEATABLE_READ"
+            validate()
+        }
 
     val dataSource = HikariDataSource(hikariConfig)
 
@@ -47,9 +47,9 @@ fun Application.configureDatabases() {
         try {
             dataSource.connection.use { conn ->
                 conn.createStatement()
-                        .execute(
-                                "CREATE ALIAS IF NOT EXISTS gen_random_uuid FOR \"java.util.UUID.randomUUID\""
-                        )
+                    .execute(
+                        "CREATE ALIAS IF NOT EXISTS gen_random_uuid FOR \"java.util.UUID.randomUUID\""
+                    )
             }
         } catch (e: Exception) {
             log.warn("Failed to create H2 alias for gen_random_uuid", e)
@@ -58,7 +58,7 @@ fun Application.configureDatabases() {
 
     // Run Flyway Migrations
     val flyway =
-            Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").load()
+        Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").load()
 
     try {
         flyway.repair()

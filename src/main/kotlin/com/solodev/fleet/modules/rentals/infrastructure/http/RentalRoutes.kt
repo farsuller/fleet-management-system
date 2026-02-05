@@ -9,7 +9,6 @@ import com.solodev.fleet.modules.rentals.application.usecases.CompleteRentalUseC
 import com.solodev.fleet.modules.rentals.application.usecases.CreateRentalUseCase
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.requestId
-import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*

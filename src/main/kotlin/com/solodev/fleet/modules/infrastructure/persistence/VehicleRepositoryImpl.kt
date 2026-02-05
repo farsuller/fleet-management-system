@@ -2,7 +2,7 @@ package com.solodev.fleet.modules.infrastructure.persistence
 
 import com.solodev.fleet.modules.domain.models.Vehicle
 import com.solodev.fleet.modules.domain.models.VehicleId
-import com.solodev.fleet.modules.domain.models.VehicleStatus
+import com.solodev.fleet.modules.domain.models.VehicleState
 import com.solodev.fleet.modules.domain.ports.VehicleRepository
 import java.time.Instant
 import java.util.*
@@ -26,13 +26,17 @@ class VehicleRepositoryImpl : VehicleRepository {
     private fun ResultRow.toVehicle() =
             Vehicle(
                     id = VehicleId(this[VehiclesTable.id].value.toString()),
-                    plateNumber = this[VehiclesTable.plateNumber],
+                    vin = this[VehiclesTable.vin] ?: "",
+                    licensePlate = this[VehiclesTable.plateNumber],
                     make = this[VehiclesTable.make],
                     model = this[VehiclesTable.model],
                     year = this[VehiclesTable.year],
-                    status = VehicleStatus.valueOf(this[VehiclesTable.status]),
-                    passengerCapacity = this[VehiclesTable.passengerCapacity],
-                    currentOdometerKm = this[VehiclesTable.currentOdometerKm]
+                    color = this[VehiclesTable.color],
+                    state = VehicleState.valueOf(this[VehiclesTable.status]),
+                    mileageKm = this[VehiclesTable.currentOdometerKm],
+                    dailyRateCents = this[VehiclesTable.dailyRateCents],
+                    currencyCode = this[VehiclesTable.currencyCode],
+                    passengerCapacity = this[VehiclesTable.passengerCapacity]
             )
 
     override suspend fun findById(id: VehicleId): Vehicle? = dbQuery {
@@ -57,26 +61,34 @@ class VehicleRepositoryImpl : VehicleRepository {
         if (exists) {
             // Update existing vehicle
             VehiclesTable.update({ VehiclesTable.id eq vehicleUuid }) {
-                it[plateNumber] = vehicle.plateNumber
+                it[vin] = vehicle.vin
+                it[plateNumber] = vehicle.licensePlate
                 it[make] = vehicle.make
                 it[model] = vehicle.model
                 it[year] = vehicle.year
-                it[status] = vehicle.status.name
+                it[color] = vehicle.color
+                it[status] = vehicle.state.name
+                it[currentOdometerKm] = vehicle.mileageKm
+                it[dailyRateCents] = vehicle.dailyRateCents
+                it[currencyCode] = vehicle.currencyCode
                 it[passengerCapacity] = vehicle.passengerCapacity
-                it[currentOdometerKm] = vehicle.currentOdometerKm
                 it[updatedAt] = now
             }
         } else {
             // Insert new vehicle
             VehiclesTable.insert {
                 it[id] = vehicleUuid
-                it[plateNumber] = vehicle.plateNumber
+                it[vin] = vehicle.vin
+                it[plateNumber] = vehicle.licensePlate
                 it[make] = vehicle.make
                 it[model] = vehicle.model
                 it[year] = vehicle.year
-                it[status] = vehicle.status.name
+                it[color] = vehicle.color
+                it[status] = vehicle.state.name
+                it[currentOdometerKm] = vehicle.mileageKm
+                it[dailyRateCents] = vehicle.dailyRateCents
+                it[currencyCode] = vehicle.currencyCode
                 it[passengerCapacity] = vehicle.passengerCapacity
-                it[currentOdometerKm] = vehicle.currentOdometerKm
                 it[createdAt] = now
                 it[updatedAt] = now
             }

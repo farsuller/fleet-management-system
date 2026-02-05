@@ -34,7 +34,70 @@ src/main/kotlin/com/solodev/fleet/modules/rentals/
 
 ---
 
-## 2. Data Transfer Objects (DTOs)
+## 2. Domain Model
+
+### Rental.kt
+`src/main/kotlin/com/solodev/fleet/modules/domain/models/Rental.kt`
+
+```kotlin
+package com.solodev.fleet.modules.domain.models
+
+import java.time.Instant
+
+/** Value object representing a unique rental identifier. */
+@JvmInline
+value class RentalId(val value: String) {
+    init {
+        require(value.isNotBlank()) { "Rental ID cannot be blank" }
+    }
+}
+
+/** Rental status in the lifecycle. */
+enum class RentalStatus {
+    RESERVED, ACTIVE, COMPLETED, CANCELLED
+}
+
+/**
+ * Rental domain entity.
+ */
+data class Rental(
+    val id: RentalId,
+    val rentalNumber: String,
+    val customerId: CustomerId,
+    val vehicleId: VehicleId,
+    val status: RentalStatus,
+    val startDate: Instant,
+    val endDate: Instant,
+    val actualStartDate: Instant? = null,
+    val actualEndDate: Instant? = null,
+    val dailyRateCents: Int,
+    val totalAmountCents: Int,
+    val currencyCode: String = "PHP",
+    val startOdometerKm: Int? = null,
+    val endOdometerKm: Int? = null
+) {
+    init {
+        require(endDate.isAfter(startDate)) { "End date must be after start date" }
+        require(totalAmountCents >= 0) { "Total amount cannot be negative" }
+    }
+
+    fun activate(actualStart: Instant, startOdo: Int): Rental {
+        require(status == RentalStatus.RESERVED) { "Rental must be RESERVED" }
+        return copy(status = RentalStatus.ACTIVE, actualStartDate = actualStart, startOdometerKm = startOdo)
+    }
+
+    fun complete(actualEnd: Instant, endOdo: Int): Rental {
+        require(status == RentalStatus.ACTIVE) { "Rental must be ACTIVE" }
+        return copy(status = RentalStatus.COMPLETED, actualEndDate = actualEnd, endOdometerKm = endOdo)
+    }
+
+    fun cancel(): Rental = copy(status = RentalStatus.CANCELLED)
+}
+```
+
+---
+
+## 3. Data Transfer Objects (DTOs)
 
 ### RentalRequest.kt
 ```kotlin
@@ -158,7 +221,63 @@ data class CustomerResponse(
 
 ---
 
-## 3. Application Use Cases
+## 4. Repository Implementation
+
+### RentalRepositoryImpl.kt
+`src/main/kotlin/com/solodev/fleet/modules/infrastructure/persistence/RentalRepositoryImpl.kt`
+
+```kotlin
+class RentalRepositoryImpl : RentalRepository {
+    private fun ResultRow.toRental() = Rental(
+        id = RentalId(this[RentalsTable.id].value.toString()),
+        rentalNumber = this[RentalsTable.rentalNumber],
+        customerId = CustomerId(this[RentalsTable.customerId].value.toString()),
+        vehicleId = VehicleId(this[RentalsTable.vehicleId].value.toString()),
+        status = RentalStatus.valueOf(this[RentalsTable.status]),
+        startDate = this[RentalsTable.startDate],
+        endDate = this[RentalsTable.endDate],
+        actualStartDate = this[RentalsTable.actualStartDate],
+        actualEndDate = this[RentalsTable.actualEndDate],
+        dailyRateCents = this[RentalsTable.dailyRateCents],
+        totalAmountCents = this[RentalsTable.totalAmountCents],
+        currencyCode = this[RentalsTable.currencyCode],
+        startOdometerKm = this[RentalsTable.startOdometerKm],
+        endOdometerKm = this[RentalsTable.endOdometerKm]
+    )
+
+    override suspend fun save(rental: Rental): Rental = dbQuery {
+        val exists = RentalsTable.select { RentalsTable.id eq UUID.fromString(rental.id.value) }.count() > 0
+        if (exists) {
+            RentalsTable.update({ RentalsTable.id eq UUID.fromString(rental.id.value) }) {
+                it[status] = rental.status.name
+                it[actualStartDate] = rental.actualStartDate
+                it[actualEndDate] = rental.actualEndDate
+                it[endOdometerKm] = rental.endOdometerKm
+                it[updatedAt] = Instant.now()
+            }
+        } else {
+            RentalsTable.insert {
+                it[id] = UUID.fromString(rental.id.value)
+                it[rentalNumber] = rental.rentalNumber
+                it[customerId] = UUID.fromString(rental.customerId.value)
+                it[vehicleId] = UUID.fromString(rental.vehicleId.value)
+                it[status] = rental.status.name
+                it[startDate] = rental.startDate
+                it[endDate] = rental.endDate
+                it[dailyRateCents] = rental.dailyRateCents
+                it[totalAmountCents] = rental.totalAmountCents
+                it[createdAt] = Instant.now()
+                it[updatedAt] = Instant.now()
+            }
+        }
+        rental
+    }
+}
+```
+
+---
+
+## 5. Application Use Cases
 
 ### CreateRentalUseCase.kt
 ```kotlin
@@ -346,7 +465,7 @@ class ListRentalsUseCase(
 
 ---
 
-## 4. Ktor Routes
+## 6. Ktor Routes
 
 ### RentalRoutes.kt
 ```kotlin
@@ -483,7 +602,27 @@ fun Route.rentalRoutes(
 
 ---
 
-## 5. API Reference
+## 7. Testing
+
+### Use Case Tests (MockK)
+```kotlin
+@Test fun `should fail if vehicle is already rented`() = runBlocking {
+    val rentalRepo = mockk<RentalRepository>()
+    val vehicleRepo = mockk<VehicleRepository>()
+    val useCase = CreateRentalUseCase(rentalRepo, vehicleRepo)
+    
+    coEvery { vehicleRepo.findById(any()) } returns createSampleVehicle()
+    coEvery { rentalRepo.findConflictingRentals(any(), any(), any()) } returns listOf(createSampleRental())
+    
+    assertFailsWith<IllegalArgumentException> {
+        useCase.execute(createRentalRequest())
+    }
+}
+```
+
+---
+
+## 8. API Reference
 
 | Method | Path | Description | Auth | Status Codes |
 |--------|------|-------------|------|--------------|
@@ -496,7 +635,7 @@ fun Route.rentalRoutes(
 
 ---
 
-## 6. Sample Payloads
+## 9. Sample Payloads
 
 ### Create Rental
 **Request**: `POST /v1/rentals`
@@ -562,7 +701,7 @@ fun Route.rentalRoutes(
 
 ---
 
-## 7. Wiring
+## 10. Wiring
 
 In `src/main/kotlin/com/solodev/fleet/Routing.kt`:
 ```kotlin
@@ -576,7 +715,7 @@ routing {
 
 ---
 
-## 8. Security & RBAC
+## 11. Security & RBAC
 
 | Endpoint | Required Permission |
 |----------|---------------------|
@@ -588,7 +727,7 @@ routing {
 
 ---
 
-## 9. Business Rules
+## 12. Business Rules
 
 1. **Rental Creation**:
    - Vehicle must exist and be AVAILABLE
@@ -613,7 +752,7 @@ routing {
 
 ---
 
-## 10. Error Scenarios
+## 13. Error Scenarios
 
 | Scenario | Status | Error Code |
 |----------|--------|------------|

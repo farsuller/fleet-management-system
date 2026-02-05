@@ -43,13 +43,13 @@ enum class InvoiceStatus {
  * Represents an account in the chart of accounts.
  */
 data class Account(
-        val id: AccountId,
-        val accountCode: String,
-        val accountName: String,
-        val accountType: AccountType,
-        val parentAccountId: AccountId? = null,
-        val isActive: Boolean = true,
-        val description: String? = null
+    val id: AccountId,
+    val accountCode: String,
+    val accountName: String,
+    val accountType: AccountType,
+    val parentAccountId: AccountId? = null,
+    val isActive: Boolean = true,
+    val description: String? = null
 ) {
     init {
         require(accountCode.isNotBlank()) { "Account code cannot be blank" }
@@ -63,13 +63,13 @@ data class Account(
  * Represents a double-entry bookkeeping journal entry.
  */
 data class LedgerEntry(
-        val id: LedgerEntryId,
-        val entryNumber: String,
-        val externalReference: String,
-        val entryDate: Instant,
-        val description: String,
-        val lines: List<LedgerEntryLine> = emptyList(),
-        val createdByUserId: UUID? = null
+    val id: LedgerEntryId,
+    val entryNumber: String,
+    val externalReference: String,
+    val entryDate: Instant,
+    val description: String,
+    val lines: List<LedgerEntryLine> = emptyList(),
+    val createdByUserId: UUID? = null
 ) {
     init {
         require(entryNumber.isNotBlank()) { "Entry number cannot be blank" }
@@ -100,20 +100,20 @@ data class LedgerEntry(
  * Represents a single debit or credit line in a journal entry.
  */
 data class LedgerEntryLine(
-        val id: UUID,
-        val entryId: LedgerEntryId,
-        val accountId: AccountId,
-        val debitAmountCents: Int = 0,
-        val creditAmountCents: Int = 0,
-        val currencyCode: String = "PHP",
-        val description: String? = null
+    val id: UUID,
+    val entryId: LedgerEntryId,
+    val accountId: AccountId,
+    val debitAmountCents: Int = 0,
+    val creditAmountCents: Int = 0,
+    val currencyCode: String = "PHP",
+    val description: String? = null
 ) {
     init {
         require(debitAmountCents >= 0) { "Debit amount cannot be negative" }
         require(creditAmountCents >= 0) { "Credit amount cannot be negative" }
         require(
-                (debitAmountCents > 0 && creditAmountCents == 0) ||
-                        (debitAmountCents == 0 && creditAmountCents > 0)
+            (debitAmountCents > 0 && creditAmountCents == 0) ||
+                    (debitAmountCents == 0 && creditAmountCents > 0)
         ) { "Each line must be either debit or credit, not both" }
     }
 
@@ -129,19 +129,19 @@ data class LedgerEntryLine(
 
 /** Invoice domain entity. */
 data class Invoice(
-        val id: UUID,
-        val invoiceNumber: String,
-        val customerId: CustomerId,
-        val rentalId: RentalId? = null,
-        val status: InvoiceStatus,
-        val subtotalCents: Int,
-        val taxCents: Int = 0,
-        val paidCents: Int = 0,
-        val currencyCode: String = "PHP",
-        val issueDate: Instant,
-        val dueDate: Instant,
-        val paidDate: Instant? = null,
-        val notes: String? = null
+    val id: UUID,
+    val invoiceNumber: String,
+    val customerId: CustomerId,
+    val rentalId: RentalId? = null,
+    val status: InvoiceStatus,
+    val subtotalCents: Int,
+    val taxCents: Int = 0,
+    val paidCents: Int = 0,
+    val currencyCode: String = "PHP",
+    val issueDate: Instant,
+    val dueDate: Instant,
+    val paidDate: Instant? = null,
+    val notes: String? = null
 ) {
     init {
         require(invoiceNumber.isNotBlank()) { "Invoice number cannot be blank" }

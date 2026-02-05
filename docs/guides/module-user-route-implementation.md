@@ -35,7 +35,37 @@ src/main/kotlin/com/solodev/fleet/modules/users/
 
 ---
 
-## 2. Data Transfer Objects (DTOs)
+## 2. Domain Model
+
+### User.kt
+`src/main/kotlin/com/solodev/fleet/modules/domain/models/User.kt`
+
+```kotlin
+package com.solodev.fleet.modules.domain.models
+
+data class User(
+    val id: UserId,
+    val email: String,
+    val passwordHash: String,
+    val firstName: String,
+    val lastName: String,
+    val phone: String? = null,
+    val isActive: Boolean = true,
+    val roles: List<Role> = emptyList()
+) {
+    val fullName: String get() = "$firstName $lastName"
+}
+
+data class Role(
+    val id: RoleId,
+    val name: String,
+    val description: String? = null
+)
+```
+
+---
+
+## 3. Data Transfer Objects (DTOs)
 
 ### **UserDTO.kt**
 `src/main/kotlin/com/solodev/fleet/modules/users/application/dto/UserDTO.kt`
@@ -138,7 +168,44 @@ data class StaffProfileDTO(
 
 ---
 
-## 3. Application Use Cases
+## 4. Repository Implementation
+
+### UserRepositoryImpl.kt
+`src/main/kotlin/com/solodev/fleet/modules/infrastructure/persistence/UserRepositoryImpl.kt`
+
+```kotlin
+class UserRepositoryImpl : UserRepository {
+    override suspend fun save(user: User): User = dbQuery {
+        val exists = UsersTable.select { UsersTable.id eq UUID.fromString(user.id.value) }.count() > 0
+        if (exists) {
+            UsersTable.update({ UsersTable.id eq UUID.fromString(user.id.value) }) {
+                it[firstName] = user.firstName
+                it[lastName] = user.lastName
+                it[phone] = user.phone
+                it[isActive] = user.isActive
+                it[updatedAt] = Instant.now()
+            }
+        } else {
+            UsersTable.insert {
+                it[id] = UUID.fromString(user.id.value)
+                it[email] = user.email
+                it[passwordHash] = user.passwordHash
+                it[firstName] = user.firstName
+                it[lastName] = user.lastName
+                it[phone] = user.phone
+                it[isActive] = user.isActive
+                it[createdAt] = Instant.now()
+                it[updatedAt] = Instant.now()
+            }
+        }
+        user
+    }
+}
+```
+
+---
+
+## 5. Application Use Cases
 
 ### **RegisterUserUseCase.kt**
 - **Purpose**: Creates a new user with hashed password.
@@ -191,7 +258,7 @@ class ListUsersUseCase(private val repository: UserRepository) {
 
 ---
 
-## 4. Ktor Routes
+## 6. Ktor Routes
 
 ### **UserRoutes.kt**
 ```kotlin
@@ -258,7 +325,26 @@ fun Route.userRoutes(repository: UserRepository) {
 
 ---
 
-## 5. API Endpoints Reference
+---
+
+## 7. Testing
+
+### Integration Tests
+```kotlin
+@Test fun `should register and find user`() = runBlocking {
+    val repo = UserRepositoryImpl()
+    val user = createSampleUser()
+    repo.save(user)
+    
+    val found = repo.findByEmail(user.email)
+    assertNotNull(found)
+    assertEquals(user.firstName, found.firstName)
+}
+```
+
+---
+
+## 8. API Endpoints Reference
 
 | Method | Path | Description | Roles |
 |--------|------|-------------|-------|
@@ -273,7 +359,7 @@ fun Route.userRoutes(repository: UserRepository) {
 
 ---
 
-## 6. Wiring
+## 9. Wiring
 Ensure the versioned route is registered in `Routing.kt`:
 ```kotlin
 val userRepo = UserRepositoryImpl()
@@ -284,7 +370,9 @@ routing {
 
 ---
 
-## 7. Pagination & Filtering (Phase 3+)
+---
+
+## 10. Pagination & Filtering (Phase 3+)
 
 As per the Phase 3 requirements, the User List endpoint should eventually support cursor-based pagination.
 
@@ -293,7 +381,9 @@ As per the Phase 3 requirements, the User List endpoint should eventually suppor
 
 ---
 
-## 8. Security & RBAC
+---
+
+## 11. Security & RBAC
 
 | Endpoint | Required Permission |
 |----------|---------------------|

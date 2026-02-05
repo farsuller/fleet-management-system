@@ -21,34 +21,34 @@ import io.ktor.server.routing.*
  */
 fun Application.configureRouting() {
 
-        // Initialize the repository
-        val vehicleRepo = VehicleRepositoryImpl()
-        val rentalRepo = RentalRepositoryImpl()
-        val userRepo = UserRepositoryImpl()
+    // Initialize the repository
+    val vehicleRepo = VehicleRepositoryImpl()
+    val rentalRepo = RentalRepositoryImpl()
+    val userRepo = UserRepositoryImpl()
 
-        routing {
-                vehicleRoutes(vehicleRepo)
+    routing {
+        vehicleRoutes(vehicleRepo)
 
-                rentalRoutes(rentalRepo)
+        rentalRoutes(rentalRepo)
 
-                userRoutes(userRepo)
+        userRoutes(userRepo)
 
-                get("/") {
-                        call.respond(
-                                ApiResponse.success(
-                                        mapOf("message" to "Fleet Management API v1"),
-                                        call.requestId
-                                )
-                        )
-                }
-
-                get("/health") {
-                        call.respond(
-                                ApiResponse.success(
-                                        data = mapOf("status" to "OK"),
-                                        requestId = call.requestId
-                                )
-                        )
-                }
+        get("/") {
+            call.respond(
+                ApiResponse.success(
+                    mapOf("message" to "Fleet Management API v1"),
+                    call.requestId
+                )
+            )
         }
+
+        get("/health") {
+            call.respond(
+                ApiResponse.success(
+                    data = mapOf("status" to "OK"),
+                    requestId = call.requestId
+                )
+            )
+        }
+    }
 }

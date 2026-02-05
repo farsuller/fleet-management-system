@@ -2,7 +2,7 @@ package com.solodev.fleet
 
 import com.solodev.fleet.shared.plugins.*
 import io.ktor.server.application.*
-import io.ktor.server.netty.EngineMain
+import io.ktor.server.netty.*
 
 /**
  * Entry point for the application. Starts the Netty engine using the configuration defined in

@@ -42,23 +42,23 @@ enum class MaintenancePriority {
  * Represents a maintenance job for a vehicle.
  */
 data class MaintenanceJob(
-        val id: MaintenanceJobId,
-        val jobNumber: String,
-        val vehicleId: VehicleId,
-        val status: MaintenanceStatus,
-        val jobType: MaintenanceJobType,
-        val description: String,
-        val priority: MaintenancePriority = MaintenancePriority.NORMAL,
-        val scheduledDate: Instant,
-        val startedAt: Instant? = null,
-        val completedAt: Instant? = null,
-        val odometerKm: Int? = null,
-        val laborCostCents: Int = 0,
-        val partsCostCents: Int = 0,
-        val currencyCode: String = "PHP",
-        val assignedToUserId: UUID? = null,
-        val completedByUserId: UUID? = null,
-        val notes: String? = null
+    val id: MaintenanceJobId,
+    val jobNumber: String,
+    val vehicleId: VehicleId,
+    val status: MaintenanceStatus,
+    val jobType: MaintenanceJobType,
+    val description: String,
+    val priority: MaintenancePriority = MaintenancePriority.NORMAL,
+    val scheduledDate: Instant,
+    val startedAt: Instant? = null,
+    val completedAt: Instant? = null,
+    val odometerKm: Int? = null,
+    val laborCostCents: Int = 0,
+    val partsCostCents: Int = 0,
+    val currencyCode: String = "PHP",
+    val assignedToUserId: UUID? = null,
+    val completedByUserId: UUID? = null,
+    val notes: String? = null
 ) {
     init {
         require(jobNumber.isNotBlank()) { "Job number cannot be blank" }
@@ -87,28 +87,28 @@ data class MaintenanceJob(
     fun start(startTime: Instant, assignedTo: UUID): MaintenanceJob {
         require(status == MaintenanceStatus.SCHEDULED) { "Can only start scheduled jobs" }
         return copy(
-                status = MaintenanceStatus.IN_PROGRESS,
-                startedAt = startTime,
-                assignedToUserId = assignedTo
+            status = MaintenanceStatus.IN_PROGRESS,
+            startedAt = startTime,
+            assignedToUserId = assignedTo
         )
     }
 
     /** Complete an in-progress maintenance job. */
     fun complete(
-            completionTime: Instant,
-            completedBy: UUID,
-            laborCost: Int,
-            partsCost: Int,
-            odometer: Int? = null
+        completionTime: Instant,
+        completedBy: UUID,
+        laborCost: Int,
+        partsCost: Int,
+        odometer: Int? = null
     ): MaintenanceJob {
         require(status == MaintenanceStatus.IN_PROGRESS) { "Can only complete in-progress jobs" }
         return copy(
-                status = MaintenanceStatus.COMPLETED,
-                completedAt = completionTime,
-                completedByUserId = completedBy,
-                laborCostCents = laborCost,
-                partsCostCents = partsCost,
-                odometerKm = odometer
+            status = MaintenanceStatus.COMPLETED,
+            completedAt = completionTime,
+            completedByUserId = completedBy,
+            laborCostCents = laborCost,
+            partsCostCents = partsCost,
+            odometerKm = odometer
         )
     }
 
@@ -123,15 +123,15 @@ data class MaintenanceJob(
 
 /** Maintenance part used in a job. */
 data class MaintenancePart(
-        val id: UUID,
-        val jobId: MaintenanceJobId,
-        val partNumber: String,
-        val partName: String,
-        val quantity: Int,
-        val unitCostCents: Int,
-        val currencyCode: String = "PHP",
-        val supplier: String? = null,
-        val notes: String? = null
+    val id: UUID,
+    val jobId: MaintenanceJobId,
+    val partNumber: String,
+    val partName: String,
+    val quantity: Int,
+    val unitCostCents: Int,
+    val currencyCode: String = "PHP",
+    val supplier: String? = null,
+    val notes: String? = null
 ) {
     init {
         require(partNumber.isNotBlank()) { "Part number cannot be blank" }

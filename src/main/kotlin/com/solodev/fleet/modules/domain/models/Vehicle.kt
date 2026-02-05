@@ -8,12 +8,12 @@ value class VehicleId(val value: String) {
     }
 }
 
-/** Vehicle status in the fleet lifecycle. */
-enum class VehicleStatus {
-    ACTIVE,
+/** Vehicle state in the fleet lifecycle. */
+enum class VehicleState {
+    AVAILABLE,
     RENTED,
-    UNDER_MAINTENANCE,
-    DECOMMISSIONED
+    MAINTENANCE,
+    RETIRED
 }
 
 /**
@@ -24,55 +24,63 @@ enum class VehicleStatus {
  */
 data class Vehicle(
         val id: VehicleId,
-        val plateNumber: String,
+        val vin: String,
+        val licensePlate: String,
         val make: String,
         val model: String,
         val year: Int,
-        val status: VehicleStatus = VehicleStatus.ACTIVE,
-        val passengerCapacity: Int? = null,
-        val currentOdometerKm: Int = 0
+        val color: String? = null,
+        val state: VehicleState = VehicleState.AVAILABLE,
+        val mileageKm: Int = 0,
+        val dailyRateCents: Int? = null,
+        val currencyCode: String = "PHP",
+        val passengerCapacity: Int? = null
 ) {
     init {
-        require(plateNumber.isNotBlank()) { "Plate number cannot be blank" }
+        require(vin.isNotBlank()) { "VIN cannot be blank" }
+        require(vin.length == 17) { "VIN must be exactly 17 characters" }
+        require(licensePlate.isNotBlank()) { "License plate cannot be blank" }
         require(make.isNotBlank()) { "Make cannot be blank" }
         require(model.isNotBlank()) { "Model cannot be blank" }
         require(year in 1900..2100) { "Year must be between 1900 and 2100" }
-        require(currentOdometerKm >= 0) { "Odometer reading cannot be negative" }
+        require(mileageKm >= 0) { "Mileage cannot be negative" }
+        dailyRateCents?.let { require(it >= 0) { "Daily rate cannot be negative" } }
         passengerCapacity?.let { require(it > 0) { "Passenger capacity must be positive" } }
+        require(currencyCode == "PHP") { "Only PHP currency is supported" }
     }
 
-    /** Transition vehicle to rented status. Business rule: Can only rent active vehicles. */
+    /** Transition vehicle to rented state. Business rule: Can only rent available vehicles. */
     fun rent(): Vehicle {
-        require(status == VehicleStatus.ACTIVE) { "Cannot rent vehicle in $status status" }
-        return copy(status = VehicleStatus.RENTED)
+        require(state == VehicleState.AVAILABLE) { "Cannot rent vehicle in $state state" }
+        return copy(state = VehicleState.RENTED)
     }
 
-    /** Return vehicle to active status. Business rule: Can only return rented vehicles. */
+    /** Return vehicle to available state. Business rule: Can only return rented vehicles. */
     fun returnFromRental(): Vehicle {
-        require(status == VehicleStatus.RENTED) { "Cannot return vehicle not in RENTED status" }
-        return copy(status = VehicleStatus.ACTIVE)
+        require(state == VehicleState.RENTED) { "Cannot return vehicle not in RENTED state" }
+        return copy(state = VehicleState.AVAILABLE)
     }
 
     /** Send vehicle for maintenance. Business rule: Cannot send rented vehicles to maintenance. */
     fun sendToMaintenance(): Vehicle {
-        require(status != VehicleStatus.RENTED) { "Cannot send rented vehicle to maintenance" }
-        return copy(status = VehicleStatus.UNDER_MAINTENANCE)
+        require(state != VehicleState.RENTED) { "Cannot send rented vehicle to maintenance" }
+        return copy(state = VehicleState.MAINTENANCE)
     }
 
-    /** Complete maintenance and return to active. */
+    /** Complete maintenance and return to available. */
     fun completeMaintenance(): Vehicle {
-        require(status == VehicleStatus.UNDER_MAINTENANCE) { "Vehicle is not under maintenance" }
-        return copy(status = VehicleStatus.ACTIVE)
+        require(state == VehicleState.MAINTENANCE) { "Vehicle is not under maintenance" }
+        return copy(state = VehicleState.AVAILABLE)
     }
 
-    /** Decommission vehicle (terminal state). */
-    fun decommission(): Vehicle = copy(status = VehicleStatus.DECOMMISSIONED)
+    /** Retire vehicle (terminal state). */
+    fun retire(): Vehicle = copy(state = VehicleState.RETIRED)
 
-    /** Update odometer reading. Business rule: Odometer can only increase. */
-    fun updateOdometer(newReading: Int): Vehicle {
-        require(newReading >= currentOdometerKm) {
-            "Odometer reading cannot decrease (current: $currentOdometerKm, new: $newReading)"
+    /** Update mileage reading. Business rule: Mileage can only increase. */
+    fun updateMileage(newMileage: Int): Vehicle {
+        require(newMileage >= mileageKm) {
+            "Mileage cannot decrease (current: $mileageKm, new: $newMileage)"
         }
-        return copy(currentOdometerKm = newReading)
+        return copy(mileageKm = newMileage)
     }
 }

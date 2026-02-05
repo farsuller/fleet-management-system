@@ -4,10 +4,45 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6d53c233-9628-48e5-af23-d029dfbfacf1" name="Changes" comment="">
+    <list default="true" id="616ed517-0370-414f-87ac-b7a4d85a14a6" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.gradle/8.14.3/checksums/checksums.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.14.3/checksums/checksums.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.14.3/executionHistory/executionHistory.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.14.3/executionHistory/executionHistory.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.14.3/executionHistory/executionHistory.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.14.3/executionHistory/executionHistory.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.14.3/fileHashes/fileHashes.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.14.3/fileHashes/fileHashes.bin" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.gradle/8.14.3/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.14.3/fileHashes/fileHashes.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.14.3/fileHashes/resourceHashesCache.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.14.3/fileHashes/resourceHashesCache.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/guides/module-accounting-route-implementation.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/guides/module-accounting-route-implementation.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/guides/module-maintenance-route-implementation.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/guides/module-maintenance-route-implementation.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/guides/module-rental-route-implementation.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/guides/module-rental-route-implementation.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/guides/module-user-route-implementation.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/guides/module-user-route-implementation.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/guides/module-vehicle-route-implementation.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/guides/module-vehicle-route-implementation.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/Application.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/Application.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/Routing.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/Routing.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/modules/domain/models/Accounting.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/modules/domain/models/Accounting.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/modules/domain/models/Maintenance.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/modules/domain/models/Maintenance.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/modules/domain/models/Vehicle.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/modules/domain/models/Vehicle.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/modules/infrastructure/persistence/VehicleRepositoryImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/modules/infrastructure/persistence/VehicleRepositoryImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/modules/rentals/infrastructure/http/RentalRoutes.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/modules/rentals/infrastructure/http/RentalRoutes.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/modules/vehicles/application/dto/VehicleRequest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/modules/vehicles/application/dto/VehicleRequest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/modules/vehicles/application/dto/VehicleResponse.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/modules/vehicles/application/dto/VehicleResponse.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/modules/vehicles/application/usecases/CreateVehicleUseCase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/modules/vehicles/application/usecases/CreateVehicleUseCase.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/modules/vehicles/infrastructure/http/VehicleRoutes.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/modules/vehicles/infrastructure/http/VehicleRoutes.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/shared/exceptions/DomainExceptions.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/shared/exceptions/DomainExceptions.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/shared/models/ApiResponse.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/shared/models/ApiResponse.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/shared/plugins/Databases.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/shared/plugins/Databases.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/shared/plugins/Security.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/shared/plugins/Security.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/shared/plugins/Serialization.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/shared/plugins/Serialization.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/shared/plugins/StatusPages.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/solodev/fleet/shared/plugins/StatusPages.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/db/migration/V002__create_vehicles_schema.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/db/migration/V002__create_vehicles_schema.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/kotlin/com/solodev/fleet/modules/infrastructure/persistence/VehicleRepositoryTest.kt" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -15,54 +50,231 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="163" />
+    <option name="cachedIndexableFilesCount" value="160" />
   </component>
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
       <ProjectState />
     </projectState>
   </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <task path="$PROJECT_DIR$">
+          <activation />
+        </task>
+        <projects_view />
+      </state>
+    </system>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Kotlin File" />
+      </list>
+    </option>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "farsuller"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/farsuller/fleet-management-system.git",
+    "accountId": "aaaacefc-62d5-445f-84a2-c4da29acde5b"
+  }
+}]]></component>
   <component name="GradleScriptDefinitionsStorage" workingDir="$PROJECT_DIR$" gradleHome="C:\Users\user\.gradle\wrapper\dists\gradle-8.14.3-bin\cv11ve7ro1n3o1j4so8xd9n66\gradle-8.14.3" javaHome="C:\Users\user\AppData\Local\Programs\Android Studio\jbr" gradleVersion="8.14.3" />
+  <component name="HttpClientEndpointsTabState">
+    <option name="cachedRequestData" value="&lt;CachedHttpClientTabRequests&gt;&#10;  &lt;entry key=&quot;a9efc9e8c31eed41d895ff325e0bfcb2eade3a2a&quot; value=&quot;###&amp;#10;GET /v1/rentals&quot; /&gt;&#10;  &lt;entry key=&quot;f73269c806404d14d33b58b8ac401ea3f5b7e71a&quot; value=&quot;###&amp;#10;POST http://localhost:8080/v1/rentals/{{id}}/activate&amp;#10;Content-Type: application/json&amp;#10;&amp;#10;&amp;quot;&amp;quot;&quot; /&gt;&#10;  &lt;entry key=&quot;e3add5ec4050677df30fbf8fe09fc0f53d0763e4&quot; value=&quot;###&amp;#10;POST http://localhost:8080/v1/rentals&amp;#10;Content-Type: application/json&quot; /&gt;&#10;&lt;/CachedHttpClientTabRequests&gt;" />
+  </component>
+  <component name="HttpClientOnboardingState"><![CDATA[{
+  "isOnboardingCommentShown": true
+}]]></component>
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
   </component>
-  <component name="ProjectColorInfo">{
-  &quot;customColor&quot;: &quot;&quot;,
-  &quot;associatedIndex&quot;: 0
-}</component>
-  <component name="ProjectId" id="39F0mKVPHa6GGRERL4tmwJu6Ua0" />
+  <component name="ProjectColorInfo"><![CDATA[{
+  "customColor": "",
+  "associatedIndex": 0
+}]]></component>
+  <component name="ProjectId" id="39F2IjRktZKPO0pF38hxZL08Ife" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Gradle.AccountRepositoryTest.executor": "Run",
+    "Gradle.AccountRepositoryTest.should save and find account.executor": "Run",
+    "Gradle.ApplicationTest.executor": "Run",
+    "Gradle.Build fleet-management.executor": "Run",
+    "Gradle.MaintenanceRepositoryTest.executor": "Run",
+    "Gradle.MigrationTest.executor": "Run",
+    "Gradle.RentalRepositoryTest.executor": "Run",
+    "Gradle.UserRepositoryTest.executor": "Run",
+    "Gradle.VehicleRepositoryTest.executor": "Run",
+    "Ktor.ApplicationKt.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.MCP Project settings loaded": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "android.gradle.sync.needed": "true",
     "git-widget-placeholder": "main",
-    "kotlin-language-version-configured": "true"
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "E:/Antigravity Projects/fleet-management"
   }
 }]]></component>
-  <component name="RunManager">
-    <configuration default="true" type="JetRunConfigurationType">
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\Antigravity Projects\fleet-management" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Gradle.VehicleRepositoryTest">
+    <configuration name="AccountRepositoryTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":test" />
+            <option value="--tests" />
+            <option value="&quot;com.solodev.fleet.modules.infrastructure.persistence.AccountRepositoryTest&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
     </configuration>
-    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
-      <option name="filePath" />
+    <configuration name="AccountRepositoryTest.should save and find account" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":test" />
+            <option value="--tests" />
+            <option value="&quot;com.solodev.fleet.modules.infrastructure.persistence.AccountRepositoryTest.should save and find account&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="ApplicationTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":test" />
+            <option value="--tests" />
+            <option value="&quot;com.solodev.fleet.ApplicationTest&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="MaintenanceRepositoryTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":test" />
+            <option value="--tests" />
+            <option value="&quot;com.solodev.fleet.modules.infrastructure.persistence.MaintenanceRepositoryTest&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="VehicleRepositoryTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":test" />
+            <option value="--tests" />
+            <option value="&quot;com.solodev.fleet.modules.infrastructure.persistence.VehicleRepositoryTest&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
       <method v="2" />
     </configuration>
     <configuration name="EngineMain" type="KtorApplicationConfigurationType" factoryName="Ktor" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="io.ktor.server.netty.EngineMain" />
-      <module name="ktor-sample.main" />
+      <module name="fleet-management.main" />
       <option name="alternativeJrePath" />
       <option name="alternativeJrePathEnabled" value="false" />
       <option name="includeProvidedScope" value="false" />
@@ -76,6 +288,15 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Gradle.VehicleRepositoryTest" />
+        <item itemvalue="Gradle.ApplicationTest" />
+        <item itemvalue="Gradle.AccountRepositoryTest" />
+        <item itemvalue="Gradle.AccountRepositoryTest.should save and find account" />
+        <item itemvalue="Gradle.MaintenanceRepositoryTest" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
@@ -86,11 +307,11 @@
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="6d53c233-9628-48e5-af23-d029dfbfacf1" name="Changes" comment="" />
-      <created>1770276672435</created>
+      <changelist id="616ed517-0370-414f-87ac-b7a4d85a14a6" name="Changes" comment="" />
+      <created>1770277420796</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1770276672435</updated>
+      <updated>1770277420796</updated>
     </task>
     <servers />
   </component>

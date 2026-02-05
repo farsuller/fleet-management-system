@@ -30,7 +30,52 @@ src/main/kotlin/com/solodev/fleet/modules/accounting/
 
 ---
 
-## 2. Data Transfer Objects (DTOs)
+## 2. Domain Model
+
+### Accounting.kt
+`src/main/kotlin/com/solodev/fleet/modules/domain/models/Accounting.kt`
+
+```kotlin
+package com.solodev.fleet.modules.domain.models
+
+/** Account type in the chart of accounts. */
+enum class AccountType {
+    ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
+}
+
+/** Invoice status. */
+enum class InvoiceStatus {
+    DRAFT, ISSUED, PAID, OVERDUE, CANCELLED
+}
+
+/**
+ * Account domain entity.
+ */
+data class Account(
+    val id: AccountId,
+    val accountCode: String,
+    val accountName: String,
+    val accountType: AccountType,
+    val isActive: Boolean = true
+)
+
+/** Invoice domain entity. */
+data class Invoice(
+    val id: UUID,
+    val invoiceNumber: String,
+    val customerId: CustomerId,
+    val status: InvoiceStatus,
+    val subtotalCents: Int,
+    val taxCents: Int = 0,
+    val currencyCode: String = "PHP"
+) {
+    val totalCents: Int get() = subtotalCents + taxCents
+}
+```
+
+---
+
+## 3. Data Transfer Objects (DTOs)
 
 ### **AccountDTO.kt**
 `src/main/kotlin/com/solodev/fleet/modules/accounting/application/dto/AccountDTO.kt`
@@ -111,7 +156,38 @@ data class InvoiceResponse(
 
 ---
 
-## 3. Application Use Cases
+## 4. Repository Implementation
+
+### AccountingRepositoryImpl.kt
+`src/main/kotlin/com/solodev/fleet/modules/infrastructure/persistence/AccountingRepositoryImpl.kt`
+
+```kotlin
+class AccountingRepositoryImpl : AccountingRepository {
+    override suspend fun saveAccount(account: Account): Account = dbQuery {
+        val exists = AccountsTable.select { AccountsTable.id eq UUID.fromString(account.id.value) }.count() > 0
+        if (exists) {
+            AccountsTable.update({ AccountsTable.id eq UUID.fromString(account.id.value) }) {
+                it[accountName] = account.accountName
+                it[updatedAt] = Instant.now()
+            }
+        } else {
+            AccountsTable.insert {
+                it[id] = UUID.fromString(account.id.value)
+                it[accountCode] = account.accountCode
+                it[accountName] = account.accountName
+                it[accountType] = account.accountType.name
+                it[createdAt] = Instant.now()
+                it[updatedAt] = Instant.now()
+            }
+        }
+        account
+    }
+}
+```
+
+---
+
+## 5. Application Use Cases
 
 ### **CreateAccountUseCase.kt**
 ```kotlin
@@ -138,7 +214,7 @@ class CreateAccountUseCase(private val repository: AccountingRepository) {
 
 ---
 
-## 4. Ktor Routes
+## 6. Ktor Routes
 
 ### **AccountingRoutes.kt**
 ```kotlin
@@ -182,7 +258,24 @@ fun Route.accountingRoutes(repository: AccountingRepository) {
 
 ---
 
-## 5. API Endpoints & Sample Payloads
+## 7. Testing
+
+### Integration Tests
+```kotlin
+@Test fun `should create and find accounting account`() = runBlocking {
+    val repo = AccountingRepositoryImpl()
+    val account = createSampleAccount()
+    repo.saveAccount(account)
+    
+    val found = repo.findAccountById(account.id)
+    assertNotNull(found)
+    assertEquals(found.accountCode, account.accountCode)
+}
+```
+
+---
+
+## 8. API Endpoints & Sample Payloads
 
 ### **A. Create Account**
 - **Endpoint**: `POST /v1/accounting/accounts`
@@ -219,7 +312,7 @@ fun Route.accountingRoutes(repository: AccountingRepository) {
 
 ---
 
-## 6. Wiring
+## 9. Wiring
 In `Routing.kt`:
 ```kotlin
 val accountingRepo = AccountingRepositoryImpl() 

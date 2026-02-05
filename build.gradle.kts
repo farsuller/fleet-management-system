@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ktor)
@@ -13,10 +15,10 @@ application {
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions {
-        jvmTarget = "21"
-        allWarningsAsErrors = false
-        freeCompilerArgs = listOf("-Xjvm-default=all")
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_21)
+        allWarningsAsErrors.set(false)
+        freeCompilerArgs.set(listOf("-Xjvm-default=all"))
     }
 }
 

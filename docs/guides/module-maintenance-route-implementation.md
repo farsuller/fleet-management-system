@@ -30,7 +30,43 @@ src/main/kotlin/com/solodev/fleet/modules/maintenance/
 
 ---
 
-## 2. Data Transfer Objects (DTOs)
+## 2. Domain Model
+
+### Maintenance.kt
+`src/main/kotlin/com/solodev/fleet/modules/domain/models/Maintenance.kt`
+
+```kotlin
+package com.solodev.fleet.modules.domain.models
+
+import java.time.Instant
+
+/** Maintenance job status. */
+enum class MaintenanceStatus {
+    SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
+}
+
+/**
+ * Maintenance job domain entity.
+ */
+data class MaintenanceJob(
+    val id: MaintenanceJobId,
+    val jobNumber: String,
+    val vehicleId: VehicleId,
+    val status: MaintenanceStatus,
+    val jobType: MaintenanceJobType,
+    val description: String,
+    val scheduledDate: Instant,
+    val laborCostCents: Int = 0,
+    val partsCostCents: Int = 0,
+    val currencyCode: String = "PHP"
+) {
+    val totalCostCents: Int get() = laborCostCents + partsCostCents
+}
+```
+
+---
+
+## 3. Data Transfer Objects (DTOs)
 
 ### **MaintenanceDTO.kt**
 `src/main/kotlin/com/solodev/fleet/modules/maintenance/application/dto/MaintenanceDTO.kt`
@@ -77,7 +113,38 @@ data class MaintenanceResponse(
 
 ---
 
-## 3. Application Use Cases
+## 4. Repository Implementation
+
+### MaintenanceRepositoryImpl.kt
+`src/main/kotlin/com/solodev/fleet/modules/infrastructure/persistence/MaintenanceRepositoryImpl.kt`
+
+```kotlin
+class MaintenanceRepositoryImpl : MaintenanceRepository {
+    override suspend fun saveJob(job: MaintenanceJob): MaintenanceJob = dbQuery {
+        val exists = MaintenanceJobsTable.select { MaintenanceJobsTable.id eq UUID.fromString(job.id.value) }.count() > 0
+        if (exists) {
+            MaintenanceJobsTable.update({ MaintenanceJobsTable.id eq UUID.fromString(job.id.value) }) {
+                it[status] = job.status.name
+                it[updatedAt] = Instant.now()
+            }
+        } else {
+            MaintenanceJobsTable.insert {
+                it[id] = UUID.fromString(job.id.value)
+                it[jobNumber] = job.jobNumber
+                it[vehicleId] = UUID.fromString(job.vehicleId.value)
+                it[status] = job.status.name
+                it[createdAt] = Instant.now()
+                it[updatedAt] = Instant.now()
+            }
+        }
+        job
+    }
+}
+```
+
+---
+
+## 5. Application Use Cases
 
 ### **ScheduleMaintenanceUseCase.kt**
 ```kotlin
@@ -108,7 +175,7 @@ class ScheduleMaintenanceUseCase(private val repository: MaintenanceRepository) 
 
 ---
 
-## 4. Ktor Routes
+## 6. Ktor Routes
 
 ### **MaintenanceRoutes.kt**
 ```kotlin
@@ -145,7 +212,24 @@ fun Route.maintenanceRoutes(repository: MaintenanceRepository) {
 
 ---
 
-## 5. API Endpoints & Sample Payloads
+## 7. Testing
+
+### Integration Tests
+```kotlin
+@Test fun `should schedule and retrieve maintenance job`() = runBlocking {
+    val repo = MaintenanceRepositoryImpl()
+    val job = createSampleJob()
+    repo.saveJob(job)
+    
+    val found = repo.findById(job.id)
+    assertNotNull(found)
+    assertEquals(job.jobNumber, found.jobNumber)
+}
+```
+
+---
+
+## 8. API Endpoints & Sample Payloads
 
 ### **A. Schedule Maintenance**
 - **Endpoint**: `POST /v1/maintenance`
@@ -180,7 +264,7 @@ fun Route.maintenanceRoutes(repository: MaintenanceRepository) {
 
 ---
 
-## 6. Wiring
+## 9. Wiring
 In `Routing.kt`:
 ```kotlin
 val maintenanceRepo = MaintenanceRepositoryImpl() 

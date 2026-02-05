@@ -8,7 +8,7 @@ CREATE TABLE vehicles (
     make VARCHAR(100) NOT NULL,
     model VARCHAR(100) NOT NULL,
     year INTEGER NOT NULL CHECK (year >= 1900 AND year <= 2100),
-    status VARCHAR(20) NOT NULL CHECK (status IN ('ACTIVE', 'RENTED', 'UNDER_MAINTENANCE', 'DECOMMISSIONED')),
+    status VARCHAR(20) NOT NULL CHECK (status IN ('AVAILABLE', 'RENTED', 'MAINTENANCE', 'RETIRED')),
     passenger_capacity INTEGER CHECK (passenger_capacity > 0),
     current_odometer_km INTEGER NOT NULL DEFAULT 0 CHECK (current_odometer_km >= 0),
     vin VARCHAR(17) UNIQUE,
@@ -16,7 +16,7 @@ CREATE TABLE vehicles (
     fuel_type VARCHAR(20) CHECK (fuel_type IN ('GASOLINE', 'DIESEL', 'ELECTRIC', 'HYBRID')),
     transmission VARCHAR(20) CHECK (transmission IN ('MANUAL', 'AUTOMATIC')),
     daily_rate_cents INTEGER CHECK (daily_rate_cents >= 0),
-    currency_code VARCHAR(3) DEFAULT 'USD',
+    currency_code VARCHAR(3) DEFAULT 'PHP',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     version BIGINT NOT NULL DEFAULT 0

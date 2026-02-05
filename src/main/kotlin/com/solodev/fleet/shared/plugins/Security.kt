@@ -3,7 +3,6 @@ package com.solodev.fleet.shared.plugins
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
-import io.ktor.server.response.*
 
 /**
  * Configures application security.

@@ -6,6 +6,7 @@ exposed = "0.50.1"
 hikaricp = "6.2.0"
 postgresql = "42.7.4"
 flyway = "11.1.0"
+spotless = "8.2.0"
 
 [libraries]
 ktor-server-core = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor" }
