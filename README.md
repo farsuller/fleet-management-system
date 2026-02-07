@@ -87,7 +87,7 @@ The Fleet Management System is a comprehensive solution for managing vehicle ren
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                  Application Layer                          │
+│                    Application Layer                        │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
 │  │   Use Cases  │  │   Use Cases  │  │   Use Cases  │       │
 │  │  (Customer)  │  │   (Rental)   │  │  (Vehicle)   │       │
@@ -100,7 +100,7 @@ The Fleet Management System is a comprehensive solution for managing vehicle ren
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    Domain Layer                             │
+│                       Domain Layer                          │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
 │  │   Customer   │  │    Rental    │  │   Vehicle    │       │
 │  │    Entity    │  │    Entity    │  │    Entity    │       │
@@ -113,7 +113,7 @@ The Fleet Management System is a comprehensive solution for managing vehicle ren
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│               Infrastructure Layer                          │
+│                   Infrastructure Layer                      │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │     Repository Implementations (Exposed ORM)         │   │
 │  └──────────────────────────────────────────────────────┘   │
