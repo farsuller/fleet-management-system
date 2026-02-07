@@ -1,13 +1,26 @@
-# Phase 3: User API Implementation Guide
+# User API - Complete Implementation Guide
 
-**Original Implementation**: 2026-02-02  
-**Enhanced Implementation**: 2026-02-07  
+**Version**: 1.1  
+**Last Updated**: 2026-02-07  
 **Verification**: Production-Ready  
-**Server Status**: ✅ OPERATIONAL  
-**Compliance**: 100% (Updated to IMPLEMENTATION-STANDARDS.md)
-**Standards**: Follows IMPLEMENTATION-STANDARDS.md  
+**Compliance**: 100% (Aligned with v1.1 Standards)  
+**Skills Applied**: Clean Code, API Patterns, Performance Optimizer, Test Engineer
 
-This guide details the implementation for the User Management module, covering user registration, profile management, role assignment, and administrative staff management.
+---
+
+## 0. Performance & Security Summary
+
+### **Latency Targets**
+| Operation | P95 Target | Efficiency Note |
+|-----------|------------|-----------------|
+| Login (Auth) | < 300ms | BCrypt hashing is intentionally resource-intensive. |
+| Token Verify | < 10ms | Stateless JWT verification (No DB lookup). |
+| List Users | < 150ms | Uses paginated queries in production. |
+
+### **Security Hardening**
+- **Credential Safety**: No cleartext passwords. BCrypt hashing with salt is mandatory.
+- **RBAC Enforcement**: Roles are embedded in JWT claims for instant permission checks.
+- **Zero-Leaked Info**: Generic "Invalid credentials" error for both missing email and wrong password.
 
 ---
 
@@ -100,6 +113,9 @@ data class StaffProfile(
 ---
 
 ## 3. Data Transfer Objects (DTOs)
+
+### **Why This Matters**:
+The User module handles PII (Personally Identifiable Information) and credentials. DTO validation here is our first line of defense against Weak Passwords and Malformed Emails, reducing load on our identity provider or auth database.
 
 ### **UserRegistrationRequest.kt**
 ```kotlin
@@ -309,6 +325,9 @@ object StaffProfilesTable : UUIDTable("staff_profiles") {
 ---
 
 ## 6. Application Use Cases
+
+### **Why This Matters**:
+User Use Cases contain the critical "Trust Handshake." They enforce identity uniqueness and credential verification. By keeping this logic in the application layer, we ensure that authentication rules are consistent whether the trigger is a REST API or a CLI tool.
 
 ### **RegisterUserUseCase.kt**
 ```kotlin
@@ -536,36 +555,25 @@ fun Route.userRoutes(repository: UserRepository) {
 
 ---
 
-## 8. Test Scenarios (Payloads)
+## 8. Testing
 
-### 8.1 User Registration
-**POST** `/v1/users/register`
-**Status**: 201 Created
-```json
-{
-  "email": "test@mail.com",
-  "passwordRaw": "**************",
-  "firstName": "John",
-  "lastName": "Smith",
-  "phone": "+63-917-000-0001"
-}
-```
+See [User Test Implementation Guide](../tests-implementations/module-user-testing.md) for detailed test scenarios and integration test examples.
 
-### 8.2 Registration - Failed (Short Password)
-**POST** `/v1/users/register`
-**Status**: 422 Unprocessable Entity
-```json
-{
-  "email": "bad@fleet.com",
-  "passwordRaw": "short",
-  "firstName": "Bad",
-  "lastName": "User"
+---
+
+## 9. Wiring
+
+In `src/main/kotlin/com/solodev/fleet/Routing.kt`:
+```kotlin
+val userRepo = UserRepositoryImpl()
+routing {
+    userRoutes(userRepo)
 }
 ```
 
 ---
 
-## 9. API Endpoints Reference
+## 10. API Endpoints Reference
 
 | Method | Path | Description | Roles |
 |--------|------|-------------|-------|
@@ -731,4 +739,14 @@ curl -X DELETE http://localhost:8080/v1/users/e2f1b0a8-3d5c-4b9e-8f2d-1a2b3c4d5e
 ```
 
 **Response (204 No Content)**:
-*(Empty Body)*
+---
+
+## 13. Error Scenarios
+
+| Scenario | Status | Error Code | Logic |
+|----------|--------|------------|-------|
+| Email taken | 409 | CONFLICT | Unique constraint on `users.email` |
+| Invalid login | 401 | AUTH_FAILED | Generic msg for security |
+| Short password | 422 | VALIDATION_ERROR | Enforced in DTO `init` |
+| User not found | 404 | NOT_FOUND | Primary key lookup failed |
+| Missing Role | 404 | ROLE_NOT_FOUND | Role name not in `roles` table |

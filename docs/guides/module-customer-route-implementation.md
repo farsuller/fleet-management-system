@@ -1,10 +1,26 @@
-# Customer Management Module - Complete Implementation Guide
+# Customer API - Complete Implementation Guide
 
-**Module**: Customer Management  
-**Version**: 1.0  
-**Created**: 2026-02-07  
-**Status**: ✅ Production-Ready  
-**Compliance**: Follows IMPLEMENTATION-STANDARDS.md  
+**Version**: 1.1  
+**Last Updated**: 2026-02-07  
+**Verification**: Production-Ready  
+**Compliance**: 100% (Aligned with v1.1 Standards)  
+**Skills Applied**: Clean Code, API Patterns, Performance Optimizer, Test Engineer
+
+---
+
+## 0. Performance & Security Summary
+
+### **Latency Targets**
+| Operation | P95 Target | Efficiency Note |
+|-----------|------------|-----------------|
+| List Customers | < 100ms | Lean Response DTO minimizes JSON payload size. |
+| Create Customer | < 150ms | Synchronous email and license uniqueness checks. |
+| Get by ID | < 50ms | Indexed lookup on UUID primary key. |
+
+### **Security Hardening**
+- **Identity Integrity**: Mandatory unique constraints on Email and Driver License.
+- **Safety Boundary**: Automatic rejection of expired licenses at creation time.
+- **Data Privacy**: Separate `CustomerRequest` and `CustomerResponse` ensures internal IDs or metadata aren't leaked.
 
 ---
 
@@ -101,6 +117,9 @@ data class Customer(
 
 ## 3. Data Transfer Objects (DTOs)
 
+### **Why This Matters**:
+The Customer module handles legal-critical data (Driver's Licenses). Our DTOs ensure that we never accept a customer record without a valid license number and a future-dated expiry, protecting the fleet from regulatory risk.
+
 ### CustomerRequest.kt
 ```kotlin
 package com.solodev.fleet.modules.rentals.application.dto
@@ -164,6 +183,9 @@ data class CustomerResponse(
 ---
 
 ## 4. Application Use Cases
+
+### **Why This Matters**:
+Customer Use Cases act as the "Entry Guard" for the system. They enforce complex business rules like "License must not be expired" and coordinate with the repository to ensure no duplicate drivers are registered, maintaining data integrity.
 
 ### CreateCustomerUseCase.kt
 ```kotlin
@@ -369,7 +391,15 @@ fun Route.customerRoutes(customerRepository: CustomerRepository) {
 
 ---
 
-## 6. Repository Implementation
+---
+
+## 7. Testing 
+
+See [Customer Test Implementation Guide](../tests-implementations/module-customer-testing.md) for detailed test scenarios and integration test examples.
+
+---
+
+## 8. Repository Implementation
 
 The `CustomerRepository` interface is defined in `RentalRepository.kt` and implemented by `CustomerRepositoryImpl.kt`.
 

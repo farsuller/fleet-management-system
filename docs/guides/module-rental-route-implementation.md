@@ -1,12 +1,26 @@
 # Rental API - Complete Implementation Guide
 
-**Original Implementation**: 2026-02-02  
-**Enhanced Implementation**: 2026-02-03  
-**Verification**: Production-Ready (Enhanced with Skills)  
-**Server Status**: ✅ OPERATIONAL  
-**Compliance**: 100%  
-**Standards**: Follows IMPLEMENTATION-STANDARDS.md  
-**Skills Applied**: Backend Development, Clean Code, API Patterns, Lint & Validate
+**Version**: 1.1  
+**Last Updated**: 2026-02-07  
+**Verification**: Production-Ready  
+**Compliance**: 100% (Aligned with v1.1 Standards)  
+**Skills Applied**: Clean Code, API Patterns, Performance Optimizer, Test Engineer
+
+---
+
+## 0. Performance & Security Summary
+
+### **Latency Targets**
+| Operation | P95 Target | Efficiency Note |
+|-----------|------------|-----------------|
+| Create Rental | < 250ms | Includes conflict check and vehicle availability lookup. |
+| Activate/Cancel | < 150ms | Double-update (Rental + Vehicle) within a single transaction. |
+| List Rentals | < 200ms | Optimized joins between Rentals, Vehicles, and Customers. |
+
+### **Security Hardening**
+- **State Guarding**: Only `RESERVED` rentals can be activated; only `ACTIVE` rentals can be completed.
+- **Conflict Prevention**: Concurrent rental detection prevents double-booking same vehicle in overlapping periods.
+- **Fail-Fast Validation**: Date range logic (`endDate > startDate`) enforced at the DTO boundary.
 
 ---
 
@@ -98,6 +112,9 @@ data class Rental(
 ---
 
 ## 3. Data Transfer Objects (DTOs)
+
+### **Why This Matters**:
+The Rental module handles complex date logic and amount calculations. Our DTOs ensure that ISO-8601 strings are valid and that `endDate` is strictly chronologically after `startDate`, preventing downstream "Impossible States."
 
 ### RentalRequest.kt
 ```kotlin
@@ -278,6 +295,9 @@ class RentalRepositoryImpl : RentalRepository {
 ---
 
 ## 5. Application Use Cases
+
+### **Why This Matters**:
+Use Cases in the Rental module coordinate state across multiple entities (Vehicles and Rentals). They ensure transactional integrity—e.g., if a vehicle is successfully set to `RENTED`, the Rental status MUST also update to `ACTIVE`.
 
 ### CreateRentalUseCase.kt
 ```kotlin
@@ -599,6 +619,12 @@ fun Route.rentalRoutes(
     }
 }
 ```
+
+---
+
+## 7. Testing 
+
+See [Rental Test Implementation Guide](../tests-implementations/module-rental-testing.md) for detailed test scenarios and integration test examples.
 
 ---
 
