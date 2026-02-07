@@ -543,8 +543,8 @@ fun Route.userRoutes(repository: UserRepository) {
 **Status**: 201 Created
 ```json
 {
-  "email": "agent.smith@fleet.com",
-  "passwordRaw": "P@ssw0rd123",
+  "email": "test@mail.com",
+  "passwordRaw": "**************",
   "firstName": "John",
   "lastName": "Smith",
   "phone": "+63-917-000-0001"
@@ -595,8 +595,8 @@ fun Route.userRoutes(repository: UserRepository) {
 **POST** `/v1/users/login`
 ```json
 {
-  "email": "agent.smith@fleet.com",
-  "passwordRaw": "P@ssw0rd123"
+  "email": "test@mail.com",
+  "passwordRaw": "**************"
 }
 ```
 
