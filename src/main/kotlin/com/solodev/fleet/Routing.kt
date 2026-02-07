@@ -1,8 +1,10 @@
 package com.solodev.fleet
 
+import com.solodev.fleet.modules.infrastructure.persistence.CustomerRepositoryImpl
 import com.solodev.fleet.modules.infrastructure.persistence.RentalRepositoryImpl
 import com.solodev.fleet.modules.infrastructure.persistence.UserRepositoryImpl
 import com.solodev.fleet.modules.infrastructure.persistence.VehicleRepositoryImpl
+import com.solodev.fleet.modules.rentals.infrastructure.http.customerRoutes
 import com.solodev.fleet.modules.rentals.infrastructure.http.rentalRoutes
 import com.solodev.fleet.modules.users.infrastructure.http.userRoutes
 import com.solodev.fleet.modules.vehicles.infrastructure.http.vehicleRoutes
@@ -25,29 +27,29 @@ fun Application.configureRouting() {
     val vehicleRepo = VehicleRepositoryImpl()
     val rentalRepo = RentalRepositoryImpl()
     val userRepo = UserRepositoryImpl()
+    val customerRepo = CustomerRepositoryImpl()
 
     routing {
         vehicleRoutes(vehicleRepo)
 
-        rentalRoutes(rentalRepo)
+        rentalRoutes(rentalRepository = rentalRepo, vehicleRepository = vehicleRepo)
+
+        customerRoutes(customerRepository = customerRepo)
 
         userRoutes(userRepo)
 
         get("/") {
             call.respond(
-                ApiResponse.success(
-                    mapOf("message" to "Fleet Management API v1"),
-                    call.requestId
-                )
+                    ApiResponse.success(
+                            mapOf("message" to "Fleet Management API v1"),
+                            call.requestId
+                    )
             )
         }
 
         get("/health") {
             call.respond(
-                ApiResponse.success(
-                    data = mapOf("status" to "OK"),
-                    requestId = call.requestId
-                )
+                    ApiResponse.success(data = mapOf("status" to "OK"), requestId = call.requestId)
             )
         }
     }

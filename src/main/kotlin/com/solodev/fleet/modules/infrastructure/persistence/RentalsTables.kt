@@ -19,6 +19,7 @@ object CustomersTable : UUIDTable("customers") {
     val state = varchar("state", 100).nullable()
     val postalCode = varchar("postal_code", 20).nullable()
     val country = varchar("country", 100).nullable()
+    val isActive = bool("is_active").default(true)
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
 }

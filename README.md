@@ -1,18 +1,582 @@
-# Getting started with a Ktor Server
+# Fleet Management System
 
-A sample standalone project created in
-the [Create, open and run a new Ktor project](https://ktor.io/docs/server-create-a-new-project.html)
-tutorial.
+A production-ready **Fleet Management System** built with Kotlin and Ktor, designed to manage vehicle rentals, customer profiles, and fleet operations.
 
-## Run
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.9.22-blue.svg)](https://kotlinlang.org/)
+[![Ktor](https://img.shields.io/badge/Ktor-2.3.7-orange.svg)](https://ktor.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-To run the sample, execute the following command in the project's root directory:
+---
 
-```bash
-./gradlew run
+## 📋 Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [System Architecture](#system-architecture)
+- [Database Schema](#database-schema)
+- [Technology Stack](#technology-stack)
+- [Getting Started](#getting-started)
+- [API Documentation](#api-documentation)
+- [Project Structure](#project-structure)
+- [Development](#development)
+- [Testing](#testing)
+- [Deployment](#deployment)
+
+---
+
+## 🎯 Overview
+
+The Fleet Management System is a comprehensive solution for managing vehicle rental operations. It provides RESTful APIs for:
+
+- **Customer Management** - Driver profiles and license validation
+- **Vehicle Fleet Management** - Vehicle inventory and availability tracking
+- **Rental Lifecycle** - Reservation, activation, completion, and cancellation
+- **User Management** - Staff and customer authentication
+
+### Key Capabilities
+
+- ✅ **Real-time Availability** - Prevent double-booking with conflict detection
+- ✅ **Driver Validation** - Automatic license expiry verification
+- ✅ **Odometer Tracking** - Mileage recording for vehicle maintenance
+- ✅ **State Management** - Clear rental lifecycle (RESERVED → ACTIVE → COMPLETED)
+- ✅ **Multi-tenancy Ready** - Designed for scalability
+
+---
+
+## ✨ Features
+
+### Customer Management
+- Create and manage customer profiles
+- Driver's license validation and expiry tracking
+- Email and license uniqueness enforcement
+- Optional user account linking for self-service portal
+
+### Vehicle Management
+- Complete vehicle inventory management
+- Real-time availability status
+- Odometer reading history
+- Vehicle state tracking (AVAILABLE, RENTED, MAINTENANCE, RETIRED)
+
+### Rental Operations
+- Create reservations with conflict detection
+- Activate rentals with odometer capture
+- Complete rentals with final mileage
+- Cancel reservations or active rentals
+- Automatic cost calculation based on daily rates
+
+### User & Authentication
+- Role-based access control (RBAC)
+- Staff profiles with department tracking
+- Multiple user roles (ADMIN, FLEET_MANAGER, RENTAL_AGENT, etc.)
+
+---
+
+## 🏗️ System Architecture
+
+### Clean Architecture Layers
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    HTTP Layer (Ktor)                         │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │   Customer   │  │    Rental    │  │   Vehicle    │      │
+│  │    Routes    │  │    Routes    │  │    Routes    │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+└─────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  Application Layer                           │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │   Use Cases  │  │   Use Cases  │  │   Use Cases  │      │
+│  │  (Customer)  │  │   (Rental)   │  │  (Vehicle)   │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+│                                                              │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │              DTOs (Request/Response)                  │  │
+│  └──────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Domain Layer                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │   Customer   │  │    Rental    │  │   Vehicle    │      │
+│  │    Entity    │  │    Entity    │  │    Entity    │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+│                                                              │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │           Repository Interfaces (Ports)               │  │
+│  └──────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│               Infrastructure Layer                           │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │     Repository Implementations (Exposed ORM)          │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                              │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │              Database (PostgreSQL)                    │  │
+│  └──────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-**Run Linting First:**
-   Execute the following command to lint and organize unused imports and spacing
+### Design Patterns
+
+- **Clean Architecture** - Separation of concerns with clear boundaries
+- **Repository Pattern** - Abstract data access layer
+- **Use Case Pattern** - Encapsulate business logic
+- **DTO Pattern** - Separate API contracts from domain models
+- **Dependency Injection** - Manual DI for simplicity
+
+---
+
+## 🗄️ Database Schema
+
+### Entity Relationship Diagram
+
+```
+┌─────────────────┐
+│     USERS       │
+│─────────────────│
+│ id (PK)         │
+│ email (UNIQUE)  │
+│ password_hash   │
+│ first_name      │
+│ last_name       │
+│ is_active       │
+└─────────────────┘
+         │
+         │ 1:1 (optional)
+         ▼
+┌─────────────────┐
+│   CUSTOMERS     │
+│─────────────────│
+│ id (PK)         │
+│ user_id (FK)    │◄─────────┐
+│ email (UNIQUE)  │          │
+│ first_name      │          │
+│ last_name       │          │
+│ phone           │          │
+│ driver_license  │          │
+│ license_expiry  │          │
+│ is_active       │          │
+└─────────────────┘          │
+         │                   │
+         │ 1:N               │
+         ▼                   │
+┌─────────────────┐          │
+│    RENTALS      │          │
+│─────────────────│          │
+│ id (PK)         │          │
+│ rental_number   │          │
+│ customer_id (FK)├──────────┘
+│ vehicle_id (FK) ├──────────┐
+│ status          │          │
+│ start_date      │          │
+│ end_date        │          │
+│ daily_rate      │          │
+│ total_amount    │          │
+└─────────────────┘          │
+                             │
+                             │ N:1
+                             ▼
+                    ┌─────────────────┐
+                    │    VEHICLES     │
+                    │─────────────────│
+                    │ id (PK)         │
+                    │ plate_number    │
+                    │ make            │
+                    │ model           │
+                    │ year            │
+                    │ status          │
+                    │ daily_rate      │
+                    │ odometer_km     │
+                    └─────────────────┘
+                             │
+                             │ 1:N
+                             ▼
+                    ┌─────────────────┐
+                    │ ODOMETER_       │
+                    │   READINGS      │
+                    │─────────────────│
+                    │ id (PK)         │
+                    │ vehicle_id (FK) │
+                    │ reading_km      │
+                    │ recorded_at     │
+                    └─────────────────┘
+```
+
+### Key Relationships
+
+1. **User ↔ Customer** (1:1, Optional)
+   - Customers can exist without user accounts (walk-in customers)
+   - Users with CUSTOMER role should have a linked customer record
+
+2. **Customer → Rental** (1:N)
+   - One customer can have multiple rentals over time
+   - Each rental belongs to exactly one customer
+
+3. **Vehicle → Rental** (1:N)
+   - One vehicle can have multiple rentals (sequential, not concurrent)
+   - Conflict detection prevents double-booking
+
+4. **Vehicle → Odometer Readings** (1:N)
+   - Track mileage history for maintenance scheduling
+   - Readings are append-only and non-decreasing
+
+---
+
+## 🛠️ Technology Stack
+
+### Backend Framework
+- **[Kotlin](https://kotlinlang.org/)** 1.9.22 - Modern JVM language
+- **[Ktor](https://ktor.io/)** 2.3.7 - Lightweight async web framework
+- **[Exposed](https://github.com/JetBrains/Exposed)** - Kotlin SQL framework
+
+### Database
+- **[PostgreSQL](https://www.postgresql.org/)** 15+ - Production database
+- **[H2](https://www.h2database.com/)** - In-memory database for testing
+- **[Flyway](https://flywaydb.org/)** - Database migration tool
+- **[HikariCP](https://github.com/brettwooldridge/HikariCP)** - Connection pooling
+
+### Serialization & Validation
+- **[kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization)** - JSON serialization
+- **Kotlin `require()`** - Input validation
+
+### Testing
+- **[JUnit 5](https://junit.org/junit5/)** - Testing framework
+- **[Kotlin Test](https://kotlinlang.org/api/latest/kotlin.test/)** - Kotlin testing utilities
+
+### Code Quality
+- **[Spotless](https://github.com/diffplug/spotless)** - Code formatting
+- **[ktfmt](https://github.com/facebook/ktfmt)** - Kotlin formatter
+
+### Build & Deployment
+- **[Gradle](https://gradle.org/)** 8.5 - Build automation
+- **[Docker](https://www.docker.com/)** - Containerization (optional)
+- **[Docker Compose](https://docs.docker.com/compose/)** - Local development
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **JDK 17+** - [Download](https://adoptium.net/)
+- **PostgreSQL 15+** - [Download](https://www.postgresql.org/download/)
+- **Git** - [Download](https://git-scm.com/)
+
+### Installation
+
+1. **Clone the repository**
    ```bash
-   ./gradlew spotlessApply
+   git clone https://github.com/yourusername/fleet-management.git
+   cd fleet-management
+   ```
+
+2. **Set up the database**
+   ```bash
+   # Start PostgreSQL with Docker Compose
+   docker-compose up -d
+   
+   # Or create database manually
+   createdb fleet_management
+   ```
+
+3. **Configure environment**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your database credentials
+   ```
+
+4. **Run database migrations**
+   ```bash
+   ./gradlew flywayMigrate
+   ```
+
+5. **Build the project**
+   ```bash
+   ./gradlew build
+   ```
+
+6. **Run the application**
+   ```bash
+   ./gradlew run
+   ```
+
+The server will start at `http://localhost:8080`
+
+### Quick Test
+
+```bash
+# Health check
+curl http://localhost:8080/health
+
+# Create a customer
+curl -X POST http://localhost:8080/v1/customers \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "phone": "+63-917-123-4567",
+    "driversLicense": "N01-12-345678",
+    "driverLicenseExpiry": "2028-12-31"
+  }'
+```
+
+---
+
+## 📚 API Documentation
+
+### Base URL
+```
+http://localhost:8080
+```
+
+### Endpoints Overview
+
+| Module | Endpoint | Method | Description |
+|--------|----------|--------|-------------|
+| **Health** | `/health` | GET | System health check |
+| **Customers** | `/v1/customers` | GET | List all customers |
+| | `/v1/customers` | POST | Create customer |
+| | `/v1/customers/{id}` | GET | Get customer by ID |
+| **Rentals** | `/v1/rentals` | GET | List all rentals |
+| | `/v1/rentals` | POST | Create rental |
+| | `/v1/rentals/{id}` | GET | Get rental by ID |
+| | `/v1/rentals/{id}/activate` | POST | Activate rental |
+| | `/v1/rentals/{id}/complete` | POST | Complete rental |
+| | `/v1/rentals/{id}/cancel` | POST | Cancel rental |
+| **Vehicles** | `/v1/vehicles` | GET | List all vehicles |
+| | `/v1/vehicles` | POST | Create vehicle |
+| | `/v1/vehicles/{id}` | GET | Get vehicle by ID |
+| | `/v1/vehicles/{id}` | PUT | Update vehicle |
+| | `/v1/vehicles/{id}` | DELETE | Delete vehicle |
+| **Users** | `/v1/users` | GET | List all users |
+| | `/v1/users` | POST | Create user |
+| | `/v1/users/{id}` | GET | Get user by ID |
+
+### Detailed Documentation
+
+For complete API documentation with request/response examples, see:
+- **[API Test Scenarios](docs/guides/API-TEST-SCENARIOS.md)** - Complete test scenarios
+- **[Customer Module](docs/guides/module-customer-route-implementation.md)** - Customer API reference
+- **[Rental Module](docs/guides/module-rental-route-implementation.md)** - Rental API reference
+- **[Vehicle Module](docs/guides/module-vehicle-route-implementation.md)** - Vehicle API reference
+- **[User Module](docs/guides/module-user-route-implementation.md)** - User API reference
+
+---
+
+## 📁 Project Structure
+
+```
+fleet-management/
+├── src/
+│   ├── main/
+│   │   ├── kotlin/com/solodev/fleet/
+│   │   │   ├── Application.kt              # Main entry point
+│   │   │   ├── Routing.kt                  # Route configuration
+│   │   │   ├── modules/
+│   │   │   │   ├── domain/
+│   │   │   │   │   ├── models/             # Domain entities
+│   │   │   │   │   │   ├── Customer.kt
+│   │   │   │   │   │   ├── Rental.kt
+│   │   │   │   │   │   ├── Vehicle.kt
+│   │   │   │   │   │   └── User.kt
+│   │   │   │   │   └── ports/              # Repository interfaces
+│   │   │   │   │       ├── CustomerRepository.kt
+│   │   │   │   │       ├── RentalRepository.kt
+│   │   │   │   │       ├── VehicleRepository.kt
+│   │   │   │   │       └── UserRepository.kt
+│   │   │   │   ├── infrastructure/
+│   │   │   │   │   └── persistence/        # Database implementations
+│   │   │   │   │       ├── CustomerRepositoryImpl.kt
+│   │   │   │   │       ├── RentalRepositoryImpl.kt
+│   │   │   │   │       ├── VehicleRepositoryImpl.kt
+│   │   │   │   │       └── *Table.kt       # Exposed table definitions
+│   │   │   │   ├── rentals/
+│   │   │   │   │   ├── application/
+│   │   │   │   │   │   ├── dto/            # Request/Response DTOs
+│   │   │   │   │   │   └── usecases/       # Business logic
+│   │   │   │   │   └── infrastructure/
+│   │   │   │   │       └── http/           # HTTP routes
+│   │   │   │   ├── vehicles/               # Similar structure
+│   │   │   │   └── users/                  # Similar structure
+│   │   │   └── shared/
+│   │   │       ├── models/                 # Shared models (ApiResponse)
+│   │   │       └── plugins/                # Ktor plugins
+│   │   └── resources/
+│   │       ├── application.conf            # Ktor configuration
+│   │       └── db/migration/               # Flyway migrations
+│   │           ├── V001__create_users_schema.sql
+│   │           ├── V002__create_vehicles_schema.sql
+│   │           └── V003__create_rentals_schema.sql
+│   └── test/
+│       └── kotlin/com/solodev/fleet/
+│           ├── ApplicationTest.kt
+│           └── MigrationTest.kt
+├── docs/
+│   ├── guides/                             # Implementation guides
+│   │   ├── README.md
+│   │   ├── API-TEST-SCENARIOS.md
+│   │   ├── module-customer-route-implementation.md
+│   │   ├── module-rental-route-implementation.md
+│   │   ├── module-vehicle-route-implementation.md
+│   │   └── module-user-route-implementation.md
+│   └── db/                                 # Database documentation
+│       └── schema-design.md
+├── build.gradle.kts                        # Gradle build configuration
+├── docker-compose.yml                      # Docker services
+├── .env.example                            # Environment variables template
+└── README.md                               # This file
+```
+
+---
+
+## 💻 Development
+
+### Code Formatting
+
+```bash
+# Apply code formatting
+./gradlew spotlessApply
+
+# Check code formatting
+./gradlew spotlessCheck
+```
+
+### Running Locally
+
+```bash
+# Run with auto-reload (development mode)
+./gradlew run
+
+# Run with specific environment
+./gradlew run -Denv=development
+```
+
+### Database Migrations
+
+```bash
+# Run migrations
+./gradlew flywayMigrate
+
+# Rollback last migration
+./gradlew flywayUndo
+
+# Check migration status
+./gradlew flywayInfo
+```
+
+### Linting
+
+```bash
+# Run all checks
+./gradlew check
+
+# Run tests only
+./gradlew test
+```
+
+---
+
+## 🧪 Testing
+
+### Run All Tests
+
+```bash
+./gradlew test
+```
+
+### Run Specific Test
+
+```bash
+./gradlew test --tests "ApplicationTest"
+```
+
+### Test Coverage
+
+```bash
+./gradlew test jacocoTestReport
+# Report available at: build/reports/jacoco/test/html/index.html
+```
+
+### Integration Testing
+
+See [API-TEST-SCENARIOS.md](docs/guides/API-TEST-SCENARIOS.md) for complete API test scenarios with cURL examples.
+
+---
+
+## 🚢 Deployment
+
+### Docker Build
+
+```bash
+# Build Docker image
+docker build -t fleet-management:latest .
+
+# Run container
+docker run -p 8080:8080 \
+  -e DATABASE_URL=jdbc:postgresql://host:5432/fleet \
+  -e DATABASE_USER=fleet_user \
+  -e DATABASE_PASSWORD=secret \
+  fleet-management:latest
+```
+
+### Production Checklist
+
+- [ ] Set strong database credentials
+- [ ] Configure HTTPS/TLS
+- [ ] Enable CORS for allowed origins only
+- [ ] Set up database backups
+- [ ] Configure monitoring and logging
+- [ ] Set up rate limiting
+- [ ] Enable authentication/authorization
+- [ ] Review and harden security settings
+
+---
+
+## 📖 Additional Documentation
+
+- **[Implementation Standards](docs/guides/IMPLEMENTATION-STANDARDS.md)** - Coding conventions and patterns
+- **[Database Schema Design](docs/db/schema-design.md)** - Detailed schema documentation
+- **[Running Locally Guide](docs/guides/RUNNING_LOCALLY.md)** - Local development setup
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 👥 Authors
+
+- **Your Name** - *Initial work*
+
+---
+
+## 🙏 Acknowledgments
+
+- Built with [Ktor](https://ktor.io/)
+- Database migrations with [Flyway](https://flywaydb.org/)
+- ORM powered by [Exposed](https://github.com/JetBrains/Exposed)
+
+---
+
+**Happy Coding! 🚀**

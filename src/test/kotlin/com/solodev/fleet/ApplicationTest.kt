@@ -15,10 +15,11 @@ class ApplicationTest {
         environment {
             config =
                     MapApplicationConfig(
-                            "storage.jdbcUrl" to "jdbc:postgresql://127.0.0.1:5435/fleet_test",
-                            "storage.username" to "fleet_user",
-                            "storage.password" to "secret_123",
-                            "storage.driverClassName" to "org.postgresql.Driver",
+                            "storage.jdbcUrl" to
+                                    "jdbc:h2:mem:test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
+                            "storage.username" to "sa",
+                            "storage.password" to "",
+                            "storage.driverClassName" to "org.h2.Driver",
                             "storage.maximumPoolSize" to "2"
                     )
         }

@@ -602,26 +602,6 @@ fun Route.rentalRoutes(
 
 ---
 
-## 7. Testing
-
-### Use Case Tests (MockK)
-```kotlin
-@Test fun `should fail if vehicle is already rented`() = runBlocking {
-    val rentalRepo = mockk<RentalRepository>()
-    val vehicleRepo = mockk<VehicleRepository>()
-    val useCase = CreateRentalUseCase(rentalRepo, vehicleRepo)
-    
-    coEvery { vehicleRepo.findById(any()) } returns createSampleVehicle()
-    coEvery { rentalRepo.findConflictingRentals(any(), any(), any()) } returns listOf(createSampleRental())
-    
-    assertFailsWith<IllegalArgumentException> {
-        useCase.execute(createRentalRequest())
-    }
-}
-```
-
----
-
 ## 8. API Reference
 
 | Method | Path | Description | Auth | Status Codes |
