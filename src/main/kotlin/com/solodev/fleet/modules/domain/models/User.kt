@@ -29,12 +29,6 @@ data class User(
     val roles: List<Role> = emptyList(),
     val staffProfile: StaffProfile? = null
 ) {
-    init {
-        require(email.contains("@")) { "Invalid email format" }
-        require(firstName.isNotBlank()) { "First name cannot be blank" }
-        require(lastName.isNotBlank()) { "Last name cannot be blank" }
-    }
-
     val fullName: String get() = "$firstName $lastName"
 }
 

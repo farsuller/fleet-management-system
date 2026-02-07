@@ -11,11 +11,7 @@ interface UserRepository {
     suspend fun save(user: User): User
     suspend fun deleteById(id: UserId): Boolean
     suspend fun findAll(): List<User>
-    
-    // Role management
     suspend fun findAllRoles(): List<Role>
     suspend fun findRoleByName(name: String): Role?
-    
-    // Auth specific
     suspend fun updatePassword(id: UserId, newPasswordHash: String)
 }
