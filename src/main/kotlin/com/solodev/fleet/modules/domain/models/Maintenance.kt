@@ -58,65 +58,32 @@ data class MaintenanceJob(
     val currencyCode: String = "PHP",
     val assignedToUserId: UUID? = null,
     val completedByUserId: UUID? = null,
-    val notes: String? = null
+    val notes: String? = null,
 ) {
     init {
-        require(jobNumber.isNotBlank()) { "Job number cannot be blank" }
-        require(description.isNotBlank()) { "Description cannot be blank" }
         require(laborCostCents >= 0) { "Labor cost cannot be negative" }
         require(partsCostCents >= 0) { "Parts cost cannot be negative" }
-        odometerKm?.let { require(it >= 0) { "Odometer reading cannot be negative" } }
-
-        // Validate date logic
-        if (startedAt != null) {
-            require(startedAt.isAfter(scheduledDate) || startedAt == scheduledDate) {
-                "Start date must be on or after scheduled date"
-            }
-        }
-        if (completedAt != null && startedAt != null) {
-            require(completedAt.isAfter(startedAt) || completedAt == startedAt) {
-                "Completion date must be on or after start date"
-            }
-        }
     }
 
-    val totalCostCents: Int
-        get() = laborCostCents + partsCostCents
+    val totalCostCents: Int get() = laborCostCents + partsCostCents
 
-    /** Start a scheduled maintenance job. */
-    fun start(startTime: Instant, assignedTo: UUID): MaintenanceJob {
-        require(status == MaintenanceStatus.SCHEDULED) { "Can only start scheduled jobs" }
-        return copy(
-            status = MaintenanceStatus.IN_PROGRESS,
-            startedAt = startTime,
-            assignedToUserId = assignedTo
-        )
+    fun start(timestamp: Instant = Instant.now()): MaintenanceJob {
+        require(status == MaintenanceStatus.SCHEDULED) { "Only SCHEDULED jobs can be started." }
+        return copy(status = MaintenanceStatus.IN_PROGRESS, startedAt = timestamp)
     }
 
-    /** Complete an in-progress maintenance job. */
-    fun complete(
-        completionTime: Instant,
-        completedBy: UUID,
-        laborCost: Int,
-        partsCost: Int,
-        odometer: Int? = null
-    ): MaintenanceJob {
-        require(status == MaintenanceStatus.IN_PROGRESS) { "Can only complete in-progress jobs" }
+    fun complete(labor: Int, parts: Int, timestamp: Instant = Instant.now()): MaintenanceJob {
+        require(status == MaintenanceStatus.IN_PROGRESS) { "Only IN_PROGRESS jobs can be completed." }
         return copy(
             status = MaintenanceStatus.COMPLETED,
-            completedAt = completionTime,
-            completedByUserId = completedBy,
-            laborCostCents = laborCost,
-            partsCostCents = partsCost,
-            odometerKm = odometer
+            completedAt = timestamp,
+            laborCostCents = labor,
+            partsCostCents = parts
         )
     }
 
-    /** Cancel a maintenance job. */
     fun cancel(): MaintenanceJob {
-        require(status in listOf(MaintenanceStatus.SCHEDULED, MaintenanceStatus.IN_PROGRESS)) {
-            "Can only cancel scheduled or in-progress jobs"
-        }
+        require(status == MaintenanceStatus.SCHEDULED) { "Cannot cancel job that has already started." }
         return copy(status = MaintenanceStatus.CANCELLED)
     }
 }

@@ -623,33 +623,9 @@ GET http://localhost:8080/v1/customers/550e8400-e29b-41d4-a716-446655440000
 
 ---
 
-## 12. cURL Examples
-
-### Create Customer
-```bash
-curl -X POST http://localhost:8080/v1/customers \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "customer@example.com",
-    "firstName": "John",
-    "lastName": "Doe",
-    "phone": "+63-917-123-4567",
-    "driversLicense": "N01-12-345678",
-    "driverLicenseExpiry": "2028-12-31"
-  }'
-```
-
-### List Customers
-```bash
-curl -X GET http://localhost:8080/v1/customers
-```
-
-### Get Customer by ID
-```bash
-curl -X GET http://localhost:8080/v1/customers/550e8400-e29b-41d4-a716-446655440000
-```
-
----
+## 12. Sample Payloads
+    
+See [Customer Sample Payloads](../sample-payloads/customer-sample-payloads.md) for detailed JSON and cURL examples.
 
 ## 13. Database Schema
 

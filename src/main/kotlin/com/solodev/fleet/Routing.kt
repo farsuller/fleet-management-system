@@ -1,9 +1,11 @@
 package com.solodev.fleet
 
 import com.solodev.fleet.modules.infrastructure.persistence.CustomerRepositoryImpl
+import com.solodev.fleet.modules.infrastructure.persistence.MaintenanceRepositoryImpl
 import com.solodev.fleet.modules.infrastructure.persistence.RentalRepositoryImpl
 import com.solodev.fleet.modules.infrastructure.persistence.UserRepositoryImpl
 import com.solodev.fleet.modules.infrastructure.persistence.VehicleRepositoryImpl
+import com.solodev.fleet.modules.maintenance.infrastructure.http.maintenanceRoutes
 import com.solodev.fleet.modules.rentals.infrastructure.http.customerRoutes
 import com.solodev.fleet.modules.rentals.infrastructure.http.rentalRoutes
 import com.solodev.fleet.modules.users.infrastructure.http.userRoutes
@@ -28,6 +30,7 @@ fun Application.configureRouting() {
     val rentalRepo = RentalRepositoryImpl()
     val userRepo = UserRepositoryImpl()
     val customerRepo = CustomerRepositoryImpl()
+    val maintenanceRepo = MaintenanceRepositoryImpl()
 
     routing {
         vehicleRoutes(vehicleRepo)
@@ -36,7 +39,9 @@ fun Application.configureRouting() {
 
         customerRoutes(customerRepository = customerRepo)
 
-        userRoutes(userRepo)
+        userRoutes(userRepository = userRepo)
+
+        maintenanceRoutes(maintenanceRepository = maintenanceRepo)
 
         get("/") {
             call.respond(

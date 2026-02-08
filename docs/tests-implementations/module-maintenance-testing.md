@@ -32,4 +32,75 @@ class ScheduleMaintenanceUseCaseTest {
         coVerify(exactly = 1) { repository.saveJob(any()) }
     }
 }
+
+
+class StartMaintenanceUseCaseTest {
+    private val repository = mockk<MaintenanceRepository>()
+    private val useCase = StartMaintenanceUseCase(repository)
+
+    @Test
+    fun `should transition job to IN_PROGRESS`() = runBlocking {
+        val job = MaintenanceJob(
+            id = MaintenanceJobId("job-1"),
+            jobNumber = "M-1",
+            vehicleId = VehicleId("v-1"),
+            status = MaintenanceStatus.SCHEDULED,
+            jobType = MaintenanceJobType.ROUTINE,
+            description = "Test",
+            scheduledDate = Instant.now()
+        )
+        coEvery { repository.findById(any()) } returns job
+        coEvery { repository.saveJob(any()) } returnsArgument 0
+
+        val result = useCase.execute("job-1")
+
+        assertEquals(MaintenanceStatus.IN_PROGRESS, result.status)
+    }
+}
+
+class CompleteMaintenanceUseCaseTest {
+    private val repository = mockk<MaintenanceRepository>()
+    private val useCase = CompleteMaintenanceUseCase(repository)
+
+    @Test
+    fun `should transition job to COMPLETED and set costs`() = runBlocking {
+        val job = MaintenanceJob(
+            id = MaintenanceJobId("job-1"),
+            jobNumber = "M-1",
+            vehicleId = VehicleId("v-1"),
+            status = MaintenanceStatus.IN_PROGRESS,
+            jobType = MaintenanceJobType.ROUTINE,
+            description = "Test",
+            scheduledDate = Instant.now(),
+            startedAt = Instant.now()
+        )
+        coEvery { repository.findById(any()) } returns job
+        coEvery { repository.saveJob(any()) } returnsArgument 0
+
+        val result = useCase.execute("job-1", 5000, 2000)
+
+        assertEquals(MaintenanceStatus.COMPLETED, result.status)
+        assertEquals(7000, result.totalCostCents)
+    }
+}
+```
+
+### HTTP Integration Tests (`MaintenanceRoutesTest`)
+```kotlin
+@Test
+fun `POST maintenance should schedule job`() = testApplication {
+    configureTestDb()
+    val response = client.post("/v1/maintenance") {
+        contentType(ContentType.Application.Json)
+        setBody("""
+            {
+                "vehicleId": "v-123",
+                "jobType": "ROUTINE",
+                "description": "Oil Change",
+                "scheduledDate": "2026-12-01T10:00:00Z"
+            }
+        """.trimIndent())
+    }
+    assertEquals(HttpStatusCode.Created, response.status)
+}
 ```
