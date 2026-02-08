@@ -1,14 +1,14 @@
 package com.solodev.fleet.modules.maintenance.infrastructure.http
 
-import com.solodev.fleet.modules.maintenance.domain.repository.MaintenanceRepository
 import com.solodev.fleet.modules.maintenance.application.dto.MaintenanceRequest
 import com.solodev.fleet.modules.maintenance.application.dto.MaintenanceResponse
 import com.solodev.fleet.modules.maintenance.application.dto.MaintenanceStatusUpdateRequest
 import com.solodev.fleet.modules.maintenance.application.usecases.*
+import com.solodev.fleet.modules.maintenance.domain.repository.MaintenanceRepository
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.requestId
 import io.ktor.http.*
-import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -107,15 +107,8 @@ fun Route.maintenanceRoutes(maintenanceRepository: MaintenanceRepository) {
                             )
                     try {
                         val request = call.receive<MaintenanceStatusUpdateRequest>()
-                        val job =
-                            completeMaintenanceUseCase.execute(
-                                id,
-                                request.laborCostCents,
-                                request.partsCostCents
-                            )
-                        call.respond(
-                            ApiResponse.success(MaintenanceResponse.fromDomain(job), call.requestId)
-                        )
+                        val job = completeMaintenanceUseCase.execute(id, request.laborCost, request.partsCost)
+                        call.respond(ApiResponse.success(MaintenanceResponse.fromDomain(job), call.requestId))
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.Conflict,

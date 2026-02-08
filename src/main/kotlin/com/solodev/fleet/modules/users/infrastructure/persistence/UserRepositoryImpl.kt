@@ -1,20 +1,16 @@
-package com.solodev.fleet.modules.users.domain.repository
+package com.solodev.fleet.modules.users.infrastructure.persistence
 
 import com.solodev.fleet.modules.users.domain.model.Role
 import com.solodev.fleet.modules.users.domain.model.RoleId
 import com.solodev.fleet.modules.users.domain.model.StaffProfile
 import com.solodev.fleet.modules.users.domain.model.User
 import com.solodev.fleet.modules.users.domain.model.UserId
-import com.solodev.fleet.modules.users.infrastructure.persistence.RolesTable
-import com.solodev.fleet.modules.users.infrastructure.persistence.StaffProfilesTable
-import com.solodev.fleet.modules.users.infrastructure.persistence.UserRolesTable
-import com.solodev.fleet.modules.users.infrastructure.persistence.UsersTable
+import com.solodev.fleet.modules.users.domain.repository.UserRepository
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 class UserRepositoryImpl : UserRepository {
@@ -132,7 +128,7 @@ class UserRepositoryImpl : UserRepository {
         }
 
         // Sync roles (simple wipe and re-insert for now)
-        UserRolesTable.deleteWhere { userId eq userUuid }
+        UserRolesTable.deleteWhere { UserRolesTable.userId eq userUuid }
         user.roles.forEach { role ->
             UserRolesTable.insert {
                 it[userId] = userUuid

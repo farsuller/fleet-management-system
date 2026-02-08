@@ -3,7 +3,7 @@
 
 -- Vehicles table: Core vehicle information
 CREATE TABLE vehicles (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     plate_number VARCHAR(20) NOT NULL UNIQUE,
     make VARCHAR(100) NOT NULL,
     model VARCHAR(100) NOT NULL,

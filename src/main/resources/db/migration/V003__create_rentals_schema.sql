@@ -3,7 +3,7 @@
 
 -- Customers table: Customer information
 CREATE TABLE customers (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID UNIQUE REFERENCES users(id) ON DELETE SET NULL,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE customers (
 
 -- Rentals table: Core rental information
 CREATE TABLE rentals (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     rental_number VARCHAR(50) NOT NULL UNIQUE,
     customer_id UUID NOT NULL REFERENCES customers(id),
     vehicle_id UUID NOT NULL REFERENCES vehicles(id),
@@ -79,7 +79,7 @@ CREATE TABLE rental_periods (
 
 -- Rental charges table: Additional charges beyond base rental
 CREATE TABLE rental_charges (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     rental_id UUID NOT NULL REFERENCES rentals(id) ON DELETE CASCADE,
     charge_type VARCHAR(50) NOT NULL CHECK (charge_type IN ('FUEL', 'DAMAGE', 'LATE_FEE', 'CLEANING', 'TOLL', 'OTHER')),
     description TEXT NOT NULL,
@@ -91,7 +91,7 @@ CREATE TABLE rental_charges (
 
 -- Rental payments table: Track payments for rentals
 CREATE TABLE rental_payments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     rental_id UUID NOT NULL REFERENCES rentals(id) ON DELETE CASCADE,
     payment_method VARCHAR(50) NOT NULL CHECK (payment_method IN ('CREDIT_CARD', 'DEBIT_CARD', 'CASH', 'BANK_TRANSFER')),
     amount_cents INTEGER NOT NULL CHECK (amount_cents > 0),

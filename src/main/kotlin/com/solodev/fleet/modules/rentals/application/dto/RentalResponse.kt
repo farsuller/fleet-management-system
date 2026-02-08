@@ -16,8 +16,8 @@ data class RentalResponse(
         val actualEndDate: String?,
         val startOdometerKm: Int?,
         val endOdometerKm: Int?,
-        val dailyRateCents: Int,
-        val totalCostCents: Int,
+        val dailyRate: Double,
+        val totalCost: Double,
         val currencyCode: String
 ) {
         companion object {
@@ -34,8 +34,8 @@ data class RentalResponse(
                                 actualEndDate = r.actualEndDate?.toString(),
                                 startOdometerKm = r.startOdometerKm,
                                 endOdometerKm = r.endOdometerKm,
-                                dailyRateCents = r.dailyRateCents,
-                                totalCostCents = r.totalAmountCents,
+                                dailyRate = r.dailyRateCents / 100.0,
+                                totalCost = r.totalAmountCents / 100.0,
                                 currencyCode = r.currencyCode
                         )
         }

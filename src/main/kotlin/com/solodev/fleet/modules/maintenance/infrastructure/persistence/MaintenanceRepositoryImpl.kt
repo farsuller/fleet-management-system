@@ -1,4 +1,4 @@
-package com.solodev.fleet.modules.maintenance.domain.repository
+package com.solodev.fleet.modules.maintenance.infrastructure.persistence
 
 import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJob
 import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJobId
@@ -6,9 +6,8 @@ import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJobType
 import com.solodev.fleet.modules.maintenance.domain.model.MaintenancePart
 import com.solodev.fleet.modules.maintenance.domain.model.MaintenancePriority
 import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceStatus
+import com.solodev.fleet.modules.maintenance.domain.repository.MaintenanceRepository
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
-import com.solodev.fleet.modules.maintenance.infrastructure.persistence.MaintenanceJobsTable
-import com.solodev.fleet.modules.maintenance.infrastructure.persistence.MaintenancePartsTable
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
