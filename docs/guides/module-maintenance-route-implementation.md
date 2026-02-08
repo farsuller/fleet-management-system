@@ -1,7 +1,7 @@
 # Maintenance API - Complete Implementation Guide
 
-**Version**: 1.1  
-**Last Updated**: 2026-02-07  
+**Version**: 1.2  
+**Last Updated**: 2026-02-08  
 **Verification**: Production-Ready  
 **Compliance**: 100% (Aligned with v1.1 Standards)  
 **Skills Applied**: Clean Code, API Patterns, Performance Optimizer, Test Engineer
@@ -86,6 +86,26 @@ data class MaintenanceJob(
     }
     
     val totalCostCents: Int get() = laborCostCents + partsCostCents
+
+    fun start(timestamp: Instant = Instant.now()): MaintenanceJob {
+        require(status == MaintenanceStatus.SCHEDULED) { "Only SCHEDULED jobs can be started." }
+        return copy(status = MaintenanceStatus.IN_PROGRESS, startedAt = timestamp)
+    }
+
+    fun complete(labor: Int, parts: Int, timestamp: Instant = Instant.now()): MaintenanceJob {
+        require(status == MaintenanceStatus.IN_PROGRESS) { "Only IN_PROGRESS jobs can be completed." }
+        return copy(
+            status = MaintenanceStatus.COMPLETED,
+            completedAt = timestamp,
+            laborCostCents = labor,
+            partsCostCents = parts
+        )
+    }
+
+    fun cancel(): MaintenanceJob {
+        require(status == MaintenanceStatus.SCHEDULED) { "Cannot cancel job that has already started." }
+        return copy(status = MaintenanceStatus.CANCELLED)
+    }
 }
 ```
 
@@ -109,6 +129,22 @@ data class MaintenanceRequest(
         require(vehicleId.isNotBlank()) { "Vehicle ID required" }
         require(description.length >= 10) { "Description too short" }
         require(MaintenanceJobType.values().any { it.name == jobType }) { "Invalid job type" }
+    }
+}
+```
+
+### **MaintenanceStatusUpdateRequest.kt**
+```kotlin
+@Serializable
+data class MaintenanceStatusUpdateRequest(
+    val status: String,
+    val laborCostCents: Int = 0,
+    val partsCostCents: Int = 0
+) {
+    init {
+        require(status.isNotBlank()) { "Status required" }
+        require(laborCostCents >= 0) { "Labor cost cannot be negative" }
+        require(partsCostCents >= 0) { "Parts cost cannot be negative" }
     }
 }
 ```
@@ -143,7 +179,57 @@ data class MaintenanceResponse(
 
 ---
 
-## 4. Application Use Cases
+## 4. Repository Implementation
+
+### **MaintenanceRepositoryImpl.kt**
+`src/main/kotlin/com/solodev/fleet/modules/infrastructure/persistence/MaintenanceRepositoryImpl.kt`
+
+```kotlin
+class MaintenanceRepositoryImpl : MaintenanceRepository {
+    override suspend fun saveJob(job: MaintenanceJob): MaintenanceJob = dbQuery {
+        val exists = MaintenanceJobsTable.select { MaintenanceJobsTable.id eq UUID.fromString(job.id.value) }.count() > 0
+        
+        if (exists) {
+            MaintenanceJobsTable.update({ MaintenanceJobsTable.id eq UUID.fromString(job.id.value) }) {
+                it[status] = job.status.name
+                it[startedAt] = job.startedAt
+                it[completedAt] = job.completedAt
+                it[laborCostCents] = job.laborCostCents
+                it[partsCostCents] = job.partsCostCents
+                it[updatedAt] = Instant.now()
+            }
+        } else {
+            MaintenanceJobsTable.insert {
+                it[id] = UUID.fromString(job.id.value)
+                it[jobNumber] = job.jobNumber
+                it[vehicleId] = UUID.fromString(job.vehicleId.value)
+                it[status] = job.status.name
+                it[jobType] = job.jobType.name
+                it[description] = job.description
+                it[scheduledDate] = job.scheduledDate
+                it[createdAt] = Instant.now()
+                it[updatedAt] = Instant.now()
+            }
+        }
+        job
+    }
+
+    override suspend fun findById(id: MaintenanceJobId): MaintenanceJob? = dbQuery {
+        MaintenanceJobsTable.select { MaintenanceJobsTable.id eq UUID.fromString(id.value) }
+            .map { it.toMaintenanceJob() }
+            .singleOrNull()
+    }
+
+    override suspend fun findByVehicleId(vehicleId: VehicleId): List<MaintenanceJob> = dbQuery {
+        MaintenanceJobsTable.select { MaintenanceJobsTable.vehicleId eq UUID.fromString(vehicleId.value) }
+            .map { it.toMaintenanceJob() }
+    }
+}
+```
+
+---
+
+## 5. Application Use Cases
 
 ### **Why This Matters**:
 Maintenance Use Cases coordinate the complex transition of vehicle states. When a job starts, the Vehicle must move to `MAINTENANCE` state automatically. Our Use Cases ensure this multi-entity state synchronization remains atomics and bug-free.
@@ -166,14 +252,54 @@ class ScheduleMaintenanceUseCase(private val repository: MaintenanceRepository) 
 }
 ```
 
+### **StartMaintenanceUseCase.kt**
+```kotlin
+class StartMaintenanceUseCase(private val repository: MaintenanceRepository) {
+    suspend fun execute(jobId: String): MaintenanceJob {
+        val job = repository.findById(MaintenanceJobId(jobId))
+            ?: throw IllegalArgumentException("Job not found")
+            
+        val startedJob = job.start()
+        return repository.saveJob(startedJob)
+    }
+}
+```
+
+### **CompleteMaintenanceUseCase.kt**
+```kotlin
+class CompleteMaintenanceUseCase(private val repository: MaintenanceRepository) {
+    suspend fun execute(jobId: String, laborCost: Int, partsCost: Int): MaintenanceJob {
+        val job = repository.findById(MaintenanceJobId(jobId))
+            ?: throw IllegalArgumentException("Job not found")
+            
+        val completedJob = job.complete(laborCost, partsCost)
+        // Note: In a real implementation, this would also event-source a "MaintenanceCompleted" event
+        // to update the Vehicle status back to AVAILABLE via a domain event listener.
+        return repository.saveJob(completedJob)
+    }
+}
+```
+
+### **ListVehicleMaintenanceUseCase.kt**
+```kotlin
+class ListVehicleMaintenanceUseCase(private val repository: MaintenanceRepository) {
+    suspend fun execute(vehicleId: String): List<MaintenanceJob> {
+        return repository.findByVehicleId(VehicleId(vehicleId))
+    }
+}
+```
+
 ---
 
-## 5. Ktor Routes
+## 6. Ktor Routes
 
 ### **MaintenanceRoutes.kt**
 ```kotlin
 fun Route.maintenanceRoutes(repository: MaintenanceRepository) {
     val scheduleUC = ScheduleMaintenanceUseCase(repository)
+    val listUC = ListVehicleMaintenanceUseCase(repository)
+    val startUC = StartMaintenanceUseCase(repository)
+    val completeUC = CompleteMaintenanceUseCase(repository)
 
     route("/v1/maintenance") {
         post {
@@ -182,15 +308,38 @@ fun Route.maintenanceRoutes(repository: MaintenanceRepository) {
                 val job = scheduleUC.execute(request)
                 call.respond(HttpStatusCode.Created, ApiResponse.success(MaintenanceResponse.fromDomain(job), call.requestId))
             } catch (e: Exception) {
-                // Mapping shared pattern from IMPLEMENTATION-STANDARDS
-                call.respond(HttpStatusCode.BadRequest, ApiResponse.error("MAINTENANCE_FAILED", e.message ?: "Invalid request", call.requestId))
+                val status = if (e is IllegalArgumentException) HttpStatusCode.UnprocessableEntity else HttpStatusCode.BadRequest
+                call.respond(status, ApiResponse.error("MAINTENANCE_FAILED", e.message ?: "Invalid request", call.requestId))
             }
         }
 
         get("/vehicle/{id}") {
             val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest, ApiResponse.error("MISSING_ID", "Vehicle ID required", call.requestId))
-            val jobs = repository.findByVehicleId(VehicleId(id))
+            val jobs = listUC.execute(id)
             call.respond(ApiResponse.success(jobs.map { MaintenanceResponse.fromDomain(it) }, call.requestId))
+        }
+
+        route("/{id}") {
+            post("/start") {
+                val id = call.parameters["id"] ?: return@post
+                try {
+                    val job = startUC.execute(id)
+                    call.respond(ApiResponse.success(MaintenanceResponse.fromDomain(job), call.requestId))
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.Conflict, ApiResponse.error("INVALID_STATE", e.message ?: "Cannot start job", call.requestId))
+                }
+            }
+
+            post("/complete") {
+                val id = call.parameters["id"] ?: return@post
+                try {
+                    val request = call.receive<MaintenanceStatusUpdateRequest>()
+                    val job = completeUC.execute(id, request.laborCostCents, request.partsCostCents)
+                    call.respond(ApiResponse.success(MaintenanceResponse.fromDomain(job), call.requestId))
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.Conflict, ApiResponse.error("INVALID_STATE", e.message ?: "Cannot complete job", call.requestId))
+                }
+            }
         }
     }
 }
@@ -198,13 +347,13 @@ fun Route.maintenanceRoutes(repository: MaintenanceRepository) {
 
 ---
 
-## 6. Testing
+## 7. Testing
 
 See [Maintenance Test Implementation Guide](../tests-implementations/module-maintenance-testing.md) for detailed test scenarios and state transition verification examples.
 
 ---
 
-## 7. Wiring & Security
+## 8. Wiring & Security
 
 ### **Wiring**
 In `Routing.kt`:
@@ -220,13 +369,16 @@ routing {
 |----------|---------------------|
 | POST /v1/maintenance | `maintenance.write` (Staff/Admin) |
 | GET /v1/maintenance/vehicle/{id} | `maintenance.read` (Staff/Admin) |
+| POST /v1/maintenance/{id}/start | `maintenance.write` (Staff) |
+| POST /v1/maintenance/{id}/complete | `maintenance.write` (Staff) |
 
 ---
 
-## 8. Error Scenarios
+## 9. Error Scenarios
 
 | Scenario | Status | Error Code | Logic |
 |----------|--------|------------|-------|
 | Invalid Job Type | 422 | VALIDATION_ERROR | Checked in Request DTO `init` |
 | Negative Cost | 422 | VALIDATION_ERROR | Checked in Domain Entity `init` |
 | Vehicle Not Found | 404 | VEHICLE_NOT_FOUND | Checked in Use Case via Repo lookup |
+| Invalid Transition | 409 | INVALID_STATE | Checked in Domain Logic (Start/Complete) |

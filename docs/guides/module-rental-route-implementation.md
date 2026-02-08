@@ -639,73 +639,9 @@ See [Rental Test Implementation Guide](../tests-implementations/module-rental-te
 | POST | `/v1/rentals/{id}/complete` | Complete rental | Staff | 200, 404, 409 |
 | POST | `/v1/rentals/{id}/cancel` | Cancel rental | Customer/Staff | 200, 404, 422 |
 
----
-
 ## 9. Sample Payloads
 
-### Create Rental
-**Request**: `POST /v1/rentals`
-```json
-{
-  "vehicleId": "46b6a07c-...",
-  "customerId": "00000000-...",
-  "startDate": "2024-06-01T10:00:00Z",
-  "endDate": "2024-06-05T10:00:00Z"
-}
-```
-
-**Response**: `201 Created`
-```json
-{
-  "success": true,
-  "data": {
-    "id": "rental_123...",
-    "rentalNumber": "RNT-1717234567890",
-    "vehicleId": "46b6a07c-...",
-    "customerId": "00000000-...",
-    "status": "RESERVED",
-    "startDate": "2024-06-01T10:00:00Z",
-    "endDate": "2024-06-05T10:00:00Z",
-    "actualStartDate": null,
-    "actualEndDate": null,
-    "totalCostCents": 20000,
-    "currencyCode": "PHP"
-  },
-  "requestId": "req_..."
-}
-```
-
-### Activate Rental
-**Request**: `POST /v1/rentals/{id}/activate`
-
-**Response**: `200 OK`
-```json
-{
-  "success": true,
-  "data": {
-    "id": "rental_123...",
-    "status": "ACTIVE",
-    "actualStartDate": "2024-06-01T10:15:00Z",
-    ...
-  },
-  "requestId": "req_..."
-}
-```
-
-### Error: Vehicle Conflict
-**Response**: `422 Unprocessable Entity`
-```json
-{
-  "success": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Vehicle is already rented during this period"
-  },
-  "requestId": "req_..."
-}
-```
-
----
+See [Rental Sample Payloads](../sample-payloads/rental-sample-payloads.md) for detailed JSON examples.
 
 ## 10. Wiring
 

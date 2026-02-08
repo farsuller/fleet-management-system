@@ -18,20 +18,19 @@ import com.solodev.fleet.modules.users.application.usecases.UpdateUserUseCase
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.requestId
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-fun Route.userRoutes(repository: UserRepository) {
-    val registerUserUseCase = RegisterUserUseCase(repository)
-    val getUserProfileUseCase = GetUserProfileUseCase(repository)
-    val updateUserUseCase = UpdateUserUseCase(repository)
-    val deleteUserUseCase = DeleteUserUseCase(repository)
-    val listUsersUseCase = ListUsersUseCase(repository)
-    val listRolesUseCase = ListRolesUseCase(repository)
-    val assignRoleUseCase = AssignRoleUseCase(repository)
-    val loginUserUseCase = LoginUserUseCase(repository)
+fun Route.userRoutes(userRepository: UserRepository) {
+    val registerUserUseCase = RegisterUserUseCase(userRepository)
+    val getUserProfileUseCase = GetUserProfileUseCase(userRepository)
+    val updateUserUseCase = UpdateUserUseCase(userRepository)
+    val deleteUserUseCase = DeleteUserUseCase(userRepository)
+    val listUsersUseCase = ListUsersUseCase(userRepository)
+    val listRolesUseCase = ListRolesUseCase(userRepository)
+    val assignRoleUseCase = AssignRoleUseCase(userRepository)
+    val loginUserUseCase = LoginUserUseCase(userRepository)
 
     route("/v1/users") {
         get {
