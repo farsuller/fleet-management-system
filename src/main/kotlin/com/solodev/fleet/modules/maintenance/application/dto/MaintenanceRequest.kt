@@ -1,7 +1,7 @@
 package com.solodev.fleet.modules.maintenance.application.dto
 
 import kotlinx.serialization.Serializable
-import com.solodev.fleet.modules.domain.models.MaintenanceJobType
+import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJobType
 
 
 @Serializable

@@ -1,6 +1,6 @@
 package com.solodev.fleet.modules.vehicles.application.dto
 
-import com.solodev.fleet.modules.domain.models.Vehicle
+import com.solodev.fleet.modules.vehicles.domain.model.Vehicle
 import kotlinx.serialization.Serializable
 
 @Serializable

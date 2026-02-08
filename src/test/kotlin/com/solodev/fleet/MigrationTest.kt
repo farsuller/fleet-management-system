@@ -17,7 +17,13 @@ class MigrationTest {
                             "storage.username" to "sa",
                             "storage.password" to "",
                             "storage.driverClassName" to "org.h2.Driver",
-                            "storage.maximumPoolSize" to "2"
+                            "storage.maximumPoolSize" to "2",
+                            "jwt.secret" to
+                                    "test-secret-at-least-64-bytes-long-for-hmac-sha256-security-1234567890",
+                            "jwt.issuer" to "test-issuer",
+                            "jwt.audience" to "test-audience",
+                            "jwt.realm" to "test-realm",
+                            "jwt.expiresIn" to "3600000"
                     )
         }
     }

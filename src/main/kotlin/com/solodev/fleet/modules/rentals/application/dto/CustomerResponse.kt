@@ -1,6 +1,6 @@
 package com.solodev.fleet.modules.rentals.application.dto
 
-import com.solodev.fleet.modules.domain.models.Customer
+import com.solodev.fleet.modules.rentals.domain.model.Customer
 import kotlinx.serialization.Serializable
 
 @Serializable

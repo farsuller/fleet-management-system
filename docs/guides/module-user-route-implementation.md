@@ -50,6 +50,7 @@ src/main/kotlin/com/solodev/fleet/modules/
     │   │   └── StaffProfileDTO.kt
     │   └── usecases/
     │       ├── RegisterUserUseCase.kt
+    │       ├── VerifyEmailUseCase.kt
     │       ├── LoginUserUseCase.kt
     │       ├── GetUserProfileUseCase.kt
     │       ├── UpdateUserUseCase.kt
@@ -60,6 +61,9 @@ src/main/kotlin/com/solodev/fleet/modules/
     └── infrastructure/
         └── http/
             └── UserRoutes.kt
+    └── infrastructure/
+        └── persistence/
+            └── VerificationTokenRepositoryImpl.kt
 ```
 
 ---
@@ -331,22 +335,59 @@ User Use Cases contain the critical "Trust Handshake." They enforce identity uni
 
 ### **RegisterUserUseCase.kt**
 ```kotlin
-class RegisterUserUseCase(private val repository: UserRepository) {
+class RegisterUserUseCase(
+    private val repository: UserRepository,
+    private val tokenRepository: VerificationTokenRepository
+) {
     suspend fun execute(request: UserRegistrationRequest): User {
-        // Business Rule: Email must be unique
         repository.findByEmail(request.email)?.let {
-            throw IllegalStateException("User with email ${request.email} already exists")
+            throw IllegalStateException("User exists")
         }
 
         val user = User(
             id = UserId(UUID.randomUUID().toString()),
             email = request.email,
-            passwordHash = "hashed_${request.passwordRaw}", // Use actual hashing in dev/prod
+            passwordHash = "hashed_${request.passwordRaw}",
             firstName = request.firstName,
             lastName = request.lastName,
-            phone = request.phone
+            phone = request.phone,
+            isVerified = false // Default to unverified
         )
-        return repository.save(user)
+        val savedUser = repository.save(user)
+
+        // Generate Token
+        val token = VerificationToken(
+            userId = savedUser.id,
+            token = UUID.randomUUID().toString(),
+            type = TokenType.EMAIL_VERIFICATION,
+            expiresAt = Instant.now().plus(24, ChronoUnit.HOURS)
+        )
+        tokenRepository.save(token)
+
+        return savedUser
+    }
+}
+```
+
+### **VerifyEmailUseCase.kt**
+```kotlin
+class VerifyEmailUseCase(
+    private val userRepository: UserRepository,
+    private val tokenRepository: VerificationTokenRepository
+) {
+    suspend fun execute(token: String) {
+        val verificationToken = tokenRepository.findByToken(token, TokenType.EMAIL_VERIFICATION)
+            ?: throw IllegalArgumentException("Invalid token")
+
+        if (verificationToken.expiresAt.isBefore(Instant.now())) {
+            throw IllegalArgumentException("Token expired")
+        }
+
+        val user = userRepository.findById(verificationToken.userId)
+            ?: throw IllegalStateException("User not found")
+
+        userRepository.save(user.copy(isVerified = true))
+        tokenRepository.deleteByToken(token)
     }
 }
 ```
@@ -457,15 +498,21 @@ class AssignRoleUseCase(private val repository: UserRepository) {
 `src/main/kotlin/com/solodev/fleet/modules/users/infrastructure/http/UserRoutes.kt`
 
 ```kotlin
-fun Route.userRoutes(repository: UserRepository) {
-    val registerUC = RegisterUserUseCase(repository)
-    val loginUC = LoginUserUseCase(repository)
-    val getProfileUC = GetUserProfileUseCase(repository)
-    val updateUC = UpdateUserUseCase(repository)
-    val deleteUC = DeleteUserUseCase(repository)
-    val listUC = ListUsersUseCase(repository)
-    val listRolesUC = ListRolesUseCase(repository)
-    val assignRoleUC = AssignRoleUseCase(repository)
+fun Route.userRoutes(
+    repository: UserRepository,
+    tokenRepository: VerificationTokenRepository
+) {
+    val registerUC = RegisterUserUseCase(repository, tokenRepository)
+    val verifyEmailUC = VerifyEmailUseCase(repository, tokenRepository)
+    // ... other use cases
+
+    route("/v1/auth/verify") {
+        get {
+            val token = call.request.queryParameters["token"]
+            verifyEmailUC.execute(token!!)
+            call.respond(ApiResponse.success(mapOf("msg" to "Verified"), call.requestId))
+        }
+    }
 
     route("/v1/users") {
         get {

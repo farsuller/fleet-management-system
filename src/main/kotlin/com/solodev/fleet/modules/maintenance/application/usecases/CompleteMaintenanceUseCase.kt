@@ -1,8 +1,8 @@
 package com.solodev.fleet.modules.maintenance.application.usecases
 
-import com.solodev.fleet.modules.domain.models.MaintenanceJob
-import com.solodev.fleet.modules.domain.models.MaintenanceJobId
-import com.solodev.fleet.modules.domain.ports.MaintenanceRepository
+import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJob
+import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJobId
+import com.solodev.fleet.modules.maintenance.domain.repository.MaintenanceRepository
 
 class CompleteMaintenanceUseCase(private val repository: MaintenanceRepository) {
     suspend fun execute(jobId: String, laborCost: Int, partsCost: Int): MaintenanceJob {

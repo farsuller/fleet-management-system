@@ -1,14 +1,14 @@
 package com.solodev.fleet.modules.rentals.application.usecases
 
-import com.solodev.fleet.modules.domain.models.CustomerId
-import com.solodev.fleet.modules.domain.models.Rental
-import com.solodev.fleet.modules.domain.models.RentalId
-import com.solodev.fleet.modules.domain.models.RentalStatus
-import com.solodev.fleet.modules.domain.models.Vehicle
-import com.solodev.fleet.modules.domain.models.VehicleId
-import com.solodev.fleet.modules.domain.models.VehicleState
-import com.solodev.fleet.modules.domain.ports.RentalRepository
-import com.solodev.fleet.modules.domain.ports.VehicleRepository
+import com.solodev.fleet.modules.rentals.domain.model.CustomerId
+import com.solodev.fleet.modules.rentals.domain.model.Rental
+import com.solodev.fleet.modules.rentals.domain.model.RentalId
+import com.solodev.fleet.modules.rentals.domain.model.RentalStatus
+import com.solodev.fleet.modules.vehicles.domain.model.Vehicle
+import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
+import com.solodev.fleet.modules.vehicles.domain.model.VehicleState
+import com.solodev.fleet.modules.rentals.domain.repository.RentalRepository
+import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 import com.solodev.fleet.modules.rentals.application.dto.RentalRequest
 import java.time.Instant
 import java.util.*

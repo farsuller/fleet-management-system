@@ -34,6 +34,7 @@ dependencies {
     implementation(libs.ktor.server.metrics.micrometer)
     implementation(libs.micrometer.registry.prometheus)
     implementation(libs.ktor.server.config.yaml)
+    implementation(libs.bcrypt)
     
     implementation(libs.logback.classic)
     
