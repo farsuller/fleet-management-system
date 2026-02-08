@@ -33,7 +33,30 @@ This document details the request and response structures for the User Managemen
 }
 ```
 
-### 11.2 List All Users
+```
+
+### 11.2 Email Verification
+**Endpoint**: `GET /v1/auth/verify?token={token}`
+**Context**: Verifies a user's email address using the token received during registration. This activates the user account for full access.
+**Permissions**: Public
+
+**Request**:
+```bash
+curl -X GET "http://localhost:8080/v1/auth/verify?token=550e8400-e29b-41d4-a716-446655440000"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Email successfully verified"
+  },
+  "requestId": "req-123456"
+}
+```
+
+### 11.3 List All Users
 **Endpoint**: `GET /v1/users`
 **Context**: Retrieves a paginated list of all registered users. Used by Admins for staff directory and user management.
 **Permissions**: Admin Only
@@ -41,6 +64,7 @@ This document details the request and response structures for the User Managemen
 **Request**:
 ```bash
 curl -X GET http://localhost:8080/v1/users \
+  -H "Authorization: Bearer <your_token>" \
   -H "Accept: application/json"
 ```
 
@@ -71,14 +95,17 @@ curl -X GET http://localhost:8080/v1/users \
 }
 ```
 
-### 11.2 Get Specific User
+```
+
+### 11.4 Get Specific User
 **Endpoint**: `GET /v1/users/{id}`
 **Context**: Fetches the profile of a single user. Users can view their own profile; Admins can view any profile.
 **Permissions**: Admin or Owner (Self)
 
 **Request**:
 ```bash
-curl -X GET http://localhost:8080/v1/users/e2f1b0a8-3d5c-4b9e-8f2d-1a2b3c4d5e6f
+curl -X GET http://localhost:8080/v1/users/e2f1b0a8-3d5c-4b9e-8f2d-1a2b3c4d5e6f \
+  -H "Authorization: Bearer <your_token>"
 ```
 
 **Response (200 OK)**:
@@ -97,7 +124,9 @@ curl -X GET http://localhost:8080/v1/users/e2f1b0a8-3d5c-4b9e-8f2d-1a2b3c4d5e6f
 }
 ```
 
-### 11.3 Partial Profile Update
+```
+
+### 11.5 Partial Profile Update
 **Endpoint**: `PATCH /v1/users/{id}`
 **Context**: Allows users to update their own basic contact information (phone, name). Does not allow changing roles or secure fields.
 **Permissions**: Admin or Owner (Self)
@@ -105,6 +134,7 @@ curl -X GET http://localhost:8080/v1/users/e2f1b0a8-3d5c-4b9e-8f2d-1a2b3c4d5e6f
 **Request**:
 ```bash
 curl -X PATCH http://localhost:8080/v1/users/e2f1b0a8-3d5c-4b9e-8f2d-1a2b3c4d5e6f \
+  -H "Authorization: Bearer <your_token>" \
   -H "Content-Type: application/json" \
   -d '{
     "phone": "+63-917-555-0199",
@@ -114,7 +144,9 @@ curl -X PATCH http://localhost:8080/v1/users/e2f1b0a8-3d5c-4b9e-8f2d-1a2b3c4d5e6
 
 ---
 
-### 11.4 Full Update (Including Staff Profile)
+---
+
+### 11.6 Full Update (Including Staff Profile)
 **Endpoint**: `PATCH /v1/users/{id}` (with staffProfile)
 **Context**: Updates extended profile fields, including employment details. Used for promotions or department transfers.
 **Permissions**: Admin Only
@@ -122,6 +154,7 @@ curl -X PATCH http://localhost:8080/v1/users/e2f1b0a8-3d5c-4b9e-8f2d-1a2b3c4d5e6
 **Request**:
 ```bash
 curl -X PATCH http://localhost:8080/v1/users/e2f1b0a8-3d5c-4b9e-8f2d-1a2b3c4d5e6f \
+  -H "Authorization: Bearer <your_token>" \
   -H "Content-Type: application/json" \
   -d '{
     "staffProfile": {
@@ -133,7 +166,9 @@ curl -X PATCH http://localhost:8080/v1/users/e2f1b0a8-3d5c-4b9e-8f2d-1a2b3c4d5e6
 
 ---
 
-### 11.5 Assign Role to User
+---
+
+### 11.7 Assign Role to User
 **Endpoint**: `POST /v1/users/{id}/roles`
 **Context**: Grants a new role (permission set) to a user. Critical for RBAC management.
 **Permissions**: Admin Only
@@ -141,6 +176,7 @@ curl -X PATCH http://localhost:8080/v1/users/e2f1b0a8-3d5c-4b9e-8f2d-1a2b3c4d5e6
 **Request**:
 ```bash
 curl -X POST http://localhost:8080/v1/users/e2f1b0a8-3d5c-4b9e-8f2d-1a2b3c4d5e6f/roles \
+  -H "Authorization: Bearer <your_token>" \
   -H "Content-Type: application/json" \
   -d '{
     "roleName": "RENTAL_AGENT"
@@ -161,15 +197,26 @@ curl -X POST http://localhost:8080/v1/users/e2f1b0a8-3d5c-4b9e-8f2d-1a2b3c4d5e6f
 
 ---
 
-### 11.6 Delete User
+---
+
+### 11.8 Delete User
 **Endpoint**: `DELETE /v1/users/{id}`
 **Context**: Deactivates (soft-delete) or removes a user account. Used for offboarding staff.
 **Permissions**: Admin Only
 
 **Request**:
 ```bash
-curl -X DELETE http://localhost:8080/v1/users/e2f1b0a8-3d5c-4b9e-8f2d-1a2b3c4d5e6f
+curl -X DELETE http://localhost:8080/v1/users/e2f1b0a8-3d5c-4b9e-8f2d-1a2b3c4d5e6f \
+  -H "Authorization: Bearer <your_token>"
 ```
 
-**Response (204 No Content)**:
-(Empty response body)
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": {
+    "message": "User deleted successfully"
+  },
+  "requestId": "req-12345"
+}
+```

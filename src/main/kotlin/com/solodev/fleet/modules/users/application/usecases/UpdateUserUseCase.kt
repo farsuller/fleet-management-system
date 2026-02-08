@@ -1,8 +1,11 @@
 package com.solodev.fleet.modules.users.application.usecases
 
-import com.solodev.fleet.modules.domain.models.*
-import com.solodev.fleet.modules.domain.ports.UserRepository
+import com.solodev.fleet.modules.users.domain.repository.UserRepository
 import com.solodev.fleet.modules.users.application.dto.UserUpdateRequest
+import com.solodev.fleet.modules.users.domain.model.StaffProfile
+import com.solodev.fleet.modules.users.domain.model.User
+import com.solodev.fleet.modules.users.domain.model.UserId
+import java.time.LocalDate
 import java.util.UUID
 
 class UpdateUserUseCase(private val repository: UserRepository) {
@@ -17,7 +20,7 @@ class UpdateUserUseCase(private val repository: UserRepository) {
                 id = UUID.randomUUID(),
                 userId = UserId(userId),
                 employeeId = request.staffProfile.employeeId ?: "EMP-TEMP", // Placeholder if new
-                hireDate = java.time.LocalDate.now()
+                hireDate = LocalDate.now()
             )
 
             updatedStaffProfile = profile.copy(

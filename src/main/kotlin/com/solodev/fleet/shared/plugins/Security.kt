@@ -1,30 +1,26 @@
 package com.solodev.fleet.shared.plugins
 
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 
-/**
- * Configures application security.
- *
- * Implements JWT (JSON Web Token) authentication.
- * - Sets up the JWT authentication provider.
- * - Defines validation logic for identifying authenticated users.
- *
- * Note: This scaffolding uses a placeholder validation block. Real implementations must verify
- * signatures/audiences strictly.
- */
 fun Application.configureSecurity() {
+    val jwtSecret = environment.config.property("jwt.secret").getString()
+    val jwtIssuer = environment.config.property("jwt.issuer").getString()
+    val jwtAudience = environment.config.property("jwt.audience").getString()
+    val jwtRealm = environment.config.property("jwt.realm").getString()
+
     install(Authentication) {
-        jwt {
-            // Placeholder: In a real app, strict verification of issuer/audience
-            // and signature against a public key or secret is required.
-            // For Phase 1 skeleton, we set up the structure.
-
-            // val jwtAudience = environment.config.property("jwt.audience").getString()
-            // val jwtDomain = environment.config.property("jwt.domain").getString()
-            // realm = environment.config.property("jwt.realm").getString()
-
+        jwt("auth-jwt") {
+            realm = jwtRealm
+            verifier(
+                    JWT.require(Algorithm.HMAC256(jwtSecret))
+                            .withIssuer(jwtIssuer)
+                            .withAudience(jwtAudience)
+                            .build()
+            )
             validate { credential ->
                 if (credential.payload.getClaim("id").asString() != "") {
                     JWTPrincipal(credential.payload)

@@ -1,8 +1,8 @@
 package com.solodev.fleet.modules.rentals.application.usecases
 
-import com.solodev.fleet.modules.domain.models.Customer
-import com.solodev.fleet.modules.domain.models.CustomerId
-import com.solodev.fleet.modules.domain.ports.CustomerRepository
+import com.solodev.fleet.modules.rentals.domain.model.Customer
+import com.solodev.fleet.modules.rentals.domain.model.CustomerId
+import com.solodev.fleet.modules.rentals.domain.repository.CustomerRepository
 
 /** Retrieves a customer by ID. */
 class GetCustomerUseCase(private val customerRepository: CustomerRepository) {

@@ -1,6 +1,6 @@
 package com.solodev.fleet.modules.users.application.dto
 
-import com.solodev.fleet.modules.domain.models.StaffProfile
+import com.solodev.fleet.modules.users.domain.model.StaffProfile
 import kotlinx.serialization.Serializable
 
 @Serializable

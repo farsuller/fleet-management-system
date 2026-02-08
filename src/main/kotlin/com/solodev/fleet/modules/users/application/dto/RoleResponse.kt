@@ -1,6 +1,6 @@
 package com.solodev.fleet.modules.users.application.dto
 
-import com.solodev.fleet.modules.domain.models.Role
+import com.solodev.fleet.modules.users.domain.model.Role
 import kotlinx.serialization.Serializable
 
 

@@ -1,7 +1,7 @@
 package com.solodev.fleet.modules.rentals.application.usecases
 
-import com.solodev.fleet.modules.domain.models.Customer
-import com.solodev.fleet.modules.domain.ports.CustomerRepository
+import com.solodev.fleet.modules.rentals.domain.model.Customer
+import com.solodev.fleet.modules.rentals.domain.repository.CustomerRepository
 
 /** Lists all customers in the system. */
 class ListCustomersUseCase(private val customerRepository: CustomerRepository) {

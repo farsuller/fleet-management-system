@@ -1,6 +1,7 @@
 package com.solodev.fleet
 
 import com.solodev.fleet.shared.plugins.*
+import com.solodev.fleet.shared.utils.JwtService
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
 
@@ -28,5 +29,14 @@ fun Application.module() {
     configureStatusPages()
     configureDatabases()
     configureSecurity()
-    configureRouting()
+
+    val secret = environment.config.propertyOrNull("jwt.secret")?.getString()
+                    ?: "change-me-in-production-use-env-var-min-64-chars"
+    val issuer = environment.config.propertyOrNull("jwt.issuer")?.getString() ?: "http://0.0.0.0:8080/"
+    val audience = environment.config.propertyOrNull("jwt.audience")?.getString() ?: "http://0.0.0.0:8080/"
+    val expiresIn = environment.config.propertyOrNull("jwt.expiresIn")?.getString()?.toLong() ?: 3600000L
+
+    val jwtService = JwtService(secret, issuer, audience, expiresIn)
+
+    configureRouting(jwtService)
 }

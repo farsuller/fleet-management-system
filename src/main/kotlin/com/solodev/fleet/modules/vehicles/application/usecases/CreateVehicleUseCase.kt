@@ -1,8 +1,10 @@
 package com.solodev.fleet.modules.vehicles.application.usecases
 
-import com.solodev.fleet.modules.domain.models.*
-import com.solodev.fleet.modules.domain.ports.VehicleRepository
+import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 import com.solodev.fleet.modules.vehicles.application.dto.VehicleRequest
+import com.solodev.fleet.modules.vehicles.domain.model.Vehicle
+import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
+import com.solodev.fleet.modules.vehicles.domain.model.VehicleState
 import java.util.UUID
 
 class CreateVehicleUseCase(

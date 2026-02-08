@@ -67,6 +67,11 @@ The Fleet Management System is a comprehensive solution for managing vehicle ren
 
 ### User & Authentication
 - Role-based access control (RBAC)
+- **Email Verification** - Account activation flow:
+  - Register -> User created (`isVerified=false`), Token generated.
+  - Login -> Fails ("Email not verified").
+  - Verify Link -> User updated (`isVerified=true`).
+  - Login -> Success (Token returned).
 - Staff profiles with department tracking
 - Multiple user roles (ADMIN, FLEET_MANAGER, RENTAL_AGENT, etc.)
 
@@ -359,6 +364,7 @@ http://localhost:8080
 | | `/v1/vehicles/{id}` | DELETE | Delete vehicle |
 | **Users** | `/v1/users` | GET | List all users |
 | | `/v1/users` | POST | Create user |
+| | `/v1/auth/verify` | GET | Verify Email |
 | | `/v1/users/{id}` | GET | Get user by ID |
 
 ### Detailed Documentation
@@ -382,31 +388,18 @@ fleet-management/
 │   │   │   ├── Application.kt              # Main entry point
 │   │   │   ├── Routing.kt                  # Route configuration
 │   │   │   ├── modules/
-│   │   │   │   ├── domain/
-│   │   │   │   │   ├── models/             # Domain entities
-│   │   │   │   │   │   ├── Customer.kt
-│   │   │   │   │   │   ├── Rental.kt
-│   │   │   │   │   │   ├── Vehicle.kt
-│   │   │   │   │   │   └── User.kt
-│   │   │   │   │   └── ports/              # Repository interfaces
-│   │   │   │   │       ├── CustomerRepository.kt
-│   │   │   │   │       ├── RentalRepository.kt
-│   │   │   │   │       ├── VehicleRepository.kt
-│   │   │   │   │       └── UserRepository.kt
-│   │   │   │   ├── infrastructure/
-│   │   │   │   │   └── persistence/        # Database implementations
-│   │   │   │   │       ├── CustomerRepositoryImpl.kt
-│   │   │   │   │       ├── RentalRepositoryImpl.kt
-│   │   │   │   │       ├── VehicleRepositoryImpl.kt
-│   │   │   │   │       └── *Table.kt       # Exposed table definitions
-│   │   │   │   ├── rentals/
+│   │   │   │   ├── <module_name>/          # e.g., rentals, vehicles, users
 │   │   │   │   │   ├── application/
 │   │   │   │   │   │   ├── dto/            # Request/Response DTOs
-│   │   │   │   │   │   └── usecases/       # Business logic
+│   │   │   │   │   │   └── usecases/       # Business logic (Use Cases)
+│   │   │   │   │   ├── domain/
+│   │   │   │   │   │   ├── model/          # Domain Entities & Value Objects
+│   │   │   │   │   │   └── repository/     # Repository Interfaces (Ports)
 │   │   │   │   │   └── infrastructure/
-│   │   │   │   │       └── http/           # HTTP routes
-│   │   │   │   ├── vehicles/               # Similar structure
-│   │   │   │   └── users/                  # Similar structure
+│   │   │   │   │       ├── http/           # HTTP Routes (Controllers)
+│   │   │   │   │       └── persistence/    # Database Implementations
+│   │   │   │   ├── infrastructure/         # Shared Infrastructure
+│   │   │   │   │   └── persistence/        # Shared DB tables (e.g. Integration)
 │   │   │   └── shared/
 │   │   │       ├── models/                 # Shared models (ApiResponse)
 │   │   │       └── plugins/                # Ktor plugins
