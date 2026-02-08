@@ -3,7 +3,7 @@
 
 -- Outbox events table: Transactional outbox pattern for reliable event publishing
 CREATE TABLE outbox_events (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     aggregate_type VARCHAR(100) NOT NULL, -- e.g., 'Vehicle', 'Rental', 'MaintenanceJob'
     aggregate_id VARCHAR(255) NOT NULL,
     event_type VARCHAR(100) NOT NULL, -- e.g., 'VehicleRegistered', 'RentalActivated'
@@ -24,7 +24,7 @@ CREATE TABLE outbox_events (
 
 -- Inbox processed messages table: Idempotent event consumption
 CREATE TABLE inbox_processed_messages (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     message_id VARCHAR(255) NOT NULL UNIQUE, -- Unique message identifier from Kafka
     consumer_group VARCHAR(100) NOT NULL,
     topic VARCHAR(255) NOT NULL,
@@ -41,7 +41,7 @@ CREATE TABLE inbox_processed_messages (
 
 -- Dead letter queue table: Failed messages for manual review
 CREATE TABLE dlq_messages (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     original_message_id VARCHAR(255),
     consumer_group VARCHAR(100) NOT NULL,
     topic VARCHAR(255) NOT NULL,
@@ -63,7 +63,7 @@ CREATE TABLE dlq_messages (
 
 -- Idempotency keys table: Track idempotency keys for API requests
 CREATE TABLE idempotency_keys (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     idempotency_key VARCHAR(255) NOT NULL UNIQUE,
     request_path VARCHAR(500) NOT NULL,
     request_method VARCHAR(10) NOT NULL,

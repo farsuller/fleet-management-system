@@ -3,7 +3,7 @@
 
 -- Maintenance jobs table: Track maintenance work on vehicles
 CREATE TABLE maintenance_jobs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     job_number VARCHAR(50) NOT NULL UNIQUE,
     vehicle_id UUID NOT NULL REFERENCES vehicles(id),
     status VARCHAR(20) NOT NULL CHECK (status IN ('SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED')),
@@ -46,7 +46,7 @@ CREATE TABLE maintenance_jobs (
 
 -- Parts used in maintenance table: Track parts inventory and usage
 CREATE TABLE maintenance_parts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     job_id UUID NOT NULL REFERENCES maintenance_jobs(id) ON DELETE CASCADE,
     part_number VARCHAR(100) NOT NULL,
     part_name VARCHAR(255) NOT NULL,

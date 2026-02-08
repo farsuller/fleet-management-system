@@ -1,4 +1,4 @@
-package com.solodev.fleet.modules.accounting.infrastructure.persistence
+package com.solodev.fleet.modules.accounts.infrastructure.persistence
 
 import com.solodev.fleet.modules.rentals.infrastructure.persistence.CustomersTable
 import com.solodev.fleet.modules.rentals.infrastructure.persistence.RentalsTable
@@ -54,6 +54,7 @@ object InvoicesTable : UUIDTable("invoices") {
     val taxCents = integer("tax_cents").default(0)
     val paidCents = integer("paid_cents").default(0)
     val currencyCode = varchar("currency_code", 3).default("PHP")
+    val balanceCents = integer("balance_cents")
 
     // Dates
     val issueDate = date("issue_date")
@@ -88,6 +89,17 @@ object PaymentsTable : UUIDTable("payments") {
     val status = varchar("status", 20)
     val paymentDate = timestamp("payment_date").nullable()
     val notes = text("notes").nullable()
+    val createdAt = timestamp("created_at")
+    val updatedAt = timestamp("updated_at")
+}
+
+/** Exposed table definition for payment methods. */
+object PaymentMethodsTable : UUIDTable("payment_methods") {
+    val code = varchar("code", 20).uniqueIndex()
+    val displayName = varchar("display_name", 100)
+    val targetAccountCode = reference("target_account_code", AccountsTable.accountCode)
+    val isActive = bool("is_active").default(true)
+    val description = text("description").nullable()
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
 }

@@ -62,7 +62,7 @@ object RentalsTable : UUIDTable("rentals") {
 /** Exposed table definition for rental periods (for double-booking prevention). */
 object RentalPeriodsTable : UUIDTable("rental_periods") {
     val rentalId =
-            reference("rental_id", RentalsTable, onDelete = ReferenceOption.CASCADE).uniqueIndex()
+        reference("rental_id", RentalsTable, onDelete = ReferenceOption.CASCADE).uniqueIndex()
     val vehicleId = reference("vehicle_id", VehiclesTable, onDelete = ReferenceOption.RESTRICT)
     val status = varchar("status", 20)
     // Note: period TSTZRANGE is handled by PostgreSQL trigger, not directly by Exposed

@@ -14,7 +14,7 @@ data class VehicleResponse(
         val color: String?,
         val state: String,
         val mileageKm: Int,
-        val dailyRateCents: Int?,
+        val dailyRate: Double?,
         val currencyCode: String,
         val passengerCapacity: Int?
 ) {
@@ -30,7 +30,7 @@ data class VehicleResponse(
                                 color = v.color,
                                 state = v.state.name,
                                 mileageKm = v.mileageKm,
-                                dailyRateCents = v.dailyRateCents,
+                                dailyRate = v.dailyRateCents?.let { it / 100.0 },
                                 currencyCode = v.currencyCode,
                                 passengerCapacity = v.passengerCapacity
                         )

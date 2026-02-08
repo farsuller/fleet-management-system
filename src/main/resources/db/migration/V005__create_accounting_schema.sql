@@ -3,7 +3,7 @@
 
 -- Chart of accounts: Define all accounts in the system
 CREATE TABLE accounts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     account_code VARCHAR(20) NOT NULL UNIQUE,
     account_name VARCHAR(255) NOT NULL,
     account_type VARCHAR(20) NOT NULL CHECK (account_type IN ('ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE')),
@@ -16,7 +16,7 @@ CREATE TABLE accounts (
 
 -- Ledger entries: Double-entry bookkeeping journal entries
 CREATE TABLE ledger_entries (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     entry_number VARCHAR(50) NOT NULL UNIQUE,
     external_reference VARCHAR(255) NOT NULL UNIQUE, -- For idempotency (e.g., "rental-123-activation")
     entry_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -27,7 +27,7 @@ CREATE TABLE ledger_entries (
 
 -- Ledger entry lines: Individual debit/credit lines
 CREATE TABLE ledger_entry_lines (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     entry_id UUID NOT NULL REFERENCES ledger_entries(id) ON DELETE CASCADE,
     account_id UUID NOT NULL REFERENCES accounts(id),
     debit_amount_cents INTEGER NOT NULL DEFAULT 0 CHECK (debit_amount_cents >= 0),
@@ -44,7 +44,7 @@ CREATE TABLE ledger_entry_lines (
 
 -- Invoices table: Track customer invoices
 CREATE TABLE invoices (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     invoice_number VARCHAR(50) NOT NULL UNIQUE,
     customer_id UUID NOT NULL REFERENCES customers(id),
     rental_id UUID REFERENCES rentals(id),
@@ -73,7 +73,7 @@ CREATE TABLE invoices (
 
 -- Invoice line items
 CREATE TABLE invoice_line_items (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     invoice_id UUID NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
     description TEXT NOT NULL,
     quantity DECIMAL(10, 2) NOT NULL CHECK (quantity > 0),
@@ -84,7 +84,7 @@ CREATE TABLE invoice_line_items (
 
 -- Payments table: Track all payments
 CREATE TABLE payments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     payment_number VARCHAR(50) NOT NULL UNIQUE,
     customer_id UUID NOT NULL REFERENCES customers(id),
     invoice_id UUID REFERENCES invoices(id),
@@ -102,7 +102,11 @@ CREATE TABLE payments (
 -- Insert default chart of accounts
 INSERT INTO accounts (account_code, account_name, account_type, description) VALUES
     -- Assets
-    ('1000', 'Cash', 'ASSET', 'Cash on hand and in bank'),
+    ('1000', 'Cash', 'ASSET', 'Cash on hand'),
+    ('1010', 'Bank Account (BPI)', 'ASSET', 'Main operating bank account'),
+    ('1020', 'GCash Wallet', 'ASSET', 'GCash merchant wallet'),
+    ('1030', 'PayMaya Wallet', 'ASSET', 'PayMaya merchant wallet'),
+    ('1040', 'Credit Card Clearing', 'ASSET', 'Payments via Stripe/Terminal awaiting settlement'),
     ('1100', 'Accounts Receivable', 'ASSET', 'Money owed by customers'),
     ('1500', 'Vehicle Fleet', 'ASSET', 'Fleet vehicles'),
     ('1600', 'Accumulated Depreciation - Vehicles', 'ASSET', 'Depreciation of fleet vehicles'),

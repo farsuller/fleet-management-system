@@ -5,25 +5,26 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class MaintenanceResponse(
-    val id: String,
-    val jobNumber: String,
-    val vehicleId: String,
-    val status: String,
-    val jobType: String,
-    val description: String,
-    val scheduledDate: String,
-    val totalCostCents: Int
+        val id: String,
+        val jobNumber: String,
+        val vehicleId: String,
+        val status: String,
+        val jobType: String,
+        val description: String,
+        val scheduledDate: String,
+        val totalCost: Double
 ) {
     companion object {
-        fun fromDomain(j: MaintenanceJob) = MaintenanceResponse(
-            id = j.id.value,
-            jobNumber = j.jobNumber,
-            vehicleId = j.vehicleId.value,
-            status = j.status.name,
-            jobType = j.jobType.name,
-            description = j.description,
-            scheduledDate = j.scheduledDate.toString(),
-            totalCostCents = j.totalCostCents
-        )
+        fun fromDomain(j: MaintenanceJob) =
+                MaintenanceResponse(
+                        id = j.id.value,
+                        jobNumber = j.jobNumber,
+                        vehicleId = j.vehicleId.value,
+                        status = j.status.name,
+                        jobType = j.jobType.name,
+                        description = j.description,
+                        scheduledDate = j.scheduledDate.toString(),
+                        totalCost = j.totalCostCents / 100.0
+                )
     }
 }

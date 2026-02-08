@@ -1,24 +1,23 @@
-package com.solodev.fleet.modules.rentals.domain.repository
+package com.solodev.fleet.modules.rentals.infrastructure.persistence
 
-import com.solodev.fleet.modules.rentals.infrastructure.persistence.RentalsTable
 import com.solodev.fleet.modules.rentals.domain.model.CustomerId
 import com.solodev.fleet.modules.rentals.domain.model.Rental
 import com.solodev.fleet.modules.rentals.domain.model.RentalId
 import com.solodev.fleet.modules.rentals.domain.model.RentalStatus
+import com.solodev.fleet.modules.rentals.domain.repository.RentalRepository
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
-import java.time.Instant
-import java.util.*
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import java.time.Instant
+import java.util.*
 
 /** PostgreSQL implementation of RentalRepository using Exposed ORM. */
 class RentalRepositoryImpl : RentalRepository {
 
     private suspend fun <T> dbQuery(block: suspend () -> T): T =
-            newSuspendedTransaction(Dispatchers.IO) { block() }
+        newSuspendedTransaction(Dispatchers.IO) { block() }
 
     private fun ResultRow.toRental() =
         Rental(
@@ -40,23 +39,23 @@ class RentalRepositoryImpl : RentalRepository {
 
     override suspend fun findById(id: RentalId): Rental? = dbQuery {
         RentalsTable.selectAll()
-                .where { RentalsTable.id eq UUID.fromString(id.value) }
-                .map { it.toRental() }
-                .singleOrNull()
+            .where { RentalsTable.id eq UUID.fromString(id.value) }
+            .map { it.toRental() }
+            .singleOrNull()
     }
 
     override suspend fun findByRentalNumber(rentalNumber: String): Rental? = dbQuery {
         RentalsTable.selectAll()
-                .where { RentalsTable.rentalNumber eq rentalNumber }
-                .map { it.toRental() }
-                .singleOrNull()
+            .where { RentalsTable.rentalNumber eq rentalNumber }
+            .map { it.toRental() }
+            .singleOrNull()
     }
 
     override suspend fun save(rental: Rental): Rental = dbQuery {
         val exists =
-                RentalsTable.selectAll()
-                        .where { RentalsTable.id eq UUID.fromString(rental.id.value) }
-                        .count() > 0
+            RentalsTable.selectAll()
+                .where { RentalsTable.id eq UUID.fromString(rental.id.value) }
+                .count() > 0
         if (exists) {
             RentalsTable.update({ RentalsTable.id eq UUID.fromString(rental.id.value) }) {
                 it[status] = rental.status.name
@@ -88,14 +87,14 @@ class RentalRepositoryImpl : RentalRepository {
 
     override suspend fun findByCustomerId(customerId: CustomerId): List<Rental> = dbQuery {
         RentalsTable.selectAll()
-                .where { RentalsTable.customerId eq UUID.fromString(customerId.value) }
-                .map { it.toRental() }
+            .where { RentalsTable.customerId eq UUID.fromString(customerId.value) }
+            .map { it.toRental() }
     }
 
     override suspend fun findByVehicleId(vehicleId: VehicleId): List<Rental> = dbQuery {
         RentalsTable.selectAll()
-                .where { RentalsTable.vehicleId eq UUID.fromString(vehicleId.value) }
-                .map { it.toRental() }
+            .where { RentalsTable.vehicleId eq UUID.fromString(vehicleId.value) }
+            .map { it.toRental() }
     }
 
     override suspend fun findAll(): List<Rental> = dbQuery {
@@ -108,17 +107,17 @@ class RentalRepositoryImpl : RentalRepository {
         endDate: Instant
     ): List<Rental> = dbQuery {
         RentalsTable.selectAll()
-                .where {
-                    (RentalsTable.vehicleId eq UUID.fromString(vehicleId.value)) and
-                            (RentalsTable.status inList
-                                    listOf(
-                                            RentalStatus.RESERVED.name,
-                                            RentalStatus.ACTIVE.name
-                                    )) and
-                            (RentalsTable.startDate lessEq endDate) and
-                            (RentalsTable.endDate greaterEq startDate)
-                }
-                .map { it.toRental() }
+            .where {
+                (RentalsTable.vehicleId eq UUID.fromString(vehicleId.value)) and
+                        (RentalsTable.status inList
+                                listOf(
+                                    RentalStatus.RESERVED.name,
+                                    RentalStatus.ACTIVE.name
+                                )) and
+                        (RentalsTable.startDate lessEq endDate) and
+                        (RentalsTable.endDate greaterEq startDate)
+            }
+            .map { it.toRental() }
     }
 
     override suspend fun findByStatus(status: RentalStatus): List<Rental> = dbQuery {

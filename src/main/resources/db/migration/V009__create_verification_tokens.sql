@@ -6,7 +6,7 @@ ALTER TABLE users ADD COLUMN is_verified BOOLEAN NOT NULL DEFAULT false;
 
 -- Create verification tokens table
 CREATE TABLE verification_tokens (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token VARCHAR(255) NOT NULL UNIQUE,
     type VARCHAR(50) NOT NULL CHECK (type IN ('EMAIL_VERIFICATION', 'PASSWORD_RESET')),

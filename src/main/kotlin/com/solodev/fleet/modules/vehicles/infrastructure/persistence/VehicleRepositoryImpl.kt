@@ -1,10 +1,9 @@
-package com.solodev.fleet.modules.vehicles.domain.repository
+package com.solodev.fleet.modules.vehicles.infrastructure.persistence
 
 import com.solodev.fleet.modules.vehicles.domain.model.Vehicle
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleState
-import com.solodev.fleet.modules.vehicles.infrastructure.persistence.OdometerReadingsTable
-import com.solodev.fleet.modules.vehicles.infrastructure.persistence.VehiclesTable
+import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 import java.time.Instant
 import java.util.*
 import kotlinx.coroutines.Dispatchers

@@ -1,16 +1,22 @@
 package com.solodev.fleet
 
-import com.solodev.fleet.modules.maintenance.domain.repository.MaintenanceRepositoryImpl
+import com.solodev.fleet.modules.accounts.infrastructure.http.accountingRoutes
+import com.solodev.fleet.modules.accounts.infrastructure.persistence.AccountRepositoryImpl
+import com.solodev.fleet.modules.accounts.infrastructure.persistence.InvoiceRepositoryImpl
+import com.solodev.fleet.modules.accounts.infrastructure.persistence.LedgerRepositoryImpl
+import com.solodev.fleet.modules.accounts.infrastructure.persistence.PaymentMethodRepositoryImpl
+import com.solodev.fleet.modules.accounts.infrastructure.persistence.PaymentRepositoryImpl
 import com.solodev.fleet.modules.maintenance.infrastructure.http.maintenanceRoutes
-import com.solodev.fleet.modules.rentals.domain.repository.CustomerRepositoryImpl
-import com.solodev.fleet.modules.rentals.domain.repository.RentalRepositoryImpl
+import com.solodev.fleet.modules.maintenance.infrastructure.persistence.MaintenanceRepositoryImpl
 import com.solodev.fleet.modules.rentals.infrastructure.http.customerRoutes
 import com.solodev.fleet.modules.rentals.infrastructure.http.rentalRoutes
-import com.solodev.fleet.modules.users.domain.repository.UserRepositoryImpl
+import com.solodev.fleet.modules.rentals.infrastructure.persistence.CustomerRepositoryImpl
+import com.solodev.fleet.modules.rentals.infrastructure.persistence.RentalRepositoryImpl
 import com.solodev.fleet.modules.users.infrastructure.http.userRoutes
-import com.solodev.fleet.modules.users.domain.repository.VerificationTokenRepositoryImpl
-import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepositoryImpl
+import com.solodev.fleet.modules.users.infrastructure.persistence.UserRepositoryImpl
+import com.solodev.fleet.modules.users.infrastructure.persistence.VerificationTokenRepositoryImpl
 import com.solodev.fleet.modules.vehicles.infrastructure.http.vehicleRoutes
+import com.solodev.fleet.modules.vehicles.infrastructure.persistence.VehicleRepositoryImpl
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.requestId
 import com.solodev.fleet.shared.utils.JwtService
@@ -28,6 +34,11 @@ fun Application.configureRouting(jwtService: JwtService) {
     val tokenRepo = VerificationTokenRepositoryImpl()
     val customerRepo = CustomerRepositoryImpl()
     val maintenanceRepo = MaintenanceRepositoryImpl()
+    val invoiceRepo = InvoiceRepositoryImpl()
+    val paymentRepo = PaymentRepositoryImpl()
+    val accountRepo = AccountRepositoryImpl()
+    val ledgerRepo = LedgerRepositoryImpl()
+    val paymentMethodRepo = PaymentMethodRepositoryImpl()
 
     routing {
         vehicleRoutes(vehicleRepo)
@@ -39,6 +50,14 @@ fun Application.configureRouting(jwtService: JwtService) {
         userRoutes(userRepository = userRepo, tokenRepository = tokenRepo, jwtService = jwtService)
 
         maintenanceRoutes(maintenanceRepository = maintenanceRepo)
+
+        accountingRoutes(
+                invoiceRepository = invoiceRepo,
+                paymentRepository = paymentRepo,
+                accountRepository = accountRepo,
+                ledgerRepository = ledgerRepo,
+                paymentMethodRepository = paymentMethodRepo
+        )
 
         get("/") {
             call.respond(
