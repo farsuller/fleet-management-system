@@ -29,6 +29,7 @@ fun Application.module() {
     configureStatusPages()
     configureDatabases()
     configureSecurity()
+    configureRateLimiting()
 
     val secret = environment.config.propertyOrNull("jwt.secret")?.getString()
                     ?: "change-me-in-production-use-env-var-min-64-chars"

@@ -4,11 +4,7 @@ import com.solodev.fleet.modules.accounts.application.dto.*
 import com.solodev.fleet.modules.accounts.application.usecases.IssueInvoiceUseCase
 import com.solodev.fleet.modules.accounts.application.usecases.PayInvoiceUseCase
 import com.solodev.fleet.modules.accounts.domain.model.PaymentMethod
-import com.solodev.fleet.modules.accounts.domain.repository.AccountRepository
-import com.solodev.fleet.modules.accounts.domain.repository.InvoiceRepository
-import com.solodev.fleet.modules.accounts.domain.repository.LedgerRepository
-import com.solodev.fleet.modules.accounts.domain.repository.PaymentMethodRepository
-import com.solodev.fleet.modules.accounts.domain.repository.PaymentRepository
+import com.solodev.fleet.modules.accounts.domain.repository.*
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.requestId
 import io.ktor.http.*

@@ -14,6 +14,11 @@ application {
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=true")
 }
 
+repositories {
+    mavenCentral()
+    maven { url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap") }
+}
+
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_21)
@@ -32,6 +37,7 @@ dependencies {
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktor.server.call.logging)
     implementation(libs.ktor.server.metrics.micrometer)
+    implementation(libs.ktor.server.rate.limit)
     implementation(libs.micrometer.registry.prometheus)
     implementation(libs.ktor.server.config.yaml)
     implementation(libs.bcrypt)
