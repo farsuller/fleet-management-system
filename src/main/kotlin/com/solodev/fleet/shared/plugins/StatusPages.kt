@@ -23,12 +23,7 @@ fun Application.configureStatusPages() {
                 HttpStatusCode.NotFound,
                 ApiResponse<Nothing>(
                     success = false,
-                    error =
-                        ErrorDetail(
-                            code = cause.errorCode,
-                            message = cause.message
-                                ?: "Resource not found"
-                        ),
+                    error = ErrorDetail(code = cause.errorCode, message = cause.message ?: "Resource not found"),
                     requestId = call.requestId
                 )
             )
@@ -39,16 +34,13 @@ fun Application.configureStatusPages() {
                 HttpStatusCode.UnprocessableEntity,
                 ApiResponse<Nothing>(
                     success = false,
-                    error =
-                        ErrorDetail(
-                            code = cause.errorCode,
-                            message = cause.message
-                                ?: "Validation failed",
-                            details =
-                                cause.fieldErrors.map { (field, reason) ->
-                                    FieldError(field, reason)
-                                }
-                        ),
+                    error = ErrorDetail(
+                        code = cause.errorCode,
+                        message = cause.message ?: "Validation failed",
+                        details = cause.fieldErrors.map { (field, reason) ->
+                            FieldError(field, reason)
+                        }
+                    ),
                     requestId = call.requestId
                 )
             )
@@ -59,12 +51,10 @@ fun Application.configureStatusPages() {
                 HttpStatusCode.Conflict,
                 ApiResponse<Nothing>(
                     success = false,
-                    error =
-                        ErrorDetail(
-                            code = cause.errorCode,
-                            message = cause.message
-                                ?: "Conflict detected"
-                        ),
+                    error = ErrorDetail(
+                        code = cause.errorCode,
+                        message = cause.message ?: "Conflict detected"
+                    ),
                     requestId = call.requestId
                 )
             )
@@ -75,12 +65,10 @@ fun Application.configureStatusPages() {
                 HttpStatusCode.Unauthorized,
                 ApiResponse<Nothing>(
                     success = false,
-                    error =
-                        ErrorDetail(
-                            code = cause.errorCode,
-                            message = cause.message
-                                ?: "Authentication required"
-                        ),
+                    error = ErrorDetail(
+                        code = cause.errorCode,
+                        message = cause.message ?: "Authentication required"
+                    ),
                     requestId = call.requestId
                 )
             )
@@ -91,15 +79,19 @@ fun Application.configureStatusPages() {
                 HttpStatusCode.Forbidden,
                 ApiResponse<Nothing>(
                     success = false,
-                    error =
-                        ErrorDetail(
-                            code = cause.errorCode,
-                            message = cause.message
-                                ?: "Insufficient permissions"
-                        ),
+                    error = ErrorDetail(
+                        code = cause.errorCode,
+                        message = cause.message ?: "Insufficient permissions"
+                    ),
                     requestId = call.requestId
                 )
             )
+        }
+
+        status(HttpStatusCode.TooManyRequests) { call, _ ->
+            val retryAfter = call.response.headers["Retry-After"]
+            // Bridge the automatic 429 status to our Domain Exception
+            throw RateLimitException("Too many requests. Please wait $retryAfter seconds.")
         }
 
         exception<RateLimitException> { call, cause ->
@@ -107,12 +99,10 @@ fun Application.configureStatusPages() {
                 HttpStatusCode.TooManyRequests,
                 ApiResponse<Nothing>(
                     success = false,
-                    error =
-                        ErrorDetail(
-                            code = cause.errorCode,
-                            message = cause.message
-                                ?: "Rate limit exceeded"
-                        ),
+                    error = ErrorDetail(
+                        code = cause.errorCode,
+                        message = cause.message ?: "Rate limit exceeded"
+                    ),
                     requestId = call.requestId
                 )
             )
@@ -127,11 +117,10 @@ fun Application.configureStatusPages() {
                 HttpStatusCode.InternalServerError,
                 ApiResponse<Nothing>(
                     success = false,
-                    error =
-                        ErrorDetail(
-                            code = "INTERNAL_ERROR",
-                            message = "An unexpected error occurred"
-                        ),
+                    error = ErrorDetail(
+                        code = "INTERNAL_ERROR",
+                        message = "An unexpected error occurred"
+                    ),
                     requestId = call.requestId
                 )
             )

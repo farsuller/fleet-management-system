@@ -1,11 +1,7 @@
 package com.solodev.fleet
 
 import com.solodev.fleet.modules.accounts.infrastructure.http.accountingRoutes
-import com.solodev.fleet.modules.accounts.infrastructure.persistence.AccountRepositoryImpl
-import com.solodev.fleet.modules.accounts.infrastructure.persistence.InvoiceRepositoryImpl
-import com.solodev.fleet.modules.accounts.infrastructure.persistence.LedgerRepositoryImpl
-import com.solodev.fleet.modules.accounts.infrastructure.persistence.PaymentMethodRepositoryImpl
-import com.solodev.fleet.modules.accounts.infrastructure.persistence.PaymentRepositoryImpl
+import com.solodev.fleet.modules.accounts.infrastructure.persistence.*
 import com.solodev.fleet.modules.maintenance.infrastructure.http.maintenanceRoutes
 import com.solodev.fleet.modules.maintenance.infrastructure.persistence.MaintenanceRepositoryImpl
 import com.solodev.fleet.modules.rentals.infrastructure.http.customerRoutes
@@ -21,6 +17,8 @@ import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.requestId
 import com.solodev.fleet.shared.utils.JwtService
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.plugins.ratelimit.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
@@ -41,36 +39,46 @@ fun Application.configureRouting(jwtService: JwtService) {
     val paymentMethodRepo = PaymentMethodRepositoryImpl()
 
     routing {
-        vehicleRoutes(vehicleRepo)
 
-        rentalRoutes(rentalRepository = rentalRepo, vehicleRepository = vehicleRepo)
-
-        customerRoutes(customerRepository = customerRepo)
-
-        userRoutes(userRepository = userRepo, tokenRepository = tokenRepo, jwtService = jwtService)
-
-        maintenanceRoutes(maintenanceRepository = maintenanceRepo)
-
-        accountingRoutes(
-                invoiceRepository = invoiceRepo,
-                paymentRepository = paymentRepo,
-                accountRepository = accountRepo,
-                ledgerRepository = ledgerRepo,
-                paymentMethodRepository = paymentMethodRepo
-        )
-
-        get("/") {
-            call.respond(
-                    ApiResponse.success(
-                            mapOf("message" to "Fleet Management API v1"),
-                            call.requestId
-                    )
-            )
+        rateLimit(RateLimitName("public_api")) {
+            vehicleRoutes(vehicleRepo)
+            rentalRoutes(rentalRepository = rentalRepo, vehicleRepository = vehicleRepo)
+            customerRoutes(customerRepository = customerRepo)
+            maintenanceRoutes(maintenanceRepository = maintenanceRepo)
         }
+
+        rateLimit(RateLimitName("auth_strict")) {
+            userRoutes(userRepository = userRepo, tokenRepository = tokenRepo, jwtService = jwtService)
+        }
+
+        authenticate("auth-jwt") {
+            rateLimit(RateLimitName("authenticated_api")) {
+                accountingRoutes(
+                    invoiceRepository = invoiceRepo,
+                    paymentRepository = paymentRepo,
+                    accountRepository = accountRepo,
+                    ledgerRepository = ledgerRepo,
+                    paymentMethodRepository = paymentMethodRepo
+                )
+            }
+        }
+
+
+        rateLimit {
+            get("/") {
+                call.respond(
+                    ApiResponse.success(
+                        mapOf("message" to "Fleet Management API v1"),
+                        call.requestId
+                    )
+                )
+            }
+        }
+
 
         get("/health") {
             call.respond(
-                    ApiResponse.success(data = mapOf("status" to "OK"), requestId = call.requestId)
+                ApiResponse.success(data = mapOf("status" to "OK"), requestId = call.requestId)
             )
         }
     }
