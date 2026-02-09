@@ -1,10 +1,8 @@
-# Phase 4 — Eventing (Kafka) + Integration
-
 ## Status
 
-- Overall: **Not Started**
-- Implementation Date: TBD
-- Verification: Pending
+- Overall: **READY TO START (Lacks Core Dependencies)**
+- Implementation Date: 2026-02-09 (Planned)
+- Verification: Pending Infura/Kafka setup
 
 ---
 
@@ -17,8 +15,17 @@ Implement the **Messaging Infrastructure** to publish and consume Domain Events.
 ## Depends on
 
 - Phase 1 architecture skeleton (Kafka/observability standards)
-- Phase 2 schema v1 (outbox/inbox tables)
-- Phase 3 API v1 (events emitted by state changes)
+- Phase 2 schema v1 (outbox/inbox tables) - ✅ **READY**
+- Phase 3 API v1 (events emitted by state changes) - ✅ **READY**
+
+---
+
+## Assessment of Readiness
+
+1. **Database**: ✅ The `outbox_events` and `inbox_processed_messages` tables are already implemented in Phase 2 migrations.
+2. **Dependencies**: ❌ Missing `ktor-server-kafka`, `kafka-clients`, and Avro/JSON serialization libraries in `build.gradle.kts`.
+3. **Infrastructure**: ❌ `docker-compose.yml` only contains Postgres and Redis. Kafka/Zookeeper/Schema-Registry need to be added.
+4. **Configuration**: ❌ `application.yaml` does not yet contain Kafka bootstrap servers or topic definitions.
 
 ---
 
@@ -312,17 +319,17 @@ docs/events/
 ### Phase 4 Requirements
 | Requirement | Status | Notes |
 |-------------|--------|-------|
-| Event catalog | Not Started | Document all events |
-| Topic strategy | Not Started | Naming and partitioning |
-| Outbox publisher | Not Started | Background publishing |
-| Consumer baseline | Not Started | Coroutine-based |
-| Idempotency | Not Started | Inbox pattern |
-| Retry policy | Not Started | Backoff and limits |
-| DLQ handling | Not Started | Poison message handling |
-| Event handlers | Not Started | Cross-domain reactions |
-| Observability | Not Started | Trace and metrics |
+| Event catalog | ⏳ In Progress | Draft events defined in module domains |
+| Topic strategy | Not Started | Naming and partitioning pending |
+| Outbox publisher | Not Started | Background publishing logic pending |
+| Consumer baseline | Not Started | Coroutine-based consumers pending |
+| Idempotency | ✅ Ready | Inbox table exists, logic pending |
+| Retry policy | Not Started | Backoff and limits pending |
+| DLQ handling | ✅ Ready | DLQ table exists, logic pending |
+| Event handlers | Not Started | Cross-domain reactions pending |
+| Observability | Not Started | Trace and metrics propagation pending |
 
-**Overall Compliance**: **0%** (Not Started)
+**Overall Compliance**: **15%** (Infrastructure Tables Ready)
 
 ---
 
@@ -459,8 +466,8 @@ Once Phase 4 is complete, events can be used to build read models and implement 
 
 ---
 
-**Implementation Date**: TBD  
-**Verification**: Pending  
-**Kafka Status**: Not Started  
-**Compliance**: 0%  
+**Implementation Date**: 2026-02-09 (Kickoff)  
+**Verification**: Pending Infrastructure  
+**Kafka Status**: Infrastructure Ready, Logic Pending  
+**Compliance**: 15%  
 **Ready for Next Phase**: Not Yet

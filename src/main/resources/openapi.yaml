@@ -1,0 +1,599 @@
+openapi: 3.0.3
+info:
+  title: Fleet Management API
+  description: API for managing a fleet of vehicles, rentals, maintenance, and accounting.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          nullable: true
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+        requestId:
+          type: string
+          example: "req-12345"
+    ErrorDetail:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          example: "Invalid input provided"
+        fieldErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'
+    FieldError:
+      type: object
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+
+    # --- Vehicles Module ---
+    VehicleRequest:
+      type: object
+      required: [make, model, year, licensePlate, vin]
+      properties:
+        make: { type: string }
+        model: { type: string }
+        year: { type: integer }
+        licensePlate: { type: string }
+        vin: { type: string }
+    VehicleUpdateRequest:
+      type: object
+      properties:
+        make: { type: string }
+        model: { type: string }
+        year: { type: integer }
+        licensePlate: { type: string }
+    VehicleResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        make: { type: string }
+        model: { type: string }
+        year: { type: integer }
+        licensePlate: { type: string }
+        vin: { type: string }
+        state: { type: string, enum: [AVAILABLE, RENTED, MAINTENANCE, RETIRED] }
+        odometerKm: { type: integer }
+    VehicleStateRequest:
+      type: object
+      required: [state]
+      properties:
+        state: { type: string, enum: [AVAILABLE, RENTED, MAINTENANCE, RETIRED] }
+    OdometerRequest:
+      type: object
+      required: [mileageKm]
+      properties:
+        mileageKm: { type: integer }
+
+    # --- Users Module ---
+    UserRegistrationRequest:
+      type: object
+      required: [email, password, firstName, lastName]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+        firstName: { type: string }
+        lastName: { type: string }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+    LoginResponse:
+      type: object
+      properties:
+        token: { type: string }
+        user: { $ref: '#/components/schemas/UserResponse' }
+    UserResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+        roles: { type: array, items: { type: string } }
+    UserUpdateRequest:
+      type: object
+      properties:
+        firstName: { type: string }
+        lastName: { type: string }
+        email: { type: string, format: email }
+
+    # --- Rentals Module ---
+    RentalRequest:
+      type: object
+      required: [vehicleId, customerId, startDate, endDate, estimatedPrice]
+      properties:
+        vehicleId: { type: string, format: uuid }
+        customerId: { type: string, format: uuid }
+        startDate: { type: string, format: date-time }
+        endDate: { type: string, format: date-time }
+        estimatedPrice: { type: integer }
+    RentalResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicleId: { type: string, format: uuid }
+        customerId: { type: string, format: uuid }
+        status: { type: string, enum: [PENDING, ACTIVE, COMPLETED, CANCELLED] }
+        startDate: { type: string, format: date-time }
+        endDate: { type: string, format: date-time }
+        actualEndDate: { type: string, format: date-time, nullable: true }
+        totalPrice: { type: integer }
+
+    # --- Maintenance Module ---
+    MaintenanceRequest:
+      type: object
+      required: [vehicleId, description, scheduledDate]
+      properties:
+        vehicleId: { type: string, format: uuid }
+        description: { type: string }
+        scheduledDate: { type: string, format: date-time }
+    MaintenanceResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicleId: { type: string, format: uuid }
+        description: { type: string }
+        status: { type: string, enum: [SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED] }
+        scheduledDate: { type: string, format: date-time }
+        startDate: { type: string, format: date-time, nullable: true }
+        completionDate: { type: string, format: date-time, nullable: true }
+        laborCost: { type: integer }
+        partsCost: { type: integer }
+    MaintenanceStatusUpdateRequest:
+      type: object
+      properties:
+        laborCost: { type: integer }
+        partsCost: { type: integer }
+
+    # --- Accounting Module ---
+    InvoiceRequest:
+      type: object
+      required: [customerId, rentalId, items, dueDate]
+      properties:
+        customerId: { type: string, format: uuid }
+        rentalId: { type: string, format: uuid }
+        dueDate: { type: string, format: date-time }
+        items:
+          type: array
+          items:
+            type: object
+            required: [description, amount]
+            properties:
+              description: { type: string }
+              amount: { type: integer }
+    InvoiceResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        invoiceNumber: { type: string }
+        customerId: { type: string, format: uuid }
+        status: { type: string, enum: [DRAFT, ISSUED, PAID, OVERDUE, CANCELLED] }
+        totalAmount: { type: integer }
+        dueDate: { type: string, format: date-time }
+    PaymentRequest:
+      type: object
+      required: [amount, paymentMethod]
+      properties:
+        amount: { type: integer }
+        paymentMethod: { type: string }
+        notes: { type: string }
+    PaymentReceiptResponse:
+      type: object
+      properties:
+        paymentId: { type: string, format: uuid }
+        invoiceId: { type: string, format: uuid }
+        amount: { type: integer }
+        paymentDate: { type: string, format: date-time }
+        transactionReference: { type: string }
+    PaymentMethodRequest:
+      type: object
+      required: [code, displayName, targetAccountCode]
+      properties:
+        code: { type: string }
+        displayName: { type: string }
+        targetAccountCode: { type: string }
+        isActive: { type: boolean }
+        description: { type: string }
+    PaymentMethodResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        displayName: { type: string }
+        isActive: { type: boolean }
+
+paths:
+  # --- Authentication & Users ---
+  /v1/auth/verify:
+    get:
+      summary: Verify email token
+      tags: [Authentication]
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Verified
+        '400':
+          description: Invalid token
+
+  /v1/users/register:
+    post:
+      summary: Register new user
+      tags: [Authentication]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserRegistrationRequest' }
+      responses:
+        '201':
+          description: Created
+
+  /v1/users/login:
+    post:
+      summary: User login
+      tags: [Authentication]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Token response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/LoginResponse' }
+
+  /v1/users:
+    get:
+      summary: List users
+      tags: [Users]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+
+  /v1/users/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      summary: Get user profile
+      tags: [Users]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+    patch:
+      summary: Update user
+      tags: [Users]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserUpdateRequest' }
+      responses:
+        '200':
+          description: Ok
+    delete:
+      summary: Delete user
+      tags: [Users]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Deleted
+
+  # --- Vehicles ---
+  /v1/vehicles:
+    get:
+      summary: List vehicles
+      tags: [Vehicles]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+    post:
+      summary: Register vehicle
+      tags: [Vehicles]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VehicleRequest' }
+      responses:
+        '201':
+          description: Created
+
+  /v1/vehicles/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      summary: Get vehicle
+      tags: [Vehicles]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+    patch:
+      summary: Update vehicle
+      tags: [Vehicles]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VehicleUpdateRequest' }
+      responses:
+        '200':
+          description: Ok
+    delete:
+      summary: Delete vehicle
+      tags: [Vehicles]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204':
+          description: Deleted
+
+  /v1/vehicles/{id}/state:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    patch:
+      summary: Update vehicle state
+      tags: [Vehicles]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VehicleStateRequest' }
+      responses:
+        '200':
+          description: Ok
+
+  /v1/vehicles/{id}/odometer:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      summary: Record odometer reading
+      tags: [Vehicles]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OdometerRequest' }
+      responses:
+        '200':
+          description: Ok
+
+  # --- Rentals ---
+  /v1/rentals:
+    get:
+      summary: List rentals
+      tags: [Rentals]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+    post:
+      summary: Create rental
+      tags: [Rentals]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RentalRequest' }
+      responses:
+        '201':
+          description: Created
+
+  /v1/rentals/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      summary: Get rental
+      tags: [Rentals]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+
+  /v1/rentals/{id}/activate:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      summary: Activate rental
+      tags: [Rentals]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+
+  /v1/rentals/{id}/complete:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      summary: Complete rental
+      tags: [Rentals]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                finalMileage: { type: integer }
+      responses:
+        '200':
+          description: Ok
+
+  /v1/rentals/{id}/cancel:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      summary: Cancel rental
+      tags: [Rentals]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+
+  # --- Maintenance ---
+  /v1/maintenance:
+    post:
+      summary: Schedule maintenance
+      tags: [Maintenance]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MaintenanceRequest' }
+      responses:
+        '201':
+          description: Created
+
+  /v1/maintenance/vehicle/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      summary: List maintenance for vehicle
+      tags: [Maintenance]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+
+  /v1/maintenance/{id}/start:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      summary: Start maintenance job
+      tags: [Maintenance]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+
+  /v1/maintenance/{id}/complete:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      summary: Complete maintenance job
+      tags: [Maintenance]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MaintenanceStatusUpdateRequest' }
+      responses:
+        '200':
+          description: Ok
+
+  /v1/maintenance/{id}/cancel:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      summary: Cancel maintenance job
+      tags: [Maintenance]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+
+  # --- Accounting ---
+  /v1/accounting/invoices:
+    post:
+      summary: Issue invoice
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InvoiceRequest' }
+      responses:
+        '201':
+          description: Created
+
+  /v1/accounting/invoices/{id}/pay:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      summary: Pay invoice
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PaymentRequest' }
+      responses:
+        '200':
+          description: Paid
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/PaymentReceiptResponse' }
+
+  /v1/accounting/payments:
+    get:
+      summary: List payments
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+
+  /v1/accounting/accounts:
+    get:
+      summary: List chart of accounts
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+
+  /v1/accounting/payment-methods:
+    get:
+      summary: List payment methods
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+    post:
+      summary: Add payment method
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PaymentMethodRequest' }
+      responses:
+        '201':
+          description: Created
+
+  # --- Infrastructure ---
+  /health:
+    get:
+      summary: Service health check
+      tags: [Infrastructure]
+      responses:
+        '200':
+          description: Ok

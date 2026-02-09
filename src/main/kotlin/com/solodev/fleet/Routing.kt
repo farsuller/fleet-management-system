@@ -18,7 +18,9 @@ import com.solodev.fleet.shared.plugins.requestId
 import com.solodev.fleet.shared.utils.JwtService
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
+import io.ktor.server.plugins.openapi.*
 import io.ktor.server.plugins.ratelimit.*
+import io.ktor.server.plugins.swagger.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
@@ -39,6 +41,8 @@ fun Application.configureRouting(jwtService: JwtService) {
     val paymentMethodRepo = PaymentMethodRepositoryImpl()
 
     routing {
+        swaggerUI(path = "swagger", swaggerFile = "openapi.yaml")
+        openAPI(path = "openapi", swaggerFile = "openapi.yaml")
 
         rateLimit(RateLimitName("public_api")) {
             vehicleRoutes(vehicleRepo)
@@ -48,37 +52,39 @@ fun Application.configureRouting(jwtService: JwtService) {
         }
 
         rateLimit(RateLimitName("auth_strict")) {
-            userRoutes(userRepository = userRepo, tokenRepository = tokenRepo, jwtService = jwtService)
+            userRoutes(
+                    userRepository = userRepo,
+                    tokenRepository = tokenRepo,
+                    jwtService = jwtService
+            )
         }
 
         authenticate("auth-jwt") {
             rateLimit(RateLimitName("authenticated_api")) {
                 accountingRoutes(
-                    invoiceRepository = invoiceRepo,
-                    paymentRepository = paymentRepo,
-                    accountRepository = accountRepo,
-                    ledgerRepository = ledgerRepo,
-                    paymentMethodRepository = paymentMethodRepo
+                        invoiceRepository = invoiceRepo,
+                        paymentRepository = paymentRepo,
+                        accountRepository = accountRepo,
+                        ledgerRepository = ledgerRepo,
+                        paymentMethodRepository = paymentMethodRepo
                 )
             }
         }
-
 
         rateLimit {
             get("/") {
                 call.respond(
-                    ApiResponse.success(
-                        mapOf("message" to "Fleet Management API v1"),
-                        call.requestId
-                    )
+                        ApiResponse.success(
+                                mapOf("message" to "Fleet Management API v1"),
+                                call.requestId
+                        )
                 )
             }
         }
 
-
         get("/health") {
             call.respond(
-                ApiResponse.success(data = mapOf("status" to "OK"), requestId = call.requestId)
+                    ApiResponse.success(data = mapOf("status" to "OK"), requestId = call.requestId)
             )
         }
     }
