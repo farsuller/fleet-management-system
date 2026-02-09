@@ -1,8 +1,8 @@
 # Infrastructure: API Rate Limiting & Abuse Protection Guide
 
-**Status**: PROPOSED / PRODUCTION-READY  
+**Status**: IMPLEMENTED / PRODUCTION-READY  
 **Version**: 1.1  
-**Last Updated**: 2026-02-07  
+**Last Updated**: 2026-02-09  
 **Objective**: Protect the Fleet Management API from DDoS attacks, brute-force attempts, and resource exhaustion, aligning with OWASP API4:2023 Resource Consumption.
 
 ---
