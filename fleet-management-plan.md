@@ -76,41 +76,41 @@ This plan is designed to be appended to `[skills/backend-development/SKILL.md](s
 
 ### Phase 1 — Architecture skeleton
 
-- [x] Details and implementation tracker: `phase-1-architecture-skeleton.md`
+- ✅ Details and implementation tracker: `phase-1-architecture-skeleton.md`
 
-- [x] Create service/module templates:
-  - [x] Ktor HTTP API with explicit routing and request pipeline.
-  - [x] Domain layer + persistence adapters (choose Exposed/jOOQ/Hibernate per module; keep transaction boundaries explicit).
-  - [x] API-boundary validation + fail-fast behavior for invalid state transitions.
-  - [x] Observability: structured JSON logs, metrics (Micrometer), tracing (OpenTelemetry), and health endpoints.
-  - [x] Migrations via Flyway/Liquibase (per service/module).
-- [x] Define cross-cutting standards:
-  - [x] Correlation IDs, request idempotency keys, stable error envelope.
-  - [x] Auth standards: JWT claim conventions, RBAC mapping, and consistent authorization checks.
-  - [x] Messaging standards: outbox pattern for publishing Kafka events; inbox/idempotency for consumers; retry + DLQ policies.
-  - [x] Local dev profile: Docker Compose/Testcontainers for PostgreSQL/Kafka/Redis and env-based configuration parity.
+- ✅ Create service/module templates:
+  - ✅ Ktor HTTP API with explicit routing and request pipeline.
+  - ✅ Domain layer + persistence adapters (choose Exposed/jOOQ/Hibernate per module; keep transaction boundaries explicit).
+  - ✅ API-boundary validation + fail-fast behavior for invalid state transitions.
+  - ✅ Observability: structured JSON logs, metrics (Micrometer), tracing (OpenTelemetry), and health endpoints.
+  - ✅ Migrations via Flyway/Liquibase (per service/module).
+- ✅ Define cross-cutting standards:
+  - ✅ Correlation IDs, request idempotency keys, stable error envelope.
+  - ✅ Auth standards: JWT claim conventions, RBAC mapping, and consistent authorization checks.
+  - ✅ Messaging standards: outbox pattern for publishing Kafka events; inbox/idempotency for consumers; retry + DLQ policies.
+  - ✅ Local dev profile: Docker Compose/Testcontainers for PostgreSQL/Kafka/Redis and env-based configuration parity.
 
-### Phase 2 — PostgreSQL schema v1 (source of truth)
+### Phase 2 — PostgreSQL schema v1 (source of truth) ✅
 
-- Details and implementation tracker: `phase-2-postgresql-schema-v1.md`
+- ✅ Details and implementation tracker: `phase-2-postgresql-schema-v1.md`
 
-- Implement schemas below per domain service.
-- Add constraints/indexes that enforce correctness at the DB level.
+- ✅ Implement schemas below per domain service.
+- ✅ Add constraints/indexes that enforce correctness at the DB level.
 
-### Phase 3 — API surface v1
+### Phase 3 — API surface v1 ⏳
 
-- Details and implementation tracker: `phase-3-api-surface-v1.md`
+- ⏳ Details and implementation tracker: `phase-3-api-surface-v1.md`
 
-- Implement minimal endpoints per domain:
-  - Vehicles: register/update/state transitions, odometer updates.
-  - Rentals: quote, reserve, activate, complete/cancel, availability checks.
-  - Maintenance: schedule/start/complete, parts used, costs.
-  - Users/Staff: RBAC and staff profiles.
-  - Accounting: invoices/charges/payments + ledger postings.
+- ⏳ Implement minimal endpoints per domain:
+  - ✅ Vehicles: register/update/state transitions, odometer updates.
+  - ✅ Rentals: quote, reserve, activate, complete/cancel, availability checks.
+  - ✅ Maintenance: schedule/start/complete, parts used, costs.
+  - ✅ Users/Staff: RBAC and staff profiles.
+  - ✅ Accounting: invoices/charges/payments + ledger postings.
 
-### Phase 4 — Eventing (Kafka) + integration
+### Phase 4 — Eventing (Kafka) + integration 📅
 
-- Details and implementation tracker: `phase-4-eventing-kafka-integration.md`
+- 📅 Details and implementation tracker: `phase-4-eventing-kafka-integration.md`
 
 - Publish domain events via outbox:
   - `VehicleRegistered`, `VehicleStateChanged`

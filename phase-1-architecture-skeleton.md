@@ -52,15 +52,15 @@ Establish the backend foundation (Ktor service template, clean boundaries, cross
 
 ## Definition of Done (Phase 1)
 
-- [x] A runnable Ktor backend skeleton exists (endpoints return proper JSON)
-- [x] Auth, error handling, validation, and observability are wired consistently
-- [x] Database migrations framework is ready for Phase 2
-- [x] Kafka/Redis usage conventions are documented and enforceable
-- [x] Response envelope pattern implemented and tested
-- [x] Request ID tracking operational
-- [x] Domain layer structure demonstrated (Vehicle example)
-- [x] Live server verification completed
-- [x] Integration tests passing (ApplicationTest)
+- ✅ A runnable Ktor backend skeleton exists (endpoints return proper JSON)
+- ✅ Auth, error handling, validation, and observability are wired consistently
+- ✅ Database migrations framework is ready for Phase 2
+- ✅ Kafka/Redis usage conventions are documented and enforceable
+- ✅ Response envelope pattern implemented and tested
+- ✅ Request ID tracking operational
+- ✅ Domain layer structure demonstrated (Vehicle example)
+- ✅ Live server verification completed
+- ✅ Integration tests passing (ApplicationTest)
 
 ---
 

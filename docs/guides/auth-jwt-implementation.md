@@ -137,10 +137,10 @@ fun Route.vehicleRoutes(...) {
 ## 7. Security Checklist & Production Readiness
 (Derived from OWASP API Security Best Practices)
 
-1.  [x] **Algorithm Enforced**: `HS256` only (no `none`).
-2.  [x] **Strong Hashing**: BCrypt with 12 rounds.
-3.  [x] **Stateless**: No session storage in DB (except refresh tokens, if added).
-4.  [x] **Route Protection**: Enforced on ALL modules (Users, Vehicles, Rentals, Customers, Maintenance).
+1.  ✅ **Algorithm Enforced**: `HS256` only (no `none`).
+2.  ✅ **Strong Hashing**: BCrypt with 12 rounds.
+3.  ✅ **Stateless**: No session storage in DB (except refresh tokens, if added).
+4.  ✅ **Route Protection**: Enforced on ALL modules (Users, Vehicles, Rentals, Customers, Maintenance).
 5.  [ ] **HTTPS**: Must be enabled in production.
 6.  [ ] **Secret Rotation**: Use Environment Variables for `jwt.secret`.
 7.  [ ] **Email Service**: Replace Console Logging with real SMTP service (SendGrid/AWS SES).

@@ -51,13 +51,13 @@ Create the **Persistence Infrastructure** (production-grade schemas) per domain.
 
 ## Definition of Done (Phase 2)
 
-- [x] All domain schemas exist as migrations and can be applied cleanly to a fresh DB
-- [x] Critical invariants are enforced at the DB level where appropriate
-- [x] Indexes exist for primary query paths; constraints prevent invalid data
-- [x] Repository implementations created for all domain entities
-- [x] Database integration tests passing (H2 verification)
-- [x] Migration rollback tested (SQL scripts verified)
-- [x] Query performance validated (Strategy defined)
+- ✅ All domain schemas exist as migrations and can be applied cleanly to a fresh DB
+- ✅ Critical invariants are enforced at the DB level where appropriate
+- ✅ Indexes exist for primary query paths; constraints prevent invalid data
+- ✅ Repository implementations created for all domain entities
+- ✅ Database integration tests passing (H2 verification)
+- ✅ Migration rollback tested (SQL scripts verified)
+- ✅ Query performance validated (Strategy defined)
 
 ---
 
@@ -306,11 +306,11 @@ db/migration/
 Phase 2 has successfully established a robust persistence layer. All domain entities are mapped to PostgreSQL tables with strong consistency guarantees enforced by database-level constraints.
 
 **Key Deliverables**:
-- [x] Flyway migration scripts for all domains
-- [x] Repository implementations using Exposed ORM
-- [x] Database constraints enforcing business rules
-- [x] Indexes for query performance
-- [x] Integration tests validating persistence layer
+- ✅ Flyway migration scripts for all domains
+- ✅ Repository implementations using Exposed ORM
+- ✅ Database constraints enforcing business rules
+- ✅ Indexes for query performance
+- ✅ Integration tests validating persistence layer
 
 **Ready for Phase 3**: **Yes**
 

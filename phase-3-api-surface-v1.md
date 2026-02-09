@@ -49,22 +49,23 @@ Deliver the **Presentation/Web Adapter** layer (HTTP APIs) for each domain. Thes
 | Accounting endpoints | ✅ Completed | Invoices, payments, accounts, balances, payment methods |
 | Pagination strategy | ⏳ In Progress | Core logic exists in some modules, plugin pending |
 | OpenAPI documentation | ✅ Completed | YAML spec implemented and UI served at `/swagger` |
+| Hardening (RBAC, Idempotency) | ⏳ In Progress | [Implementation Guide](./phase-3-hardening-implementation.md) created |
 | Security testing plan | Not Started | OWASP API Top 10 focus |
 
 ---
 
 ## Definition of Done (Phase 3)
 
-- [ ] Each domain has a minimal v1 API with consistent conventions and auth
-- [ ] Responses and errors are consistent across modules/services
-- [ ] OpenAPI docs exist with examples and error formats
-- [ ] All endpoints require authentication (except health/metrics)
-- [ ] RBAC enforced on sensitive operations
-- [ ] Idempotency implemented for critical operations
-- [ ] Pagination working for list endpoints
-- [ ] Rate limiting configured and tested
-- [ ] Integration tests covering all endpoints
-- [ ] API documentation published
+- ✅ Each domain has a minimal v1 API with consistent conventions and auth
+- ✅ Responses and errors are consistent across modules/services
+- ✅ OpenAPI docs exist with examples and error formats
+- ✅ All endpoints require authentication (except health/metrics)
+- [ ] RBAC enforced on sensitive operations (Logic exists, needs full policy audit)
+- [ ] Idempotency implemented for critical operations (Database ready, middleware pending)
+- [ ] Pagination working for list endpoints (Core logic implemented, plugin pending)
+- ✅ Rate limiting configured and tested
+- [ ] Integration tests covering all endpoints (Partial coverage existing)
+- ✅ API documentation published (Swagger UI active)
 
 ---
 
@@ -405,13 +406,13 @@ curl -X POST http://localhost:8080/v1/rentals/{id}/activate \
 This phase has delivered the bulk of the REST API surface. Core business flows for all modules (Vehicles, Rentals, User management, and Accounting) are implemented and integrated with the persistence layer from Phase 2.
 
 **Key Deliverables**:
-- [x] REST endpoints for all domains (vehicles, rentals, maintenance, accounting)
-- [x] Use case implementations (application layer)
-- [x] Request/response DTOs
-- [x] Rate limiting (Tiered protection)
+- ✅ REST endpoints for all domains (vehicles, rentals, maintenance, accounting)
+- ✅ Use case implementations (application layer)
+- ✅ Request/response DTOs
+- ✅ Rate limiting (Tiered protection)
 - [ ] Pagination (Finalizing plugin)
 - [ ] Idempotency (Finalizing middleware)
-- [x] OpenAPI documentation
+- ✅ OpenAPI documentation
 - [ ] Integration tests (Partial coverage)
 
 **Ready for Phase 4**: **Partially**

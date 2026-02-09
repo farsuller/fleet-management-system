@@ -256,9 +256,9 @@ fun Route.accountingRoutes(
 
 ## 5. Checklist for Review
 
-1.  [x] **Audit Trail**: Does every payment create a entry in the `PaymentsTable`?
-2.  [x] **State Sync**: Does the `PayInvoice` use case update both `Payment` and `Invoice` states?
-3.  [x] **User Feedback**: Does the response include a meaningful `message` for the UI?
-4.  [x] **General Ledger**: Ledger posting implementation completed with specialized accounts (Bank, GCash, PayMaya).
+1.  ✅ **Audit Trail**: Does every payment create a entry in the `PaymentsTable`?
+2.  ✅ **State Sync**: Does the `PayInvoice` use case update both `Payment` and `Invoice` states?
+3.  ✅ **User Feedback**: Does the response include a meaningful `message` for the UI?
+4.  ✅ **General Ledger**: Ledger posting implementation completed with specialized accounts (Bank, GCash, PayMaya).
 
 ---

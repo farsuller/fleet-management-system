@@ -176,10 +176,10 @@ Basic rate limiting is easy to circumvent. We implement these "Gotchas" to ensur
 
 ## 9. Security Testing Checklist
 
-- [x] **Consitency**: Verify the 429 response is JSON and matches `ApiResponse`.
-- [x] **Bridge**: Verify that both the plugin and manual `throw` use the same format.
-- [x] **Headers**: Verify `X-RateLimit-Remaining` is present in responses.
-- [x] **Scope**: Verify that logged-in users are limited by ID, not just IP.
+- ✅ **Consitency**: Verify the 429 response is JSON and matches `ApiResponse`.
+- ✅ **Bridge**: Verify that both the plugin and manual `throw` use the same format.
+- ✅ **Headers**: Verify `X-RateLimit-Remaining` is present in responses.
+- ✅ **Scope**: Verify that logged-in users are limited by ID, not just IP.
 
 ---
 
