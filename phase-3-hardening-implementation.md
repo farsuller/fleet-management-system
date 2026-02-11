@@ -1,5 +1,8 @@
 # Phase 3 Hardening Implementation: RBAC, Idempotency, and Pagination
 
+> **Status: ✅ APPLIED**
+> All components described in this document have been implemented, verified, and integrated into the Fleet Management codebase.
+
 This document contains the complete code implementations for the remaining "Definition of Done" items in Phase 3. These components ensure the API is secure, reliable, and scalable.
 
 ---
@@ -52,31 +55,42 @@ fun JWTPrincipal.getRoles(): List<UserRole> {
 }
 
 /**
- * Route-scoped authorization wrapper.
- * Intercepts requests and verifies that the authenticated user has at least one of the required roles.
+ * Plugin configuration for Authorization.
  */
-fun Route.withRoles(vararg roles: UserRole, build: Route.() -> Unit): Route {
-    val authorizedRoute = createChild(object : RouteSelector() {
-        override fun evaluate(context: RoutingResolveContext, segmentIndex: Int) = RouteSelectorEvaluation.Constant
-    })
-    
-    authorizedRoute.intercept(ApplicationCallPipeline.Plugins) {
+class AuthorizationConfig {
+    var requiredRoles: List<UserRole> = emptyList()
+}
+
+/**
+ * Route-scoped authorization plugin.
+ * Verifies that the authenticated user has at least one of the required roles.
+ */
+val Authorization = createRouteScopedPlugin(name = "Authorization", createConfiguration = ::AuthorizationConfig) {
+    val roles = pluginConfig.requiredRoles
+
+    on(AuthenticationChecked) { call ->
         val principal = call.principal<JWTPrincipal>()
         val userRoles = principal?.getRoles() ?: emptyList()
-        
-        // Admins automatically bypass specific role checks
-        if (roles.none { it in userRoles } && UserRole.ADMIN !in userRoles) {
+
+        if (roles.isNotEmpty() && roles.none { it in userRoles } && UserRole.ADMIN !in userRoles) {
             call.respond(HttpStatusCode.Forbidden, ApiResponse.error(
                 code = "FORBIDDEN",
                 message = "You do not have the required permissions.",
                 requestId = call.requestId
             ))
-            finish() // Stop the pipeline to prevent executing the handler
         }
     }
-    
-    authorizedRoute.build()
-    return authorizedRoute
+}
+
+/**
+ * Extension to apply authorization to a route.
+ */
+fun Route.withRoles(vararg roles: UserRole, build: Route.() -> Unit): Route {
+    install(Authorization) {
+        requiredRoles = roles.toList()
+    }
+    build()
+    return this
 }
 ```
 
@@ -92,7 +106,10 @@ File: `src/main/kotlin/com/solodev/fleet/shared/infrastructure/persistence/Idemp
 package com.solodev.fleet.shared.infrastructure.persistence
 
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.javatime.timestamp
+import org.jetbrains.exposed.sql.json.jsonb
 import org.jetbrains.exposed.sql.transactions.transaction
+import kotlinx.serialization.json.Json
 import java.time.Instant
 import java.util.*
 
@@ -101,13 +118,16 @@ class IdempotencyRepositoryImpl {
     object IdempotencyKeys : Table("idempotency_keys") {
         val id = uuid("id")
         val idempotencyKey = varchar("idempotency_key", 255).uniqueIndex()
+        val requestPath = varchar("request_path", 500)
+        val requestMethod = varchar("request_method", 10)
         val responseStatus = integer("response_status").nullable()
-        val responseBody = text("response_body").nullable()
+        // Use 'jsonb' to match the PostgreSQL column type
+        val responseBody = jsonb<String>("response_body", Json { ignoreUnknownKeys = true }).nullable()
         val expiresAt = timestamp("expires_at")
         override val primaryKey = PrimaryKey(id)
     }
 
-    /** Lookup an existing key to see if this request was already processed */
+    /** Lookup an existing key */
     fun find(key: String) = transaction {
         IdempotencyKeys.select { IdempotencyKeys.idempotencyKey eq key }
             .map { 
@@ -118,16 +138,18 @@ class IdempotencyRepositoryImpl {
             }.singleOrNull()
     }
 
-    /** Claim a key to prevent other concurrent requests with the same key */
-    fun create(key: String, ttlMinutes: Long = 60) = transaction {
+    /** Claim a key */
+    fun create(key: String, path: String, method: String, ttlMinutes: Long = 60) = transaction {
         IdempotencyKeys.insert {
             it[id] = UUID.randomUUID()
             it[idempotencyKey] = key
+            it[requestPath] = path
+            it[requestMethod] = method
             it[expiresAt] = Instant.now().plusSeconds(ttlMinutes * 60)
         }
     }
 
-    /** Store the final successful or failed response for future retries */
+    /** Update response */
     fun updateResponse(key: String, status: Int, body: String) = transaction {
         IdempotencyKeys.update({ IdempotencyKeys.idempotencyKey eq key }) {
             it[responseStatus] = status
@@ -149,6 +171,7 @@ package com.solodev.fleet.shared.plugins
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.http.*
+import io.ktor.http.content.*
 import io.ktor.util.*
 
 val IdempotencyKey = AttributeKey<String>("IdempotencyKey")
@@ -157,11 +180,13 @@ val IdempotencyKey = AttributeKey<String>("IdempotencyKey")
  * Plugin that enforces idempotency. 
  * If a key is seen again, it returns the cached response instead of re-running the logic.
  */
-val Idempotency = createRouteScopedPlugin(name = "Idempotency", createConfiguration = { IdempotencyConfig() }) {
-    val repository = IdempotencyRepositoryImpl()
+val Idempotency = createRouteScopedPlugin(name = "Idempotency", createConfiguration = ::IdempotencyConfig) {
+    val repository = pluginConfig.repository
+    val headerName = pluginConfig.headerName
+    val expiresInMinutes = pluginConfig.expiresInMinutes
 
     onCall { call ->
-        val key = call.request.headers["Idempotency-Key"] ?: return@onCall
+        val key = call.request.headers[headerName] ?: return@onCall
         call.attributes.put(IdempotencyKey, key)
 
         val existing = repository.find(key)
@@ -175,20 +200,45 @@ val Idempotency = createRouteScopedPlugin(name = "Idempotency", createConfigurat
             }
         } else {
             // NEW: Record that we are starting to process this key.
-            repository.create(key)
+            // Pass the path and method to satisfy the DB schema constraints
+            repository.create(
+                key = key,
+                path = call.request.uri,
+                method = call.request.httpMethod.value,
+                ttlMinutes = expiresInMinutes
+            )
         }
     }
 
-    /** Capture the outgoing response to cache it for the next time this key is used */
-    onRenderedContent { call, content ->
-        val key = call.attributes.getOrNull(IdempotencyKey) ?: return@onRenderedContent
+    /** 
+     * Capture the outgoing response to cache it for the next time this key is used.
+     * Note: In production, you would use a custom transformation or interceptor to ensure 
+     * the body is captured in its final JSON string format.
+     */
+    onCallRespond { call, message ->
+        val key = call.attributes.getOrNull(IdempotencyKey) ?: return@onCallRespond
         val status = call.response.status()?.value ?: 200
-        val body = content.toString() 
+        
+        // Simplified body capture. 
+        // For production, ensure your serialization pipeline allows string capture.
+        val body = when (message) {
+            is String -> message
+            is TextContent -> message.text
+            else -> message.toString() 
+        }
+        
         repository.updateResponse(key, status, body)
     }
 }
 
-class IdempotencyConfig
+/**
+ * Configuration for the Idempotency plugin.
+ */
+class IdempotencyConfig {
+    var repository: IdempotencyRepositoryImpl = IdempotencyRepositoryImpl()
+    var headerName: String = "Idempotency-Key"
+    var expiresInMinutes: Long = 60
+}
 ```
 
 ---
@@ -240,9 +290,164 @@ fun ApplicationCall.paginationParams(defaultLimit: Int = 20, maxLimit: Int = 100
 
 ## 🏗️ How to Apply These Changes
 
-1.  **RBAC**: Use `.withRoles(UserRole.ADMIN)` around sensitive routes in your module `Routes.kt` files.
-2.  **Idempotency**: Apply the `install(Idempotency)` plugin to `POST` routes that modify state (Payments, Rental Start).
-3.  **Pagination**: Update `GET` list endpoints to use `call.paginationParams()` and return the `PaginatedResponse` wrapper.
+This section provides a step-by-step guide on how to integrate these hardening features into your existing codebase.
+
+### 1. Step-By-Step: Applying RBAC (Role-Based Access Control)
+
+RBAC should be applied consistently across all domain modules. Use the `withRoles` extension to wrap groups of routes or individual endpoints.
+
+#### **A. Vehicle Module (`VehicleRoutes.kt`)**
+| Endpoint | Allowed Roles | Purpose |
+| :--- | :--- | :--- |
+| `GET /v1/vehicles` | All Staff | View inventory |
+| `POST /v1/vehicles` | `ADMIN`, `FLEET_MANAGER` | Add new asset |
+| `GET /v1/vehicles/{id}` | All Staff | View details |
+| `PATCH /v1/vehicles/{id}` | `ADMIN`, `FLEET_MANAGER` | Update specs |
+| `DELETE /v1/vehicles/{id}` | `ADMIN` | Decommission asset |
+| `PATCH /v1/vehicles/{id}/state` | `ADMIN`, `FLEET_MANAGER`, `RENTAL_AGENT` | Change status (Ready, Maintenance) |
+| `POST /v1/vehicles/{id}/odometer` | `ADMIN`, `FLEET_MANAGER`, `RENTAL_AGENT` | Log mileage |
+
+#### **B. Rental Module (`RentalRoutes.kt`)**
+| Endpoint | Allowed Roles | Purpose |
+| :--- | :--- | :--- |
+| `GET /v1/rentals` | All Staff | View trip history |
+| `POST /v1/rentals` | `ADMIN`, `RENTAL_AGENT` | Create new reservation |
+| `POST /v1/rentals/{id}/activate` | `ADMIN`, `RENTAL_AGENT` | Start the trip |
+| `POST /v1/rentals/{id}/complete` | `ADMIN`, `RENTAL_AGENT` | Finish trip & return vehicle |
+| `POST /v1/rentals/{id}/cancel` | `ADMIN`, `RENTAL_AGENT` | Void reservation |
+
+#### **C. Maintenance Module (`MaintenanceRoutes.kt`)**
+| Endpoint | Allowed Roles | Purpose |
+| :--- | :--- | :--- |
+| `GET /v1/maintenance` | All Staff | View service logs |
+| `POST /v1/maintenance` | `ADMIN`, `FLEET_MANAGER` | Schedule service |
+| `PATCH /v1/maintenance/{id}` | `ADMIN`, `FLEET_MANAGER` | Update job details |
+| `DELETE /v1/maintenance/{id}` | `ADMIN` | Remove log entry |
+| `POST /v1/maintenance/{id}/parts` | `ADMIN`, `FLEET_MANAGER` | Log parts/inventory used |
+| `POST /v1/maintenance/{id}/complete` | `ADMIN`, `FLEET_MANAGER` | Finalize job |
+
+#### **D. Accounting Module (`AccountingRoutes.kt`)**
+| Endpoint | Allowed Roles | Purpose |
+| :--- | :--- | :--- |
+| `POST /v1/accounting/invoices` | `ADMIN`, `RENTAL_AGENT` | Issue billing |
+| `POST /v1/accounting/invoices/{id}/pay` | `ADMIN`, `RENTAL_AGENT` | Record payment |
+| `GET /v1/accounting/accounts/balance` | `ADMIN`, `FLEET_MANAGER` | Financial oversight |
+| `GET /v1/accounting/payment-methods` | All Staff | View billing setup |
+| `POST /v1/accounting/payment-methods` | `ADMIN` | Configure gateways |
+| `DELETE /v1/accounting/payments/{id}` | `ADMIN` | Financial corrections |
+
+**Code Example Implementation (e.g., `VehicleRoutes.kt`):**
+```kotlin
+route("/v1/vehicles") {
+    get { /* logic for listing */ }
+    
+    // Protected administrative actions
+    withRoles(UserRole.ADMIN, UserRole.FLEET_MANAGER) {
+        post { /* register vehicle */ }
+        route("/{id}") {
+            patch { /* update vehicle */ }
+            delete { /* admin only deletion */ }
+        }
+    }
+}
+```
+
+### 2. Step-By-Step: Applying Idempotency
+Use Idempotency for operations that must not happen twice even if retried (e.g., Payments, Vehicle Registrations).
+
+**Action**: Install the `Idempotency` plugin at the route level.
+*   **Target**: `POST` and `PATCH` routes that modify state.
+
+#### **Example A: Accounting Module (`AccountingRoutes.kt`) - CRITICAL**
+Invoices and Payments are the most important places to apply idempotency to prevent double-billing.
+
+**CRITICAL**: `install(Idempotency)` must be outside the `post { ... }` block but inside the `route` block.
+```kotlin
+route("/v1/accounting/invoices") {
+    
+    route("/{id}/pay") {
+        // Correct placement: Outside the post handler
+        install(Idempotency)
+        
+        post {
+            // ... payment recording logic ...
+        }
+    }
+}
+```
+
+#### **Example B: Vehicle Module (`VehicleRoutes.kt`)**
+```kotlin
+route("/v1/vehicles") {
+    withRoles(UserRole.ADMIN, UserRole.FLEET_MANAGER) {
+        route("/register") { // Create a specific route if you want idempotency just for POST
+            install(Idempotency)
+            post {
+                val request = call.receive<VehicleRequest>()
+                // ... registration logic ...
+            }
+        }
+    }
+}
+```
+*   **Requirement**: Ensure the client sends a unique UUID in the `Idempotency-Key` header.
+
+### 3. Step-By-Step: Applying Pagination
+Updating list endpoints to handle large datasets safely.
+
+**Action A**: Update the Repository and Use Case.
+*   **Files**: `VehicleRepository.kt`, `VehicleRepositoryImpl.kt` & `ListVehiclesUseCase.kt`
+
+```kotlin
+// 1. Repository Interface (VehicleRepository.kt)
+suspend fun findAll(params: PaginationParams): Pair<List<Vehicle>, Long>
+
+// 2. Repository Implementation (VehicleRepositoryImpl.kt)
+override suspend fun findAll(params: PaginationParams): Pair<List<Vehicle>, Long> = dbQuery {
+    val totalCount = VehiclesTable.selectAll().count()
+    
+    var query = VehiclesTable.selectAll()
+    
+    // Applying Cursor Filter if provided
+    params.cursor?.let {
+        val lastId = UUID.fromString(it)
+        query = query.where { VehiclesTable.id greater lastId }
+    }
+    
+    val items = query
+        .orderBy(VehiclesTable.id to SortOrder.ASC) // Stable Sort required
+        .limit(params.limit)
+        .map { it.toVehicle() }
+        
+    Pair(items, totalCount)
+}
+
+// 3. Use Case (ListVehiclesUseCase.kt)
+suspend fun execute(params: PaginationParams): PaginatedResponse<VehicleResponse> {
+    val (vehicles, total) = repository.findAll(params)
+    val items = vehicles.map { VehicleResponse.fromDomain(it) }
+    
+    // Cursor is the ID of the last item in the list
+    val nextCursor = items.lastOrNull()?.id 
+    
+    return PaginatedResponse(
+        items = items,
+        nextCursor = if (items.size >= params.limit) nextCursor else null,
+        limit = params.limit,
+        total = total
+    )
+}
+```
+
+**Action B**: Update the Route handler.
+*   **File**: `VehicleRoutes.kt`
+    ```kotlin
+    get {
+        val params = call.paginationParams() // Extracts limit and cursor
+        val result = listVehiclesUseCase.execute(params)
+        call.respond(ApiResponse.success(result, call.requestId))
+    }
+    ```
 
 ---
 
@@ -307,3 +512,154 @@ X-Idempotency-Cache: HIT
   "requestId": "req_999"
 }
 ```
+
+---
+
+## 🛠️ How to Test Roles in Postman
+
+To test RBAC (Role-Based Access Control) in Postman, you don't add the "role" as a separate header. Instead, roles are **embedded inside the JWT Token** itself.
+
+### **Step 1: Obtain a Token**
+Login using the login endpoint (e.g., `POST /v1/users/login`). The server will generate a token for you based on your user profile in the database.
+
+### **Step 2: Inspect your Token (Optional)**
+You can verify if your token contains the correct roles by pasting it into [jwt.io](https://jwt.io/). Look for the payload section:
+```json
+{
+  "id": "user-uuid",
+  "email": "admin@solodev.com",
+  "roles": ["ADMIN", "FLEET_MANAGER"],  // <--- These are the roles used by 'withRoles'
+  "exp": 1707684000
+}
+```
+
+### **Step 3: Configure Postman Authorization**
+For any protected endpoint (like `POST /v1/vehicles`):
+1.  Open the request in Postman.
+2.  Click on the **Authorization** tab.
+3.  Select **Type**: `Bearer Token`.
+4.  Paste your token into the **Token** field.
+5.  Click **Send**.
+
+### **Step 4: Verify Scenarios**
+
+To understand the "Sense" of Idempotency, test these three specific scenarios:
+
+#### **Scenario A: The "Invisible" Success (Network Glitch Simulation)**
+*   **Goal**: Prove the client gets a success even if they "think" it failed.
+1.  Send a `POST` to `/invoices/{id}/pay` with `Idempotency-Key: pay_001`.
+2.  Receive `200 OK`.
+3.  Send the **exact same** request again with the **same** key.
+4.  **Verification**: You get `200 OK` again. The server **did not** return "Invoice already paid" or an error. It served the cached success, making the retry seamless for the client.
+
+#### **Scenario B: The "Double Click" Shield (409 Conflict)**
+*   **Goal**: Prove that two simultaneous requests don't overlap.
+1.  This is hard to do manually, but if you click "Send" twice extremely fast (or use a script).
+2.  **Verification**: One request will succeed (`200 OK`), and the other will immediately return `409 Conflict`. This proves the "Lock" is working to prevent the same logic from running twice at the same time.
+
+#### **Scenario C: Key Misuse (Changing the Body)**
+*   **Goal**: Prove the key is the absolute source of truth.
+1.  Send a request with `Idempotency-Key: key_abc` and `amount: 100`. 
+2.  Get `200 OK`.
+3.  Keep the key `key_abc` but change the body to `amount: 5000`.
+4.  **Verification**: You will still get the old `200 OK` (with the response for 100). The server **ignored** your new input because the key told it: *"I already did this work, here is the result."* 
+
+---
+
+## 📱 Mobile / Client Integration (Android/iOS)
+
+When integrating these hardened endpoints into a mobile app, follow these patterns:
+
+### **1. Generating the Idempotency-Key (Android/Kotlin)**
+Always generate a fresh UUID for every new "Action" (like a button tap).
+```kotlin
+// Inside your ViewModel or Repository
+val idempotencyKey = java.util.UUID.randomUUID().toString()
+
+// Add to your Retrofit/Ktor-Client headers:
+// .header("Idempotency-Key", idempotencyKey)
+```
+
+### **2. Handling Retries on Mobile**
+If a mobile request fails due to a `SocketTimeoutException` or `NoRouteToHostException`:
+1.  **Do NOT** generate a new UUID.
+2.  **REUSE** the same UUID from the first attempt.
+3.  This ensures that if the first request actually reached the server but the response was dropped, the second attempt will safely return the cached success.
+
+### **3. Ktor Client Example (Android/Mobile)**
+If you are using the Ktor Client on Android, you can either pass it manually or use a simple `DefaultRequest` plugin.
+
+**Manual usage per call:**
+```kotlin
+suspend fun submitPayment(invoiceId: String, amount: Long) {
+    // 1. Generate the key ONCE for this transaction
+    val transactionId = java.util.UUID.randomUUID().toString()
+
+    client.post("https://api.v1/accounting/invoices/$invoiceId/pay") {
+        contentType(ContentType.Application.Json)
+        // 2. Attach the key to the header
+        header("Idempotency-Key", transactionId)
+        setBody(PaymentRequest(amount = amount))
+    }
+}
+```
+
+**Why generating it "just once" matters:**
+If the request times out, you call `submitPayment` again. By keeping the **same** `transactionId`, the server knows it's the same attempt. If you generated a *new* UUID on every retry, you'd risk paying twice if the first request actually reached the server but the response was blocked by a weak mobile signal!
+
+### **4. Full Android Clean Architecture Example (Koin + Ktor + MVVM)**
+If you are using **MVVM**, **Clean Architecture**, and **Koin**, follow this flow for the `Pay Invoice` feature:
+
+#### **A. The ViewModel (Presentation)**
+The ViewModel is the best place to generate the key because it outlives simple screen rotations.
+```kotlin
+class InvoiceViewModel(private val payInvoiceUseCase: PayInvoiceUseCase) : ViewModel() {
+    
+    fun processPayment(invoiceId: String, amount: Long) {
+        // 1. Generate the key ONCE at the start of the user action
+        val idempotencyKey = UUID.randomUUID().toString()
+        
+        viewModelScope.launch {
+            val result = payInvoiceUseCase.execute(idempotencyKey, invoiceId, amount)
+            // handle success/failure
+        }
+    }
+}
+```
+
+#### **B. The Use Case (Domain)**
+```kotlin
+class PayInvoiceUseCase(private val repository: InvoiceRepository) {
+    suspend fun execute(key: String, id: String, amount: Long) = 
+        repository.pay(key, id, amount)
+}
+```
+
+#### **C. The Repository Implementation (Data/Infrastructure)**
+Using Ktor Client with your Koin-injected `HttpClient`.
+```kotlin
+class InvoiceRepositoryImpl(private val client: HttpClient) : InvoiceRepository {
+    override suspend fun pay(key: String, id: String, amount: Long) {
+        client.post("https://api.v1/accounting/invoices/$id/pay") {
+            header("Idempotency-Key", key) // Pass the key generated in the VM
+            setBody(PaymentRequest(amount))
+        }
+    }
+}
+```
+
+#### **D. Koin Module (DI)**
+```kotlin
+val accountingModule = module {
+    single { HttpClient(Android) { install(ContentNegotiation) { json() } } }
+    single<InvoiceRepository> { InvoiceRepositoryImpl(get()) }
+    factory { PayInvoiceUseCase(get()) }
+    viewModel { InvoiceViewModel(get()) }
+}
+```
+
+**Why this works**: By following this flow, the **Idempotency-Key** is treated as part of the "Command" data. It is consistently passed from the user's intent (ViewModel) down to the actual execution (Ktor), ensuring it stays identical even if the Repository triggers an automatic retry for network issues.
+
+---
+
+## 🧪 Expected Behavior (Detailed API Outputs)
