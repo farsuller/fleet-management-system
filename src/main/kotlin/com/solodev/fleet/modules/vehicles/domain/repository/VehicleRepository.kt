@@ -2,6 +2,7 @@ package com.solodev.fleet.modules.vehicles.domain.repository
 
 import com.solodev.fleet.modules.vehicles.domain.model.Vehicle
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
+import com.solodev.fleet.shared.models.PaginationParams
 
 /**
  * Repository interface for Vehicle persistence.
@@ -37,7 +38,7 @@ interface VehicleRepository {
      *
      * @return List of all vehicles
      */
-    suspend fun findAll(): List<Vehicle>
+    suspend fun findAll(params: PaginationParams): Pair<List<Vehicle>, Long>
 
     /**
      * Delete a vehicle by ID.

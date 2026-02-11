@@ -6,6 +6,7 @@ import com.solodev.fleet.modules.accounts.application.usecases.PayInvoiceUseCase
 import com.solodev.fleet.modules.accounts.domain.model.PaymentMethod
 import com.solodev.fleet.modules.accounts.domain.repository.*
 import com.solodev.fleet.shared.models.ApiResponse
+import com.solodev.fleet.shared.plugins.Idempotency
 import com.solodev.fleet.shared.plugins.requestId
 import io.ktor.http.*
 import io.ktor.server.auth.*
@@ -33,7 +34,6 @@ fun Route.accountingRoutes(
 
     authenticate("auth-jwt") {
         route("/v1/accounting") {
-
             // Issue New Invoice
             post("/invoices") {
                 try {
@@ -55,8 +55,10 @@ fun Route.accountingRoutes(
                 }
             }
 
+            install(Idempotency)
             // Pay Invoice (Updated to return a formal Receipt)
             post("/invoices/{id}/pay") {
+
                 val id =
                     call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
                 val request = call.receive<PaymentRequest>()

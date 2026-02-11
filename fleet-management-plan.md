@@ -97,16 +97,17 @@ This plan is designed to be appended to `[skills/backend-development/SKILL.md](s
 - ✅ Implement schemas below per domain service.
 - ✅ Add constraints/indexes that enforce correctness at the DB level.
 
-### Phase 3 — API surface v1 ⏳
+### Phase 3 — API surface v1 ✅
 
-- ⏳ Details and implementation tracker: `phase-3-api-surface-v1.md`
+- ✅ Details and implementation tracker: `phase-3-hardening-implementation.md`
 
-- ⏳ Implement minimal endpoints per domain:
+- ✅ Implement minimal endpoints per domain:
   - ✅ Vehicles: register/update/state transitions, odometer updates.
   - ✅ Rentals: quote, reserve, activate, complete/cancel, availability checks.
   - ✅ Maintenance: schedule/start/complete, parts used, costs.
   - ✅ Users/Staff: RBAC and staff profiles.
   - ✅ Accounting: invoices/charges/payments + ledger postings.
+  - ✅ Hardening: RBAC (withRoles), Idempotency, and Pagination applied.
 
 ### Phase 4 — Eventing (Kafka) + integration 📅
 

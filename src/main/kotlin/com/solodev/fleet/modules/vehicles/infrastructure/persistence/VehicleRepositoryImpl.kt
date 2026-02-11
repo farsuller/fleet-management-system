@@ -4,6 +4,7 @@ import com.solodev.fleet.modules.vehicles.domain.model.Vehicle
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleState
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
+import com.solodev.fleet.shared.models.PaginationParams
 import java.time.Instant
 import java.util.*
 import kotlinx.coroutines.Dispatchers
@@ -98,8 +99,23 @@ class VehicleRepositoryImpl : VehicleRepository {
         vehicle
     }
 
-    override suspend fun findAll(): List<Vehicle> = dbQuery {
-        VehiclesTable.selectAll().map { it.toVehicle() }
+    override suspend fun findAll(params: PaginationParams): Pair<List<Vehicle>, Long> = dbQuery {
+        val totalCount = VehiclesTable.selectAll().count()
+
+        var query = VehiclesTable.selectAll()
+
+        // Applying Cursor Filter if provided
+        params.cursor?.let {
+            val lastId = UUID.fromString(it)
+            query = query.where { VehiclesTable.id greater lastId }
+        }
+
+        val items = query
+            .orderBy(VehiclesTable.id to SortOrder.ASC) // Stable Sort required
+            .limit(params.limit)
+            .map { it.toVehicle() }
+
+        Pair(items, totalCount)
     }
 
     override suspend fun deleteById(id: VehicleId): Boolean = dbQuery {
