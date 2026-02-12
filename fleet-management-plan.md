@@ -109,21 +109,22 @@ This plan is designed to be appended to `[skills/backend-development/SKILL.md](s
   - ✅ Accounting: invoices/charges/payments + ledger postings.
   - ✅ Hardening: RBAC (withRoles), Idempotency, and Pagination applied.
 
-### Phase 4 — Eventing (Kafka) + integration 📅
+### Phase 4 — Eventing (Kafka) + integration ⏸️
 
-- 📅 Details and implementation tracker: `phase-4-eventing-kafka-integration.md`
+- ⏸️ **DEFERRED**: Skipped to simplify deployment on Render.
+- Details and implementation tracker: `phase-4-eventing-kafka-integration.md`
 
-- Publish domain events via outbox:
+- [REUSE IN FUTURE] Publish domain events via outbox:
   - `VehicleRegistered`, `VehicleStateChanged`
   - `RentalReserved`, `RentalActivated`, `RentalCompleted`, `RentalCancelled`
   - `MaintenanceScheduled`, `MaintenanceCompleted`
   - `InvoiceIssued`, `PaymentCaptured`, `LedgerPosted`
-- Consumers:
+- [REUSE IN FUTURE] Consumers:
   - Enforce idempotency via `inbox_processed_messages`.
   - Manage offsets explicitly; design for at-least-once delivery and safe retries.
   - Use DLQs for poison messages; document replay procedures.
 
-### Phase 5 — Reporting and accounting correctness
+### Phase 5 — Reporting and accounting correctness ⏳
 
 - Details and implementation tracker: `phase-5-reporting-and-accounting-correctness.md`
 

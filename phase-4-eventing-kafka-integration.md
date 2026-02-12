@@ -1,8 +1,8 @@
 ## Status
 
-- Overall: **READY TO START (Lacks Core Dependencies)**
-- Implementation Date: 2026-02-09 (Planned)
-- Verification: Pending Infura/Kafka setup
+- Overall: **⏸️ DEFERRED**
+- Implementation Date: TBD
+- Verification: Deferred to simplify deployment on Render.
 
 ---
 
