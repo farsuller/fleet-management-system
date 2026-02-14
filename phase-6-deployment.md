@@ -1,4 +1,4 @@
-# Phase 7 — Deployment (Render)
+# Phase 6 — Deployment
 
 ## Status
 
@@ -10,7 +10,7 @@
 
 ## Purpose
 
-Make the system runnable locally and deployable to **Render** with safe configuration, health checks, and observability. We prioritize Render for MVP speed and simplicity, while keeping EKS notes for future scaling.
+Design and implement the production deployment strategy for the Fleet Management system.
 
 ---
 

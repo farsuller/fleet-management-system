@@ -1,4 +1,4 @@
-# Phase 3 Hardening Implementation: RBAC, Idempotency, and Pagination
+# Phase 3 Hardening Implementation: RBAC, Idempotency, Pagination, and Rate Limiting
 
 > **Status: ✅ APPLIED**
 > All components described in this document have been implemented, verified, and integrated into the Fleet Management codebase.
@@ -20,6 +20,10 @@ This document contains the complete code implementations for the remaining "Defi
 ### 3. Cursor-Based Pagination
 **Definition**: A technique for retrieving large datasets in small chunks (pages) using a unique, stable pointer (the "cursor") rather than a page number.
 *   **Production Purpose**: **Performance & Stability**. Traditional `LIMIT/OFFSET` pagination becomes slow as the offset grows (the DB must skip thousands of rows). Cursor-based pagination is constant-time and prevents data from being skipped or duplicated if new records are added while a user is scrolling.
+    
+### 4. Rate Limiting
+**Definition**: A strategy for limiting network traffic to prevent users from exhausting system resources or performing brute-force attacks.
+*   **Production Purpose**: **Brute-Force & DOS Prevention**. By limiting how many requests a specific IP or User ID can make in a given timeframe (e.g., 5 attempts per minute for login), we protect the system from being overwhelmed by malicious bots or accidental loops in client code.
 
 ---
 
@@ -439,7 +443,120 @@ suspend fun execute(params: PaginationParams): PaginatedResponse<VehicleResponse
 }
 ```
 
-**Action B**: Update the Route handler.
+---
+
+## 4. Rate Limiting & Abuse Protection
+*Purpose: Protect the API from DDoS attacks and brute-force attempts following OWASP API4:2023.*
+
+### **Step 1: Dependency (Technology)**
+We use the official Ktor Rate Limit plugin to implement the **Token Bucket** strategy.
+File: `build.gradle.kts`
+```kotlin
+implementation(libs.ktor.server.rate.limit) // API protection
+```
+
+### **Step 2: Implementation (RateLimiting.kt)**
+We define multiple tiers (Buckets) to separate anonymous traffic from authenticated users.
+File: `src/main/kotlin/com/solodev/fleet/shared/plugins/RateLimiting.kt`
+```kotlin
+fun Application.configureRateLimiting() {
+    install(RateLimit) {
+        // 1. Global Safety Net (Strict)
+        register {
+            rateLimiter(limit = 5, refillPeriod = 60.seconds)
+        }
+
+        // 2. Sensitive Endpoints (Brute-force protection)
+        register(RateLimitName("auth_strict")) {
+            rateLimiter(limit = 5, refillPeriod = 1.minutes)
+            requestKey { call -> call.request.origin.remoteHost }
+        }
+
+        // 3. Authenticated API (User-based)
+        register(RateLimitName("authenticated_api")) {
+            rateLimiter(limit = 500, refillPeriod = 1.minutes)
+            requestKey { call ->
+                call.principal<JWTPrincipal>()?.payload?.getClaim("id")?.asString()
+                    ?: call.request.origin.remoteHost
+            }
+        }
+    }
+}
+```
+
+### **Step 3: Standardizing Response (StatusPages Bridge)**
+To ensure our 429 response matches our `ApiResponse` envelope, we bridge the plugin's automatic status to our domain exception.
+File: `src/main/kotlin/com/solodev/fleet/shared/plugins/StatusPages.kt`
+```kotlin
+// Inside configureStatusPages()
+status(HttpStatusCode.TooManyRequests) { call, _ ->
+    val retryAfter = call.response.headers["Retry-After"]
+    throw RateLimitException("Too many requests. Please wait $retryAfter seconds.")
+}
+
+exception<RateLimitException> { call, cause ->
+    call.respond(HttpStatusCode.TooManyRequests, ApiResponse.error(
+        code = cause.errorCode,
+        message = cause.message ?: "Rate limit exceeded",
+        requestId = call.requestId
+    ))
+}
+```
+
+### **Step 4: Applying Method (Routing.kt)**
+Activate the registered tiers by wrapping your routes in the `rateLimit` block.
+File: `src/main/kotlin/com/solodev/fleet/Routing.kt`
+```kotlin
+routing {
+    // Apply Public/Guest Limit
+    rateLimit(RateLimitName("public_api")) {
+        vehicleRoutes(vehicleRepo)
+        rentalRoutes(...)
+    }
+
+    // Apply strict limit for Auth
+    rateLimit(RateLimitName("auth_strict")) {
+        userRoutes(...)
+    }
+
+    // Apply higher quota for trusted users
+    authenticate("auth-jwt") {
+        rateLimit(RateLimitName("authenticated_api")) {
+            accountingRoutes(...)
+        }
+    }
+}
+```
+
+---
+
+## 🏢 Verification & Testing (cURL)
+
+### **Scenario A: Success (Under Limit)**
+Command: `curl -i http://localhost:8080/v1/vehicles`
+*   **Expected**: `200 OK` + `X-RateLimit-Remaining: 99`
+
+### **Scenario B: Rate Limited (Limit Exceeded)**
+Hit the endpoint repeatedly until the bucket is empty.
+Command: `curl -i http://localhost:8080/v1/vehicles`
+*   **Expected Response**:
+```http
+HTTP/1.1 429 Too Many Requests
+Retry-After: 58
+
+{
+  "success": false,
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Too many requests. Please wait 58 seconds."
+  },
+  "requestId": "req_8e23..."
+}
+```
+
+---
+
+## 🏗️ How to Apply These Changes
 *   **File**: `VehicleRoutes.kt`
     ```kotlin
     get {

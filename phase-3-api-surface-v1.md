@@ -367,8 +367,8 @@ curl -X POST http://localhost:8080/v1/rentals/{id}/activate \
 5. Implement cross-domain event reactions
 
 ### Future Phases
-- **Phase 5**: Accounting and reporting with ledger queries
-- **Phase 6**: Hardening (structured logging, performance tuning)
+- **Phase 5**: Hardening v2 (Concurrency, Redis, Bucket4j)
+- **Phase 6**: Accounting and reporting (double-entry ledger)
 - **Phase 7**: Deployment with API gateway and load balancing
 
 ---
@@ -378,7 +378,7 @@ curl -X POST http://localhost:8080/v1/rentals/{id}/activate \
 ### Project Documentation
 - `fleet-management-plan.md` - Overall project plan
 - `phase-2-postgresql-schema-v1.md` - Previous phase
-- `phase-4-eventing-kafka-integration.md` - Next phase
+- `phase-deferred-eventing-kafka-integration.md` - Next phase
 
 ### Skills Documentation
 - `skills/backend-development/SKILL.md` - Backend principles

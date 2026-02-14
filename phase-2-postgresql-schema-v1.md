@@ -186,6 +186,41 @@ db/migration/
 
 ---
 
+## 🛡️ SQL Injection Protection
+
+Ensuring data security is a core requirement of the persistence layer. In Phase 2, we formalized the protection against SQL injection by standardizing on **Exposed ORM**.
+
+### 1. Security Dependencies
+We use JetBrains' Exposed framework, which provides a type-safe DSL for database interactions.
+
+```kotlin
+// build.gradle.kts
+implementation(libs.exposed.core)
+implementation(libs.exposed.jdbc)
+```
+
+### 2. Implementation Pattern (Type-Safe DSL)
+Instead of building SQL strings manually, all repositories use the Exposed DSL. This ensures that user input is never directly concatenated into a query string.
+
+**Example Implementation:**
+```kotlin
+// UserRepositoryImpl.kt
+override suspend fun findByEmail(email: String): User? = dbQuery {
+    // The DSL '{ UsersTable.email eq email }' is type-safe
+    UsersTable.selectAll()
+        .where { UsersTable.email eq email } 
+        .singleOrNull()
+}
+```
+
+### 3. Applying Method (Parameterized Queries)
+Under the hood, Exposed translates the DSL into **Parameterized Queries** (JDBC `PreparedStatement`). 
+
+- **Mechanism**: The database driver receives the SQL command and the data (parameters) separately.
+- **Security Benefit**: Even if the `email` variable contains malicious SQL commands (e.g., `' OR '1'='1`), the database treats it strictly as a literal string value, preventing the "breakout" required for an injection attack.
+
+---
+
 ## Key Achievements
 
 *This section will be populated during implementation with:*

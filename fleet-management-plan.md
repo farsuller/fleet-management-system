@@ -60,6 +60,16 @@ This plan is designed to be appended to `[skills/backend-development/SKILL.md](s
 - Accounting correctness: reports derived from **immutable transactions** (double-entry postings).
 - Data ownership: domains own their data; integrations via APIs/events (avoid shared DBs).
 
+## Special Feature: Schematic Visualization
+
+The system includes a proprietary **Custom Schematic Route-Based Visualization** engine. This replaces expensive 3rd-party map tiles with a high-value operational "Command Center" view.
+
+- **Objective**: Cost-effective, high-precision tracking without Map APIs.
+- **Key Tech**: PostGIS (snapping), SVG/Canvas (rendering), Delta-Encoded WebSockets.
+- **Detail Plan**: `[fleet-custom-schematic-route-based-visualization-plan.md](fleet-custom-schematic-route-based-visualization-plan.md)`
+
+---
+
 #### Outputs (deliverables)
 
 - Domain glossary + bounded-context map (vehicles/rentals/maintenance/users/accounting/reporting)
@@ -93,7 +103,6 @@ This plan is designed to be appended to `[skills/backend-development/SKILL.md](s
 ### Phase 2 — PostgreSQL schema v1 (source of truth) ✅
 
 - ✅ Details and implementation tracker: `phase-2-postgresql-schema-v1.md`
-
 - ✅ Implement schemas below per domain service.
 - ✅ Add constraints/indexes that enforce correctness at the DB level.
 
@@ -109,10 +118,10 @@ This plan is designed to be appended to `[skills/backend-development/SKILL.md](s
   - ✅ Accounting: invoices/charges/payments + ledger postings.
   - ✅ Hardening: RBAC (withRoles), Idempotency, and Pagination applied.
 
-### Phase 4 — Eventing (Kafka) + integration ⏸️
+### Phase: Deferred — Eventing (Kafka) + integration ⏸️
 
 - ⏸️ **DEFERRED**: Skipped to simplify deployment on Render.
-- Details and implementation tracker: `phase-4-eventing-kafka-integration.md`
+- Details and implementation tracker: `phase-deferred-eventing-kafka-integration.md`
 
 - [REUSE IN FUTURE] Publish domain events via outbox:
   - `VehicleRegistered`, `VehicleStateChanged`
@@ -124,6 +133,14 @@ This plan is designed to be appended to `[skills/backend-development/SKILL.md](s
   - Manage offsets explicitly; design for at-least-once delivery and safe retries.
   - Use DLQs for poison messages; document replay procedures.
 
+### Phase 4 — Hardening v2
+
+- Details and implementation tracker: `phase-4-hardening-v2.md`
+
+- Concurrency: transactional boundaries, advisory locks where needed.
+- Security: RBAC checks at boundaries, least privilege.
+- Load: index tuning, query plans, backpressure on consumers.
+
 ### Phase 5 — Reporting and accounting correctness ⏳
 
 - Details and implementation tracker: `phase-5-reporting-and-accounting-correctness.md`
@@ -132,23 +149,29 @@ This plan is designed to be appended to `[skills/backend-development/SKILL.md](s
 - Reports generated from ledger + immutable rental/maintenance facts.
 - Optionally add report snapshots for performance (never overwrite facts).
 
-### Phase 6 — Hardening
+### Phase 6 — Deployment
 
-- Details and implementation tracker: `phase-6-hardening.md`
-
-- Concurrency: transactional boundaries, advisory locks where needed.
-- Security: RBAC checks at boundaries, least privilege.
-- Load: index tuning, query plans, backpressure on consumers.
-
-### Phase 7 — Deployment
-
-- Details and implementation tracker: `phase-7-deployment.md`
+- Details and implementation tracker: `phase-6-deployment.md`
 
 - Docker Compose/Testcontainers for local.
 - Kubernetes/EKS manifests (Deployment/Service/ConfigMap/Secret/HPA) with:
   - Readiness/liveness probes (wired to health endpoints)
   - Environment-driven configuration (no hardcoded secrets)
   - Reasonable resource requests/limits and autoscaling guidance
+
+### Phase 7 — PostGIS Spatial Extensions
+
+- Details and implementation tracker: `phase-7-postgis-spatial-extensions.md`
+
+- Enable spatial intelligence for route geometries.
+- Implement snapping and distance-based progress calculation.
+
+### Phase 8 — Schematic Visualization Engine
+
+- Details and implementation tracker: `phase-8-schematic-visualization-engine.md`
+
+- Core matching logic and Delta-Encoded WebSocket broadcasting.
+- Real-time fleet monitor and anomaly/fraud detection.
 
 ## Schemas (PostgreSQL blueprint)
 

@@ -58,7 +58,7 @@ Implement the **Messaging Infrastructure** to publish and consume Domain Events.
 
 ---
 
-## Definition of Done (Phase 4)
+## 🏁 Definition of Done (Phase: Deferred)
 
 - [ ] Events are produced via outbox and consumed idempotently
 - [ ] Retry + DLQ paths are implemented and documented (including replay)
@@ -316,9 +316,6 @@ docs/events/
 |-------------|--------|-------|
 | API endpoints | ✅ | State changes trigger events |
 
-### Phase 4 Requirements
-| Requirement | Status | Notes |
-|-------------|--------|-------|
 | Event catalog | ⏳ In Progress | Draft events defined in module domains |
 | Topic strategy | Not Started | Naming and partitioning pending |
 | Outbox publisher | Not Started | Background publishing logic pending |
@@ -410,16 +407,16 @@ kafka-consumer-groups --bootstrap-server localhost:9092 --describe --group fleet
 - [ ] Write integration tests
 - [ ] Document replay procedures
 
-### Phase 5: Reporting and Accounting Correctness
+### Phase 5: Hardening v2
+1. Improve performance and concurrency safety
+2. Implement distributed rate limiting
+
+### Phase 6: Reporting and Accounting Correctness
 1. Use events to build read models for reporting
 2. Implement reconciliation processes
 3. Create financial reports from ledger
 4. Add audit trails using event log
 5. Implement event sourcing for accounting
-
-### Future Phases
-- **Phase 6**: Hardening (monitoring Kafka lag, alerting on DLQ)
-- **Phase 7**: Deployment (Kafka cluster configuration, topic replication)
 
 ---
 
@@ -428,7 +425,7 @@ kafka-consumer-groups --bootstrap-server localhost:9092 --describe --group fleet
 ### Project Documentation
 - `fleet-management-plan.md` - Overall project plan
 - `phase-3-api-surface-v1.md` - Previous phase
-- `phase-5-reporting-and-accounting-correctness.md` - Next phase
+- `phase-6-reporting-and-accounting-correctness.md` - Next phase
 
 ### Skills Documentation
 - `skills/backend-development/SKILL.md` - Backend principles

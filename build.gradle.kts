@@ -28,36 +28,45 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 }
 
 dependencies {
-    implementation(libs.ktor.server.core)
-    implementation(libs.ktor.server.netty)
-    implementation(libs.ktor.server.status.pages)
-    implementation(libs.ktor.server.auth)
-    implementation(libs.ktor.server.auth.jwt)
-    implementation(libs.ktor.server.content.negotiation)
-    implementation(libs.ktor.serialization.kotlinx.json)
-    implementation(libs.ktor.server.call.logging)
-    implementation(libs.ktor.server.metrics.micrometer)
-    implementation(libs.ktor.server.rate.limit)
-    implementation(libs.ktor.server.openapi)
-    implementation(libs.ktor.server.swagger)
-    implementation(libs.micrometer.registry.prometheus)
-    implementation(libs.ktor.server.config.yaml)
-    implementation(libs.bcrypt)
+    // --- Ktor Server Runtime ---
+    implementation(libs.ktor.server.core)                 // Core Ktor framework
+    implementation(libs.ktor.server.netty)                // Netty engine for high-performance HTTP
+    implementation(libs.ktor.server.status.pages)         // Standardized error handling & status mapping
     
-    implementation(libs.logback.classic)
+    // --- Security & Authentication ---
+    implementation(libs.ktor.server.auth)                 // Authentication baseline
+    implementation(libs.ktor.server.auth.jwt)             // JWT validation and claim handling
+    implementation(libs.bcrypt)                           // Secure password hashing
     
-    implementation(libs.exposed.core)
-    implementation(libs.exposed.jdbc)
-    implementation(libs.exposed.java.time)
-    implementation(libs.exposed.json)
-    implementation(libs.hikaricp)
-    implementation(libs.postgresql)
+    // --- API Features & Serialization ---
+    implementation(libs.ktor.server.content.negotiation)  // Content negotiation (JSON, XML, etc.)
+    implementation(libs.ktor.serialization.kotlinx.json)  // Kotlinx.serialization for JSON support
+    implementation(libs.ktor.server.rate.limit)           // API protection against brute force/DOS
+    implementation(libs.ktor.server.openapi)              // OpenAPI spec generation
+    implementation(libs.ktor.server.swagger)              // Swagger UI for API testing
     
-    implementation(libs.flyway.core)
-    implementation(libs.flyway.database.postgresql)
+    // --- Observability & Configuration ---
+    implementation(libs.ktor.server.call.logging)         // Request/Response logging
+    implementation(libs.ktor.server.metrics.micrometer)   // Metrics collection framework
+    implementation(libs.micrometer.registry.prometheus)   // Prometheus integration for metrics
+    implementation(libs.ktor.server.config.yaml)          // YAML support for application.yaml
+    implementation(libs.logback.classic)                  // Standard logging implementation
     
-    testImplementation(libs.ktor.server.test.host)
-    testImplementation(libs.ktor.client.content.negotiation)
-    testImplementation(libs.kotlin.test.junit)
-    testImplementation(libs.h2)
+    // --- Database (Exposed ORM) ---
+    implementation(libs.exposed.core)                      // Type-safe SQL DSL (prevents SQLi)
+    implementation(libs.exposed.jdbc)                      // JDBC support for Exposed
+    implementation(libs.exposed.java.time)                 // Java Time support for Exposed columns
+    implementation(libs.exposed.json)                      // JSONB support for PostgreSQL
+    implementation(libs.hikaricp)                          // High-performance connection pooling
+    implementation(libs.postgresql)                        // PostgreSQL database driver
+    
+    // --- Database Migrations ---
+    implementation(libs.flyway.core)                       // Database version control
+    implementation(libs.flyway.database.postgresql)        // Flyway support for PostgreSQL
+    
+    // --- Testing ---
+    testImplementation(libs.ktor.server.test.host)         // In-memory Ktor server for integration tests
+    testImplementation(libs.ktor.client.content.negotiation) // Ktor client for testing endpoints
+    testImplementation(libs.kotlin.test.junit)             // Kotlin-style JUnit testing
+    testImplementation(libs.h2)                            // In-memory DB for fast testing
 }

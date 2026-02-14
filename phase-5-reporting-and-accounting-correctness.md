@@ -3,7 +3,7 @@
 ## Status
 
 - Overall: **IN PLANNING (Synchronous Strategy)**
-- Implementation Date: 2026-02-12
+- Implementation Date: 2026-02-14
 - Verification: Pending (Focus on Transactional Correctness)
 
 ---
@@ -19,6 +19,7 @@ Deliver a **Double-Entry Accounting System** that is reproducible and auditable.
 - Phase 2 schema v1 (ledger tables and invariants) - ✅ **READY**
 - Phase 3 API v1 (basic posting APIs) - ✅ **READY**
 - Phase 3 Hardening (Idempotency keys for safe retries) - ✅ **READY**
+- Phase 5 Hardening v2 (Concurrency and Locking) - ⏳ **PLANNED**
 
 ---
 
@@ -476,7 +477,7 @@ Update `src/main/kotlin/com/solodev/fleet/modules/accounts/infrastructure/http/A
 
 ---
 
-## 🏁 Definition of Done (Phase 5)
+## 🏁 Definition of Done (Phase 6)
 
 - [x] Financial reports are derived from immutable facts and can be regenerated
 - [x] Ledger postings are idempotent and auditable

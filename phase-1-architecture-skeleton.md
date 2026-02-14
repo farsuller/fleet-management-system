@@ -125,7 +125,29 @@ data class ApiResponse<T>(
 }
 ```
 
-#### 3. **Request ID Middleware**
+#### 4. **Netty Synchronous/Asynchronous Engine**
+*Purpose: Provides the high-performance, non-blocking asynchronous network application framework for Ktor.*
+
+**Dependency:**
+```kotlin
+// build.gradle.kts
+implementation(libs.ktor.server.netty) // High-performance Netty engine
+```
+
+**Code Implementation (Entry Point):**
+The entry point of the application is configured to use the Netty `EngineMain`.
+
+```kotlin
+// Application.kt
+fun main(args: Array<String>) {
+    io.ktor.server.netty.EngineMain.main(args)
+}
+```
+
+**Applying Method:**
+Netty acts as the underlying server engine that handles incoming HTTP requests. By using `EngineMain`, we allow Ktor to read the configuration from `application.yaml` (port, host, etc.) and start the Netty server automatically. This setup leverages Netty's event-loop architecture to handle thousands of concurrent connections efficiently using Kotlin Coroutines.
+
+#### 5. **Request ID Middleware**
 **Files Created**:
 - `src/main/kotlin/com/example/shared/plugins/RequestId.kt`
 
