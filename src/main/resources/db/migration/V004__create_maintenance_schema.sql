@@ -14,18 +14,18 @@ CREATE TABLE maintenance_jobs (
     priority VARCHAR(20) NOT NULL DEFAULT 'NORMAL' CHECK (priority IN ('LOW', 'NORMAL', 'HIGH', 'URGENT')),
     
     -- Scheduling
-    scheduled_date TIMESTAMPTZ NOT NULL,
-    started_at TIMESTAMPTZ,
-    completed_at TIMESTAMPTZ,
+    scheduled_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    started_at TIMESTAMP WITH TIME ZONE,
+    completed_at TIMESTAMP WITH TIME ZONE,
     
     -- Odometer at time of service
     odometer_km INTEGER CHECK (odometer_km >= 0),
     
     -- Cost tracking
-    labor_cost_cents INTEGER DEFAULT 0 CHECK (labor_cost_cents >= 0),
-    parts_cost_cents INTEGER DEFAULT 0 CHECK (parts_cost_cents >= 0),
-    total_cost_cents INTEGER GENERATED ALWAYS AS (labor_cost_cents + parts_cost_cents) STORED,
-    currency_code VARCHAR(3) NOT NULL DEFAULT 'USD',
+    labor_cost INTEGER DEFAULT 0 CHECK (labor_cost >= 0),
+    parts_cost INTEGER DEFAULT 0 CHECK (parts_cost >= 0),
+    total_cost INTEGER GENERATED ALWAYS AS (labor_cost + parts_cost) STORED,
+    currency_code VARCHAR(3) NOT NULL DEFAULT 'PHP',
     
     -- Personnel
     assigned_to_user_id UUID REFERENCES users(id),
@@ -33,8 +33,8 @@ CREATE TABLE maintenance_jobs (
     
     -- Metadata
     notes TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     version BIGINT NOT NULL DEFAULT 0,
     
     -- Constraints
@@ -51,12 +51,12 @@ CREATE TABLE maintenance_parts (
     part_number VARCHAR(100) NOT NULL,
     part_name VARCHAR(255) NOT NULL,
     quantity INTEGER NOT NULL CHECK (quantity > 0),
-    unit_cost_cents INTEGER NOT NULL CHECK (unit_cost_cents >= 0),
-    total_cost_cents INTEGER GENERATED ALWAYS AS (quantity * unit_cost_cents) STORED,
-    currency_code VARCHAR(3) NOT NULL DEFAULT 'USD',
+    unit_cost INTEGER NOT NULL CHECK (unit_cost >= 0),
+    total_cost INTEGER GENERATED ALWAYS AS (quantity * unit_cost) STORED,
+    currency_code VARCHAR(3) NOT NULL DEFAULT 'PHP',
     supplier VARCHAR(255),
     notes TEXT,
-    added_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    added_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Maintenance schedules table: Define recurring maintenance requirements
@@ -72,16 +72,16 @@ CREATE TABLE maintenance_schedules (
     time_interval_days INTEGER CHECK (time_interval_days > 0),
     
     -- Last service tracking
-    last_service_date TIMESTAMPTZ,
+    last_service_date TIMESTAMP WITH TIME ZONE,
     last_service_odometer_km INTEGER,
     
     -- Next service due
-    next_service_date TIMESTAMPTZ,
+    next_service_date TIMESTAMP WITH TIME ZONE,
     next_service_odometer_km INTEGER,
     
     is_active BOOLEAN NOT NULL DEFAULT true,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     -- Constraints
     CONSTRAINT schedule_interval_valid CHECK (

@@ -10,8 +10,8 @@ CREATE TABLE accounts (
     parent_account_id UUID REFERENCES accounts(id),
     is_active BOOLEAN NOT NULL DEFAULT true,
     description TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Ledger entries: Double-entry bookkeeping journal entries
@@ -19,10 +19,10 @@ CREATE TABLE ledger_entries (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     entry_number VARCHAR(50) NOT NULL UNIQUE,
     external_reference VARCHAR(255) NOT NULL UNIQUE, -- For idempotency (e.g., "rental-123-activation")
-    entry_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    entry_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     description TEXT NOT NULL,
     created_by_user_id UUID REFERENCES users(id),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Ledger entry lines: Individual debit/credit lines
@@ -30,15 +30,15 @@ CREATE TABLE ledger_entry_lines (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     entry_id UUID NOT NULL REFERENCES ledger_entries(id) ON DELETE CASCADE,
     account_id UUID NOT NULL REFERENCES accounts(id),
-    debit_amount_cents INTEGER NOT NULL DEFAULT 0 CHECK (debit_amount_cents >= 0),
-    credit_amount_cents INTEGER NOT NULL DEFAULT 0 CHECK (credit_amount_cents >= 0),
-    currency_code VARCHAR(3) NOT NULL DEFAULT 'USD',
+    debit_amount INTEGER NOT NULL DEFAULT 0 CHECK (debit_amount >= 0),
+    credit_amount INTEGER NOT NULL DEFAULT 0 CHECK (credit_amount >= 0),
+    currency_code VARCHAR(3) NOT NULL DEFAULT 'PHP',
     description TEXT,
     
     -- Constraint: Each line must be either debit or credit, not both
     CONSTRAINT debit_or_credit_not_both CHECK (
-        (debit_amount_cents > 0 AND credit_amount_cents = 0) OR
-        (debit_amount_cents = 0 AND credit_amount_cents > 0)
+        (debit_amount > 0 AND credit_amount = 0) OR
+        (debit_amount = 0 AND credit_amount > 0)
     )
 );
 
@@ -51,12 +51,12 @@ CREATE TABLE invoices (
     status VARCHAR(20) NOT NULL CHECK (status IN ('DRAFT', 'ISSUED', 'PAID', 'OVERDUE', 'CANCELLED')),
     
     -- Amounts
-    subtotal_cents INTEGER NOT NULL CHECK (subtotal_cents >= 0),
-    tax_cents INTEGER NOT NULL DEFAULT 0 CHECK (tax_cents >= 0),
-    total_cents INTEGER GENERATED ALWAYS AS (subtotal_cents + tax_cents) STORED,
-    paid_cents INTEGER NOT NULL DEFAULT 0 CHECK (paid_cents >= 0),
-    balance_cents INTEGER GENERATED ALWAYS AS (subtotal_cents + tax_cents - paid_cents) STORED,
-    currency_code VARCHAR(3) NOT NULL DEFAULT 'USD',
+    subtotal INTEGER NOT NULL CHECK (subtotal >= 0),
+    tax INTEGER NOT NULL DEFAULT 0 CHECK (tax >= 0),
+    total_amount INTEGER GENERATED ALWAYS AS (subtotal + tax) STORED,
+    paid_amount INTEGER NOT NULL DEFAULT 0 CHECK (paid_amount >= 0),
+    balance INTEGER GENERATED ALWAYS AS (subtotal + tax - paid_amount) STORED,
+    currency_code VARCHAR(3) NOT NULL DEFAULT 'PHP',
     
     -- Dates
     issue_date DATE NOT NULL,
@@ -65,8 +65,8 @@ CREATE TABLE invoices (
     
     -- Metadata
     notes TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     CONSTRAINT invoice_dates_valid CHECK (due_date >= issue_date)
 );
@@ -77,9 +77,9 @@ CREATE TABLE invoice_line_items (
     invoice_id UUID NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
     description TEXT NOT NULL,
     quantity DECIMAL(10, 2) NOT NULL CHECK (quantity > 0),
-    unit_price_cents INTEGER NOT NULL CHECK (unit_price_cents >= 0),
-    total_cents INTEGER GENERATED ALWAYS AS (CAST(quantity * unit_price_cents AS INTEGER)) STORED,
-    currency_code VARCHAR(3) NOT NULL DEFAULT 'USD'
+    unit_price INTEGER NOT NULL CHECK (unit_price >= 0),
+    total_amount INTEGER GENERATED ALWAYS AS (CAST(quantity * unit_price AS INTEGER)) STORED,
+    currency_code VARCHAR(3) NOT NULL DEFAULT 'PHP'
 );
 
 -- Payments table: Track all payments
@@ -89,14 +89,14 @@ CREATE TABLE payments (
     customer_id UUID NOT NULL REFERENCES customers(id),
     invoice_id UUID REFERENCES invoices(id),
     payment_method VARCHAR(50) NOT NULL CHECK (payment_method IN ('CREDIT_CARD', 'DEBIT_CARD', 'CASH', 'BANK_TRANSFER', 'CHECK')),
-    amount_cents INTEGER NOT NULL CHECK (amount_cents > 0),
-    currency_code VARCHAR(3) NOT NULL DEFAULT 'USD',
+    amount INTEGER NOT NULL CHECK (amount > 0),
+    currency_code VARCHAR(3) NOT NULL DEFAULT 'PHP',
     transaction_reference VARCHAR(255),
     status VARCHAR(20) NOT NULL CHECK (status IN ('PENDING', 'COMPLETED', 'FAILED', 'REFUNDED')),
-    payment_date TIMESTAMPTZ,
+    payment_date TIMESTAMP WITH TIME ZONE,
     notes TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Insert default chart of accounts
@@ -164,8 +164,8 @@ DECLARE
 BEGIN
     -- Calculate total debits and credits for this entry
     SELECT 
-        COALESCE(SUM(debit_amount_cents), 0),
-        COALESCE(SUM(credit_amount_cents), 0)
+        COALESCE(SUM(debit_amount), 0),
+        COALESCE(SUM(credit_amount), 0)
     INTO total_debits, total_credits
     FROM ledger_entry_lines
     WHERE entry_id = NEW.entry_id;

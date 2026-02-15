@@ -9,7 +9,7 @@ The Fleet Management System uses PostgreSQL as its source of truth with a well-s
 1. **UUID Primary Keys**: All tables use UUID primary keys for global uniqueness
 2. **Audit Fields**: All tables include `created_at` and `updated_at` timestamps
 3. **Optimistic Locking**: Critical tables include a `version` column for concurrency control
-4. **Money Storage**: All monetary values stored as cents (INTEGER) with currency code
+4. **Money Storage**: All monetary values stored as whole units (PHP) as integers (Long)
 5. **Constraint Enforcement**: Business rules enforced via CHECK constraints and triggers
 6. **Immutable Facts**: Historical data (odometer readings, ledger entries) is append-only
 
@@ -112,8 +112,9 @@ CREATE TRIGGER increment_vehicles_version BEFORE UPDATE ON vehicles
 **Key Features**:
 - **Double-Entry Bookkeeping**: Debits must equal credits (enforced by trigger)
 - **Idempotent Posting**: Unique `external_reference` prevents duplicate entries
-- Account types: ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
-- Generated columns for totals
+- **Account Types**: ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
+- **Normal Balance**: Reports handle sign-flipping (Revenue/Liabilities/Equity = Credit - Debit)
+- **PHP Currency**: Stored as whole units (Long) for precision and readability
 
 **Business Rules Enforced**:
 ```sql

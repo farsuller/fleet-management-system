@@ -58,15 +58,15 @@ data class Rental(
     val endDate: Instant,
     val actualStartDate: Instant? = null,
     val actualEndDate: Instant? = null,
-    val dailyRateCents: Int,
-    val totalAmountCents: Int,
+    val dailyRateAmount: Int,
+    val totalAmount: Int,
     val currencyCode: String = "PHP",
     val startOdometerKm: Int? = null,
     val endOdometerKm: Int? = null
 ) {
     init {
         require(endDate.isAfter(startDate)) { "End date must be after start date" }
-        require(totalAmountCents >= 0) { "Total amount cannot be negative" }
+        require(totalAmount >= 0) { "Total amount cannot be negative" }
     }
 
     fun activate(actualStart: Instant, startOdo: Int): Rental {

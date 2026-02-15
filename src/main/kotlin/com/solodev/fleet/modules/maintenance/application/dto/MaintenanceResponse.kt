@@ -24,7 +24,7 @@ data class MaintenanceResponse(
                         jobType = j.jobType.name,
                         description = j.description,
                         scheduledDate = j.scheduledDate.toString(),
-                        totalCost = j.totalCostCents / 100.0
+                        totalCost = j.totalCost / 100.0
                 )
     }
 }

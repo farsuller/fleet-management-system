@@ -37,4 +37,6 @@ interface AccountRepository {
      * Find all accounts.
      */
     suspend fun findAll(): List<Account>
+
+    suspend fun delete(id: AccountId): Boolean
 }

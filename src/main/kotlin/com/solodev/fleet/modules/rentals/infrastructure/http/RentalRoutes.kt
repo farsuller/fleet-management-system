@@ -1,5 +1,6 @@
 package com.solodev.fleet.modules.rentals.infrastructure.http
 
+import com.solodev.fleet.modules.accounts.application.AccountingService
 import com.solodev.fleet.modules.rentals.application.dto.RentalRequest
 import com.solodev.fleet.modules.rentals.application.dto.RentalResponse
 import com.solodev.fleet.modules.rentals.application.usecases.*
@@ -13,10 +14,18 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-fun Route.rentalRoutes(rentalRepository: RentalRepository, vehicleRepository: VehicleRepository) {
+fun Route.rentalRoutes(
+    rentalRepository: RentalRepository,
+    vehicleRepository: VehicleRepository,
+    accountingService: AccountingService
+    ) {
     val createRentalUseCase = CreateRentalUseCase(rentalRepository, vehicleRepository)
     val getRentalUseCase = GetRentalUseCase(rentalRepository)
-    val activateRentalUseCase = ActivateRentalUseCase(rentalRepository, vehicleRepository)
+    val activateRentalUseCase = ActivateRentalUseCase(
+        rentalRepository = rentalRepository,
+        vehicleRepository = vehicleRepository,
+        accountingService = accountingService
+    )
     val completeRentalUseCase = CompleteRentalUseCase(rentalRepository, vehicleRepository)
     val cancelRentalUseCase = CancelRentalUseCase(rentalRepository)
     val listRentalsUseCase = ListRentalsUseCase(rentalRepository)

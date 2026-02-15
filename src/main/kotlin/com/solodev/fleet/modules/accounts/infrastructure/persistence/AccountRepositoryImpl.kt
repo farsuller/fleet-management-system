@@ -4,47 +4,45 @@ import com.solodev.fleet.modules.accounts.domain.model.Account
 import com.solodev.fleet.modules.accounts.domain.model.AccountId
 import com.solodev.fleet.modules.accounts.domain.model.AccountType
 import com.solodev.fleet.modules.accounts.domain.repository.AccountRepository
-import kotlinx.coroutines.Dispatchers
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.update
+import com.solodev.fleet.shared.helpers.dbQuery
 import java.time.Instant
 import java.util.*
+import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.update
 
 /** PostgreSQL implementation of AccountRepository using Exposed ORM. */
 class AccountRepositoryImpl : AccountRepository {
 
-    private suspend fun <T> dbQuery(block: suspend () -> T): T =
-        newSuspendedTransaction(Dispatchers.IO) { block() }
-
     private fun ResultRow.toAccount() =
-        Account(
-            id = AccountId(this[AccountsTable.id].value.toString()),
-            accountCode = this[AccountsTable.accountCode],
-            accountName = this[AccountsTable.accountName],
-            accountType = AccountType.valueOf(this[AccountsTable.accountType]),
-            parentAccountId =
-                this[AccountsTable.parentAccountId]?.value?.toString()?.let {
-                    AccountId(it)
-                },
-            isActive = this[AccountsTable.isActive],
-            description = this[AccountsTable.description]
-        )
+            Account(
+                    id = AccountId(this[AccountsTable.id].value.toString()),
+                    accountCode = this[AccountsTable.accountCode],
+                    accountName = this[AccountsTable.accountName],
+                    accountType = AccountType.valueOf(this[AccountsTable.accountType]),
+                    parentAccountId =
+                            this[AccountsTable.parentAccountId]?.value?.toString()?.let {
+                                AccountId(it)
+                            },
+                    isActive = this[AccountsTable.isActive],
+                    description = this[AccountsTable.description]
+            )
 
     override suspend fun findById(id: AccountId): Account? = dbQuery {
         AccountsTable.selectAll()
-            .where { AccountsTable.id eq UUID.fromString(id.value) }
-            .map { it.toAccount() }
-            .singleOrNull()
+                .where { AccountsTable.id eq UUID.fromString(id.value) }
+                .map { it.toAccount() }
+                .singleOrNull()
     }
 
     override suspend fun findByCode(accountCode: String): Account? = dbQuery {
         AccountsTable.selectAll()
-            .where { AccountsTable.accountCode eq accountCode }
-            .map { it.toAccount() }
-            .singleOrNull()
+                .where { AccountsTable.accountCode eq accountCode }
+                .map { it.toAccount() }
+                .singleOrNull()
     }
 
     override suspend fun save(account: Account): Account = dbQuery {
@@ -92,5 +90,9 @@ class AccountRepositoryImpl : AccountRepository {
 
     override suspend fun findAll(): List<Account> = dbQuery {
         AccountsTable.selectAll().map { it.toAccount() }
+    }
+
+    override suspend fun delete(id: AccountId): Boolean = dbQuery {
+        AccountsTable.deleteWhere { AccountsTable.id eq UUID.fromString(id.value) } > 0
     }
 }

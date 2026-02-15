@@ -2,17 +2,13 @@ package com.solodev.fleet.modules.accounts.infrastructure.persistence
 
 import com.solodev.fleet.modules.accounts.domain.model.PaymentMethod
 import com.solodev.fleet.modules.accounts.domain.repository.PaymentMethodRepository
+import com.solodev.fleet.shared.helpers.dbQuery
 import java.time.Instant
 import java.util.*
-import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 class PaymentMethodRepositoryImpl : PaymentMethodRepository {
-
-    private suspend fun <T> dbQuery(block: suspend () -> T): T =
-            newSuspendedTransaction(Dispatchers.IO) { block() }
 
     private fun ResultRow.toPaymentMethod() =
             PaymentMethod(

@@ -13,8 +13,8 @@ class UpdateVehicleUseCase(private val repository: VehicleRepository) {
                 existing.copy(
                         licensePlate = request.licensePlate ?: existing.licensePlate,
                         color = request.color ?: existing.color,
-                        dailyRateCents = request.dailyRate?.let { (it * 100).toInt() }
-                                        ?: existing.dailyRateCents
+                        dailyRateAmount = request.dailyRate?.let { (it * 100).toInt() }
+                                        ?: existing.dailyRateAmount
                 )
 
         return repository.save(updated)

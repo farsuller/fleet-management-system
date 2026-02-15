@@ -33,7 +33,7 @@ This document details the lifecycle of a Rental request, from creation to activa
     "endDate": "2024-06-05T10:00:00Z",
     "actualStartDate": null,
     "actualEndDate": null,
-    "totalCostCents": 20000,
+    "totalCost": 200,
     "currencyCode": "PHP"
   },
   "requestId": "req_..."

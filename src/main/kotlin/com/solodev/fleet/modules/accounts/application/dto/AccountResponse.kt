@@ -12,19 +12,18 @@ data class AccountResponse(
         val parentAccountId: String? = null,
         val isActive: Boolean,
         val description: String? = null,
-        val balance: Double = 0.0
+        val balance: Long = 0
 ) {
-    companion object {
-        fun fromDomain(account: Account, balanceCents: Long = 0) =
-                AccountResponse(
-                        id = account.id.value,
-                        accountCode = account.accountCode,
-                        accountName = account.accountName,
-                        accountType = account.accountType.name,
-                        parentAccountId = account.parentAccountId?.value,
-                        isActive = account.isActive,
-                        description = account.description,
-                        balance = balanceCents / 100.0
-                )
-    }
+        companion object {
+                fun fromDomain(account: Account, balanceAmount: Long = 0) =
+                        AccountResponse(
+                                id = account.id.value,
+                                accountCode = account.accountCode,
+                                accountName = account.accountName,
+                                accountType = account.accountType.name,
+                                isActive = account.isActive,
+                                description = account.description,
+                                balance = balanceAmount
+                        )
+        }
 }

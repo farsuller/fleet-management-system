@@ -43,30 +43,31 @@ enum class MaintenancePriority {
  * Represents a maintenance job for a vehicle.
  */
 data class MaintenanceJob(
-    val id: MaintenanceJobId,
-    val jobNumber: String,
-    val vehicleId: VehicleId,
-    val status: MaintenanceStatus,
-    val jobType: MaintenanceJobType,
-    val description: String,
-    val priority: MaintenancePriority = MaintenancePriority.NORMAL,
-    val scheduledDate: Instant,
-    val startedAt: Instant? = null,
-    val completedAt: Instant? = null,
-    val odometerKm: Int? = null,
-    val laborCostCents: Int = 0,
-    val partsCostCents: Int = 0,
-    val currencyCode: String = "PHP",
-    val assignedToUserId: UUID? = null,
-    val completedByUserId: UUID? = null,
-    val notes: String? = null,
+        val id: MaintenanceJobId,
+        val jobNumber: String,
+        val vehicleId: VehicleId,
+        val status: MaintenanceStatus,
+        val jobType: MaintenanceJobType,
+        val description: String,
+        val priority: MaintenancePriority = MaintenancePriority.NORMAL,
+        val scheduledDate: Instant,
+        val startedAt: Instant? = null,
+        val completedAt: Instant? = null,
+        val odometerKm: Int? = null,
+        val laborCost: Int = 0,
+        val partsCost: Int = 0,
+        val currencyCode: String = "PHP",
+        val assignedToUserId: UUID? = null,
+        val completedByUserId: UUID? = null,
+        val notes: String? = null,
 ) {
     init {
-        require(laborCostCents >= 0) { "Labor cost cannot be negative" }
-        require(partsCostCents >= 0) { "Parts cost cannot be negative" }
+        require(laborCost >= 0) { "Labor cost cannot be negative" }
+        require(partsCost >= 0) { "Parts cost cannot be negative" }
     }
 
-    val totalCostCents: Int get() = laborCostCents + partsCostCents
+    val totalCost: Int
+        get() = laborCost + partsCost
 
     fun start(timestamp: Instant = Instant.now()): MaintenanceJob {
         require(status == MaintenanceStatus.SCHEDULED) { "Only SCHEDULED jobs can be started." }
@@ -74,40 +75,44 @@ data class MaintenanceJob(
     }
 
     fun complete(labor: Int, parts: Int, timestamp: Instant = Instant.now()): MaintenanceJob {
-        require(status == MaintenanceStatus.IN_PROGRESS) { "Only IN_PROGRESS jobs can be completed." }
+        require(status == MaintenanceStatus.IN_PROGRESS) {
+            "Only IN_PROGRESS jobs can be completed."
+        }
         return copy(
-            status = MaintenanceStatus.COMPLETED,
-            completedAt = timestamp,
-            laborCostCents = labor,
-            partsCostCents = parts
+                status = MaintenanceStatus.COMPLETED,
+                completedAt = timestamp,
+                laborCost = labor,
+                partsCost = parts
         )
     }
 
     fun cancel(): MaintenanceJob {
-        require(status == MaintenanceStatus.SCHEDULED) { "Cannot cancel job that has already started." }
+        require(status == MaintenanceStatus.SCHEDULED) {
+            "Cannot cancel job that has already started."
+        }
         return copy(status = MaintenanceStatus.CANCELLED)
     }
 }
 
 /** Maintenance part used in a job. */
 data class MaintenancePart(
-    val id: UUID,
-    val jobId: MaintenanceJobId,
-    val partNumber: String,
-    val partName: String,
-    val quantity: Int,
-    val unitCostCents: Int,
-    val currencyCode: String = "PHP",
-    val supplier: String? = null,
-    val notes: String? = null
+        val id: UUID,
+        val jobId: MaintenanceJobId,
+        val partNumber: String,
+        val partName: String,
+        val quantity: Int,
+        val unitCost: Int,
+        val currencyCode: String = "PHP",
+        val supplier: String? = null,
+        val notes: String? = null
 ) {
     init {
         require(partNumber.isNotBlank()) { "Part number cannot be blank" }
         require(partName.isNotBlank()) { "Part name cannot be blank" }
         require(quantity > 0) { "Quantity must be positive" }
-        require(unitCostCents >= 0) { "Unit cost cannot be negative" }
+        require(unitCost >= 0) { "Unit cost cannot be negative" }
     }
 
-    val totalCostCents: Int
-        get() = quantity * unitCostCents
+    val totalCost: Int
+        get() = quantity * unitCost
 }

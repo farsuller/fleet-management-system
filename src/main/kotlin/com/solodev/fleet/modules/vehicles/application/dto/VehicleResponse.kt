@@ -30,7 +30,7 @@ data class VehicleResponse(
                                 color = v.color,
                                 state = v.state.name,
                                 mileageKm = v.mileageKm,
-                                dailyRate = v.dailyRateCents?.let { it / 100.0 },
+                                dailyRate = v.dailyRateAmount?.let { it / 100.0 },
                                 currencyCode = v.currencyCode,
                                 passengerCapacity = v.passengerCapacity
                         )

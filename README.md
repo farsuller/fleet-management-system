@@ -13,8 +13,10 @@ A production-ready **Fleet Management System** built with Kotlin and Ktor, desig
 
 - [Overview](#overview)
 - [Features](#features)
+- [Implementation Roadmap](#implementation-roadmap)
 - [System Architecture](#system-architecture)
 - [Database Schema](#database-schema)
+- [Typical Workflow](#typical-workflow)
 - [Technology Stack](#technology-stack)
 - [Getting Started](#getting-started)
 - [API Documentation](#api-documentation)
@@ -22,6 +24,7 @@ A production-ready **Fleet Management System** built with Kotlin and Ktor, desig
 - [Development](#development)
 - [Testing](#testing)
 - [Deployment](#deployment)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -39,8 +42,10 @@ The Fleet Management System is a comprehensive solution for managing vehicle ren
 - ✅ **Real-time Availability** - Prevent double-booking with conflict detection
 - ✅ **Driver Validation** - Automatic license expiry verification
 - ✅ **Odometer Tracking** - Mileage recording for vehicle maintenance
+- ✅ **Double-Entry Ledger** - Synchronous financial postings with zero-sum integrity
+- ✅ **Reconciliation** - Automated matching between operational and financial records
+- ✅ **PHP Currency** - All monetary values handled as whole PHP units (Integer)
 - ✅ **State Management** - Clear rental lifecycle (RESERVED → ACTIVE → COMPLETED)
-- ✅ **Multi-tenancy Ready** - Designed for scalability
 
 ---
 
@@ -74,6 +79,33 @@ The Fleet Management System is a comprehensive solution for managing vehicle ren
   - Login -> Success (Token returned).
 - Staff profiles with department tracking
 - Multiple user roles (ADMIN, FLEET_MANAGER, RENTAL_AGENT, etc.)
+
+### Accounting & Reporting (Phase 5)
+- **Double-Entry Ledger** - Guaranteed balance between debits and credits
+- **Automated Invoicing** - Synchronous invoice generation upon rental events
+- **Payment Reconciliation** - Detecting "Silent Failures" in ledger postings
+- **Financial Reports** - Balance Sheet and Revenue Reports with "Normal Balance" logic (sign-flipping)
+- **Flexible Payments** - Support for multiple payment methods (Cash, Card, GCash, etc.)
+
+---
+
+## 🗺️ Implementation Roadmap
+
+The system is developed in distinct phases, moving from architecture to complex features.
+
+| Phase | Status | Document | Focus |
+|-------|--------|----------|-------------|
+| **P0** | ✅ | [Plan](./docs/implementations/phase-0-plan-requirements-dependencies-boundaries.md) | Requirements & boundaries |
+| **P1** | ✅ | [Architecture](./docs/implementations/phase-1-architecture-skeleton.md) | Skeleton & DI |
+| **P2** | ✅ | [Schema](./docs/implementations/phase-2-postgresql-schema-v1.md) | Database v1 |
+| **P3** | ✅ | [API v1](./docs/implementations/phase-3-api-surface-v1.md) | Surface & core logic |
+| **P4** | ✅ | [Hardening](./docs/implementations/phase-4-hardening-v2-implementation.md) | Concurrency & Redis |
+| **P5** | ✅ | [Accounting](./docs/implementations/phase-5-reporting-and-accounting-correctness.md) | Ledger & Correctness |
+| **P6** | 🏗️ | [Spatial](./docs/implementations/phase-6-postgis-spatial-extensions.md) | PostGIS & Tracking |
+| **P7** | 🏗️ | [Visuals](./docs/implementations/phase-7-schematic-visualization-engine.md) | Real-time Engine |
+| **P8** | 🏗️ | [Deployment](./docs/implementations/phase-8-deployment.md) | Cloud & Scalability |
+
+---
 
 ---
 
@@ -191,8 +223,8 @@ The Fleet Management System is a comprehensive solution for managing vehicle ren
 │ status          │                      │
 │ start_date      │                      │
 │ end_date        │                      │
-│ daily_rate_cents│                      │
-│ total_price_cents                      │
+│ daily_rate      │ (PHP)                │
+│ total_price     │ (PHP)                │
 │ actual_start    │                      │
 │ actual_end      │                      │
 │ start_odo_km    │                      │
@@ -245,8 +277,8 @@ The Fleet Management System is a comprehensive solution for managing vehicle ren
 │ started_at      │
 │ completed_at    │
 │ odometer_km     │
-│ labor_cost_cents│
-│ parts_cost_cents│
+│ labor_cost      │ (PHP)
+│ parts_cost      │ (PHP)
 │ assigned_to (FK)├──────► USERS
 │ completed_by(FK)├──────► USERS
 │ version         │
@@ -263,7 +295,7 @@ The Fleet Management System is a comprehensive solution for managing vehicle ren
 │ part_number     │
 │ part_name       │
 │ quantity        │
-│ unit_cost_cents │
+│ unit_cost       │ (PHP)
 │ supplier        │
 └─────────────────┘
 
@@ -308,8 +340,8 @@ The Fleet Management System is a comprehensive solution for managing vehicle ren
 │ id (PK)         │         │ entry_number    │
 │ entry_id (FK)   ├────────►│ external_ref    │
 │ account_id (FK) ├─────────┤ entry_date      │
-│ debit_amt_cents │         │ description     │
-│ credit_amt_cents│         │ created_by (FK) ├──► USERS
+│ debit_amount    │ (PHP)   │ description     │
+│ credit_amount   │ (PHP)   │ created_by (FK) ├──► USERS
 │ description     │         └─────────────────┘
 └─────────────────┘
 
@@ -321,11 +353,11 @@ The Fleet Management System is a comprehensive solution for managing vehicle ren
 │ customer_id (FK)├──────► CUSTOMERS    │
 │ rental_id (FK)  ├──────► RENTALS      │
 │ status          │                     │
-│ subtotal_cents  │                     │
-│ tax_cents       │                     │
-│ total_cents     │                     │
-│ paid_cents      │                     │
-│ balance_cents   │                     │
+│ subtotal        │ (PHP)               │
+│ tax             │ (PHP)               │
+│ total           │ (PHP)               │
+│ paid_amount     │ (PHP)               │
+│ balance         │ (PHP)               │
 │ issue_date      │                     │
 │ due_date        │                     │
 │ paid_date       │                     │
@@ -341,8 +373,8 @@ The Fleet Management System is a comprehensive solution for managing vehicle ren
 │ invoice_id (FK) │                     │
 │ description     │                     │
 │ quantity        │                     │
-│ unit_price_cents│                     │
-│ total_cents     │                     │
+│ unit_price      │ (PHP)               │
+│ total           │ (PHP)               │
 └─────────────────┘                     │
                                         │
 ┌─────────────────┐                     │
@@ -352,8 +384,8 @@ The Fleet Management System is a comprehensive solution for managing vehicle ren
 │ payment_number  │                     │
 │ customer_id (FK)├──────► CUSTOMERS    │
 │ invoice_id (FK) ├─────────────────────┘
-│ payment_method  │
-│ amount_cents    │
+│ payment_method  │ (FK) ──────► PAYMENT_METHODS
+│ amount          │ (PHP)
 │ status          │
 │ payment_date    │
 │ transaction_ref │
@@ -406,9 +438,41 @@ The Fleet Management System is a comprehensive solution for managing vehicle ren
 - **Rental Conflicts**: Prevents double-booking via date range checks
 - **License Validation**: Driver license expiry must be future-dated
 - **Odometer Integrity**: Readings must be non-decreasing
-- **Financial Integrity**: All money stored as cents (integer) to avoid floating-point errors
+- **Financial Integrity**: All money stored as whole units (PHP) to avoid floating-point errors
 - **Audit Trail**: All tables have `created_at`, `updated_at` timestamps
 - **Optimistic Locking**: Version columns on critical tables (rentals, maintenance, vehicles)
+
+---
+
+---
+
+## 🔄 Typical Workflow: Creating & Paying a Rental
+
+```bash
+1. Create Customer
+   POST /v1/customers -> Returns customerId
+
+2. Verify Vehicle Available
+   GET /v1/vehicles/{vehicleId} -> Check status is "AVAILABLE"
+
+3. Create Rental (Reservation)
+   POST /v1/rentals -> Returns rentalId, status: "RESERVED"
+
+4. Activate Rental (Pickup)
+   POST /v1/rentals/{rentalId}/activate
+   → Status: "ACTIVE", Vehicle: "RENTED", Ledger: Receivable + Revenue
+
+5. Complete Rental (Return)
+   POST /v1/rentals/{rentalId}/complete
+   → Status: "COMPLETED", Vehicle: "AVAILABLE"
+
+6. Issue Invoice
+   POST /v1/reconciliation/invoices -> Standardizes reference formats
+
+7. Capture Payment
+   POST /v1/reconciliation/invoices/{id}/pay
+   → Ledger: Cash + Clearance, Reconciliation: Balanced (0.00 mismatch)
+```
 
 ---
 

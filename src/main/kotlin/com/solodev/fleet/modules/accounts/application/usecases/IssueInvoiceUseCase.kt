@@ -8,10 +8,10 @@ import com.solodev.fleet.modules.accounts.domain.repository.LedgerRepository
 import com.solodev.fleet.modules.rentals.domain.model.CustomerId
 import com.solodev.fleet.modules.rentals.domain.model.RentalId
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 class IssueInvoiceUseCase(
-        private val repository: InvoiceRepository,
+        private val invoiceRepo: InvoiceRepository,
         private val accountRepo: AccountRepository,
         private val ledgerRepo: LedgerRepository
 ) {
@@ -23,13 +23,13 @@ class IssueInvoiceUseCase(
                         customerId = CustomerId(request.customerId),
                         rentalId = request.rentalId?.let { RentalId(it) },
                         status = InvoiceStatus.ISSUED,
-                        subtotalCents = (request.subtotal * 100).toInt(),
-                        taxCents = (request.tax * 100).toInt(),
-                        paidCents = 0,
+                        subtotal = request.subtotal,
+                        tax = request.tax,
+                        paidAmount = 0,
                         issueDate = Instant.now(),
                         dueDate = Instant.parse(request.dueDate)
                 )
-        val savedInvoice = repository.save(invoice)
+        val savedInvoice = invoiceRepo.save(invoice)
 
         // Post to General Ledger
         // When an invoice is issued:
@@ -52,7 +52,7 @@ class IssueInvoiceUseCase(
                 LedgerEntry(
                         id = entryId,
                         entryNumber = "JE-${System.currentTimeMillis()}",
-                        externalReference = "invoice-${savedInvoice.invoiceNumber}",
+                        externalReference = "invoice-${savedInvoice.id}-issuance",
                         entryDate = entryDate,
                         description = "Invoice issued: ${savedInvoice.invoiceNumber}",
                         lines =
@@ -61,8 +61,8 @@ class IssueInvoiceUseCase(
                                                 id = UUID.randomUUID(),
                                                 entryId = entryId,
                                                 accountId = arAccount.id,
-                                                debitAmountCents = savedInvoice.totalCents,
-                                                creditAmountCents = 0,
+                                                debitAmount = savedInvoice.totalAmount,
+                                                creditAmount = 0,
                                                 description =
                                                         "Receivable for ${savedInvoice.invoiceNumber}"
                                         ),
@@ -70,8 +70,8 @@ class IssueInvoiceUseCase(
                                                 id = UUID.randomUUID(),
                                                 entryId = entryId,
                                                 accountId = revenueAccount.id,
-                                                debitAmountCents = 0,
-                                                creditAmountCents = savedInvoice.totalCents,
+                                                debitAmount = 0,
+                                                creditAmount = savedInvoice.totalAmount,
                                                 description =
                                                         "Revenue for ${savedInvoice.invoiceNumber}"
                                         )

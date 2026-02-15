@@ -35,8 +35,8 @@ object LedgerEntriesTable : UUIDTable("ledger_entries") {
 object LedgerEntryLinesTable : UUIDTable("ledger_entry_lines") {
     val entryId = reference("entry_id", LedgerEntriesTable, onDelete = ReferenceOption.CASCADE)
     val accountId = reference("account_id", AccountsTable, onDelete = ReferenceOption.RESTRICT)
-    val debitAmountCents = integer("debit_amount_cents").default(0)
-    val creditAmountCents = integer("credit_amount_cents").default(0)
+    val debitAmount = integer("debit_amount").default(0)
+    val creditAmount = integer("credit_amount").default(0)
     val currencyCode = varchar("currency_code", 3).default("PHP")
     val description = text("description").nullable()
 }
@@ -50,11 +50,11 @@ object InvoicesTable : UUIDTable("invoices") {
     val status = varchar("status", 20)
 
     // Amounts
-    val subtotalCents = integer("subtotal_cents")
-    val taxCents = integer("tax_cents").default(0)
-    val paidCents = integer("paid_cents").default(0)
+    val subtotal = integer("subtotal")
+    val tax = integer("tax").default(0)
+    val paidAmount = integer("paid_amount").default(0)
     val currencyCode = varchar("currency_code", 3).default("PHP")
-    val balanceCents = integer("balance_cents")
+    val balance = integer("balance")
 
     // Dates
     val issueDate = date("issue_date")
@@ -72,7 +72,7 @@ object InvoiceLineItemsTable : UUIDTable("invoice_line_items") {
     val invoiceId = reference("invoice_id", InvoicesTable, onDelete = ReferenceOption.CASCADE)
     val description = text("description")
     val quantity = decimal("quantity", 10, 2)
-    val unitPriceCents = integer("unit_price_cents")
+    val unitPrice = integer("unit_price")
     val currencyCode = varchar("currency_code", 3).default("PHP")
 }
 
@@ -83,7 +83,7 @@ object PaymentsTable : UUIDTable("payments") {
     val invoiceId =
             reference("invoice_id", InvoicesTable, onDelete = ReferenceOption.SET_NULL).nullable()
     val paymentMethod = varchar("payment_method", 50)
-    val amountCents = integer("amount_cents")
+    val amount = integer("amount")
     val currencyCode = varchar("currency_code", 3).default("PHP")
     val transactionReference = varchar("transaction_reference", 255).nullable()
     val status = varchar("status", 20)

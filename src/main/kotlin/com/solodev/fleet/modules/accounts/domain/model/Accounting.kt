@@ -80,8 +80,8 @@ data class LedgerEntry(
 
         // Validate double-entry balance
         if (lines.isNotEmpty()) {
-            val totalDebits = lines.sumOf { it.debitAmountCents }
-            val totalCredits = lines.sumOf { it.creditAmountCents }
+            val totalDebits = lines.sumOf { it.debitAmount }
+            val totalCredits = lines.sumOf { it.creditAmount }
             require(totalDebits == totalCredits) {
                 "Ledger entry must be balanced: debits=$totalDebits, credits=$totalCredits"
             }
@@ -90,8 +90,8 @@ data class LedgerEntry(
 
     /** Check if this entry is balanced. */
     fun isBalanced(): Boolean {
-        val totalDebits = lines.sumOf { it.debitAmountCents }
-        val totalCredits = lines.sumOf { it.creditAmountCents }
+        val totalDebits = lines.sumOf { it.debitAmount }
+        val totalCredits = lines.sumOf { it.creditAmount }
         return totalDebits == totalCredits
     }
 }
@@ -105,28 +105,27 @@ data class LedgerEntryLine(
         val id: UUID,
         val entryId: LedgerEntryId,
         val accountId: AccountId,
-        val debitAmountCents: Int = 0,
-        val creditAmountCents: Int = 0,
+        val debitAmount: Int = 0,
+        val creditAmount: Int = 0,
         val currencyCode: String = "PHP",
         val description: String? = null
 ) {
     init {
-        require(debitAmountCents >= 0) { "Debit amount cannot be negative" }
-        require(creditAmountCents >= 0) { "Credit amount cannot be negative" }
-        require(
-                (debitAmountCents > 0 && creditAmountCents == 0) ||
-                        (debitAmountCents == 0 && creditAmountCents > 0)
-        ) { "Each line must be either debit or credit, not both" }
+        require(debitAmount >= 0) { "Debit amount cannot be negative" }
+        require(creditAmount >= 0) { "Credit amount cannot be negative" }
+        require((debitAmount > 0 && creditAmount == 0) || (debitAmount == 0 && creditAmount > 0)) {
+            "Each line must be either debit or credit, not both"
+        }
     }
 
     val isDebit: Boolean
-        get() = debitAmountCents > 0
+        get() = debitAmount > 0
 
     val isCredit: Boolean
-        get() = creditAmountCents > 0
+        get() = creditAmount > 0
 
     val amount: Int
-        get() = if (isDebit) debitAmountCents else creditAmountCents
+        get() = if (isDebit) debitAmount else creditAmount
 }
 
 /** Invoice domain entity. */
@@ -136,9 +135,9 @@ data class Invoice(
         val customerId: CustomerId,
         val rentalId: RentalId? = null,
         val status: InvoiceStatus,
-        val subtotalCents: Int,
-        val taxCents: Int = 0,
-        val paidCents: Int = 0,
+        val subtotal: Int,
+        val tax: Int = 0,
+        val paidAmount: Int = 0,
         val currencyCode: String = "PHP",
         val issueDate: Instant,
         val dueDate: Instant,
@@ -147,22 +146,22 @@ data class Invoice(
 ) {
     init {
         require(invoiceNumber.isNotBlank()) { "Invoice number cannot be blank" }
-        require(subtotalCents >= 0) { "Subtotal cannot be negative" }
-        require(taxCents >= 0) { "Tax cannot be negative" }
-        require(paidCents >= 0) { "Paid amount cannot be negative" }
+        require(subtotal >= 0) { "Subtotal cannot be negative" }
+        require(tax >= 0) { "Tax cannot be negative" }
+        require(paidAmount >= 0) { "Paid amount cannot be negative" }
         require(dueDate.isAfter(issueDate) || dueDate == issueDate) {
             "Due date must be on or after issue date"
         }
     }
 
-    val totalCents: Int
-        get() = subtotalCents + taxCents
+    val totalAmount: Int
+        get() = subtotal + tax
 
-    val balanceCents: Int
-        get() = totalCents - paidCents
+    val balance: Int
+        get() = totalAmount - paidAmount
 
     val isPaid: Boolean
-        get() = balanceCents == 0
+        get() = balance == 0
 
     val isOverdue: Boolean
         get() = !isPaid && Instant.now().isAfter(dueDate)
@@ -174,7 +173,7 @@ data class Payment(
         val paymentNumber: String,
         val customerId: CustomerId,
         val invoiceId: UUID?,
-        val amountCents: Int,
+        val amount: Int,
         val paymentMethod: String,
         val transactionReference: String? = null,
         val status: PaymentStatus,

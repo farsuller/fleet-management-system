@@ -15,10 +15,10 @@ CREATE TABLE vehicles (
     color VARCHAR(50),
     fuel_type VARCHAR(20) CHECK (fuel_type IN ('GASOLINE', 'DIESEL', 'ELECTRIC', 'HYBRID')),
     transmission VARCHAR(20) CHECK (transmission IN ('MANUAL', 'AUTOMATIC')),
-    daily_rate_cents INTEGER CHECK (daily_rate_cents >= 0),
+    daily_rate INTEGER CHECK (daily_rate >= 0),
     currency_code VARCHAR(3) DEFAULT 'PHP',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     version BIGINT NOT NULL DEFAULT 0
 );
 
@@ -28,7 +28,7 @@ CREATE TABLE odometer_readings (
     vehicle_id UUID NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
     reading_km INTEGER NOT NULL CHECK (reading_km >= 0),
     recorded_by_user_id UUID REFERENCES users(id),
-    recorded_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    recorded_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     notes TEXT
 );
 

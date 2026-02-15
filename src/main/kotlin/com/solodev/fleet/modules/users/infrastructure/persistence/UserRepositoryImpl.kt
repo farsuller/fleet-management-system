@@ -6,17 +6,13 @@ import com.solodev.fleet.modules.users.domain.model.StaffProfile
 import com.solodev.fleet.modules.users.domain.model.User
 import com.solodev.fleet.modules.users.domain.model.UserId
 import com.solodev.fleet.modules.users.domain.repository.UserRepository
+import com.solodev.fleet.shared.helpers.dbQuery
 import java.time.Instant
 import java.util.*
-import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 class UserRepositoryImpl : UserRepository {
-
-    private suspend fun <T> dbQuery(block: suspend () -> T): T =
-            newSuspendedTransaction(Dispatchers.IO) { block() }
 
     private fun ResultRow.toUser(
             roles: List<Role> = emptyList(),

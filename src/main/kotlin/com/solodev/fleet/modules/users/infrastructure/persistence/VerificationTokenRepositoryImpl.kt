@@ -4,21 +4,17 @@ import com.solodev.fleet.modules.users.domain.model.TokenType
 import com.solodev.fleet.modules.users.domain.model.UserId
 import com.solodev.fleet.modules.users.domain.model.VerificationToken
 import com.solodev.fleet.modules.users.domain.repository.VerificationTokenRepository
-import kotlinx.coroutines.Dispatchers
+import com.solodev.fleet.shared.helpers.dbQuery
+import java.time.Instant
+import java.util.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import java.time.Instant
-import java.util.*
 
 class VerificationTokenRepositoryImpl : VerificationTokenRepository {
-
-    private suspend fun <T> dbQuery(block: suspend () -> T): T =
-        newSuspendedTransaction(Dispatchers.IO) { block() }
 
     override suspend fun save(token: VerificationToken): VerificationToken = dbQuery {
         VerificationTokensTable.insert {
@@ -34,21 +30,21 @@ class VerificationTokenRepositoryImpl : VerificationTokenRepository {
 
     override suspend fun findByToken(token: String, type: TokenType): VerificationToken? = dbQuery {
         VerificationTokensTable.selectAll()
-            .where {
-                (VerificationTokensTable.token eq token) and
-                        (VerificationTokensTable.type eq type.name)
-            }
-            .map {
-                VerificationToken(
-                    id = it[VerificationTokensTable.id].value,
-                    userId = UserId(it[VerificationTokensTable.userId].value.toString()),
-                    token = it[VerificationTokensTable.token],
-                    type = TokenType.valueOf(it[VerificationTokensTable.type]),
-                    expiresAt = it[VerificationTokensTable.expiresAt],
-                    createdAt = it[VerificationTokensTable.createdAt]
-                )
-            }
-            .singleOrNull()
+                .where {
+                    (VerificationTokensTable.token eq token) and
+                            (VerificationTokensTable.type eq type.name)
+                }
+                .map {
+                    VerificationToken(
+                            id = it[VerificationTokensTable.id].value,
+                            userId = UserId(it[VerificationTokensTable.userId].value.toString()),
+                            token = it[VerificationTokensTable.token],
+                            type = TokenType.valueOf(it[VerificationTokensTable.type]),
+                            expiresAt = it[VerificationTokensTable.expiresAt],
+                            createdAt = it[VerificationTokensTable.createdAt]
+                    )
+                }
+                .singleOrNull()
     }
 
     override suspend fun deleteByToken(token: String): Unit = dbQuery {
