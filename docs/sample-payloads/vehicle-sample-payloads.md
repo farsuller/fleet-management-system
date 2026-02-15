@@ -24,7 +24,7 @@ This document provides sample payloads for the Vehicle API, designed to help fro
       "color": "Silver",
       "state": "AVAILABLE",
       "mileageKm": 15000,
-      "dailyRateCents": 250000,
+      "dailyRate": 2500,
       "currencyCode": "PHP",
       "passengerCapacity": 5
     },
@@ -38,7 +38,7 @@ This document provides sample payloads for the Vehicle API, designed to help fro
       "color": "Blue",
       "state": "RENTED",
       "mileageKm": 8500,
-      "dailyRateCents": 200000,
+      "dailyRate": 2000,
       "currencyCode": "PHP",
       "passengerCapacity": 5
     }
@@ -62,7 +62,7 @@ This document provides sample payloads for the Vehicle API, designed to help fro
   "year": 2024,
   "color": "Silver",
   "mileageKm": 0,
-  "dailyRateCents": 250000,
+  "dailyRate": 2500,
   "passengerCapacity": 5
 }
 ```
@@ -81,7 +81,7 @@ This document provides sample payloads for the Vehicle API, designed to help fro
     "color": "Silver",
     "state": "AVAILABLE",
     "mileageKm": 0,
-    "dailyRateCents": 250000,
+    "dailyRate": 2500,
     "currencyCode": "PHP",
     "passengerCapacity": 5
   },
@@ -130,7 +130,7 @@ This document provides sample payloads for the Vehicle API, designed to help fro
     "color": "Silver",
     "state": "AVAILABLE",
     "mileageKm": 15000,
-    "dailyRateCents": 250000,
+    "dailyRate": 2500,
     "currencyCode": "PHP",
     "passengerCapacity": 5
   },
@@ -159,7 +159,7 @@ This document provides sample payloads for the Vehicle API, designed to help fro
 ```json
 {
   "color": "Red",
-  "dailyRateCents": 280000,
+  "dailyRate": 2800,
   "passengerCapacity": 4
 }
 ```
@@ -178,7 +178,7 @@ This document provides sample payloads for the Vehicle API, designed to help fro
     "color": "Red",
     "state": "AVAILABLE",
     "mileageKm": 15000,
-    "dailyRateCents": 280000,
+    "dailyRate": 2800,
     "currencyCode": "PHP",
     "passengerCapacity": 4
   },
@@ -212,7 +212,7 @@ This document provides sample payloads for the Vehicle API, designed to help fro
     "color": "Red",
     "state": "MAINTENANCE",
     "mileageKm": 15000,
-    "dailyRateCents": 280000,
+    "dailyRate": 2800,
     "currencyCode": "PHP",
     "passengerCapacity": 4
   },
@@ -258,7 +258,7 @@ This document provides sample payloads for the Vehicle API, designed to help fro
     "color": "Red",
     "state": "MAINTENANCE",
     "mileageKm": 18500,
-    "dailyRateCents": 280000,
+    "dailyRate": 2800,
     "currencyCode": "PHP",
     "passengerCapacity": 4
   },

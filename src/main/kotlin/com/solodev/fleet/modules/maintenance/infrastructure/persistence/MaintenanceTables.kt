@@ -25,8 +25,8 @@ object MaintenanceJobsTable : UUIDTable("maintenance_jobs") {
     val odometerKm = integer("odometer_km").nullable()
 
     // Cost tracking
-    val laborCostCents = integer("labor_cost_cents").default(0)
-    val partsCostCents = integer("parts_cost_cents").default(0)
+    val laborCost = integer("labor_cost").default(0)
+    val partsCost = integer("parts_cost").default(0)
     val currencyCode = varchar("currency_code", 3).default("PHP")
 
     // Personnel
@@ -46,7 +46,7 @@ object MaintenancePartsTable : UUIDTable("maintenance_parts") {
     val partNumber = varchar("part_number", 100)
     val partName = varchar("part_name", 255)
     val quantity = integer("quantity")
-    val unitCostCents = integer("unit_cost_cents")
+    val unitCost = integer("unit_cost")
     val currencyCode = varchar("currency_code", 3).default("PHP")
     val supplier = varchar("supplier", 255).nullable()
     val notes = text("notes").nullable()

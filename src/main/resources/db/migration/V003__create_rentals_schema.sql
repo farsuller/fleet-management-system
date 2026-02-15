@@ -16,8 +16,8 @@ CREATE TABLE customers (
     state VARCHAR(100),
     postal_code VARCHAR(20),
     country VARCHAR(100),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Rentals table: Core rental information
@@ -29,15 +29,15 @@ CREATE TABLE rentals (
     status VARCHAR(20) NOT NULL CHECK (status IN ('RESERVED', 'ACTIVE', 'COMPLETED', 'CANCELLED')),
     
     -- Rental period
-    start_date TIMESTAMPTZ NOT NULL,
-    end_date TIMESTAMPTZ NOT NULL,
-    actual_start_date TIMESTAMPTZ,
-    actual_end_date TIMESTAMPTZ,
+    start_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    end_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    actual_start_date TIMESTAMP WITH TIME ZONE,
+    actual_end_date TIMESTAMP WITH TIME ZONE,
     
     -- Pricing
-    daily_rate_cents INTEGER NOT NULL CHECK (daily_rate_cents >= 0),
-    total_amount_cents INTEGER NOT NULL CHECK (total_amount_cents >= 0),
-    currency_code VARCHAR(3) NOT NULL DEFAULT 'USD',
+    daily_rate INTEGER NOT NULL CHECK (daily_rate >= 0),
+    total_amount INTEGER NOT NULL CHECK (total_amount >= 0),
+    currency_code VARCHAR(3) NOT NULL DEFAULT 'PHP',
     
     -- Odometer
     start_odometer_km INTEGER CHECK (start_odometer_km >= 0),
@@ -50,8 +50,8 @@ CREATE TABLE rentals (
     -- Metadata
     notes TEXT,
     created_by_user_id UUID REFERENCES users(id),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     version BIGINT NOT NULL DEFAULT 0,
     
     -- Constraints
@@ -83,9 +83,9 @@ CREATE TABLE rental_charges (
     rental_id UUID NOT NULL REFERENCES rentals(id) ON DELETE CASCADE,
     charge_type VARCHAR(50) NOT NULL CHECK (charge_type IN ('FUEL', 'DAMAGE', 'LATE_FEE', 'CLEANING', 'TOLL', 'OTHER')),
     description TEXT NOT NULL,
-    amount_cents INTEGER NOT NULL CHECK (amount_cents >= 0),
-    currency_code VARCHAR(3) NOT NULL DEFAULT 'USD',
-    charged_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    amount INTEGER NOT NULL CHECK (amount >= 0),
+    currency_code VARCHAR(3) NOT NULL DEFAULT 'PHP',
+    charged_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     charged_by_user_id UUID REFERENCES users(id)
 );
 
@@ -94,13 +94,13 @@ CREATE TABLE rental_payments (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     rental_id UUID NOT NULL REFERENCES rentals(id) ON DELETE CASCADE,
     payment_method VARCHAR(50) NOT NULL CHECK (payment_method IN ('CREDIT_CARD', 'DEBIT_CARD', 'CASH', 'BANK_TRANSFER')),
-    amount_cents INTEGER NOT NULL CHECK (amount_cents > 0),
-    currency_code VARCHAR(3) NOT NULL DEFAULT 'USD',
+    amount INTEGER NOT NULL CHECK (amount > 0),
+    currency_code VARCHAR(3) NOT NULL DEFAULT 'PHP',
     transaction_reference VARCHAR(255),
     status VARCHAR(20) NOT NULL CHECK (status IN ('PENDING', 'COMPLETED', 'FAILED', 'REFUNDED')),
-    paid_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    paid_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Indexes for performance

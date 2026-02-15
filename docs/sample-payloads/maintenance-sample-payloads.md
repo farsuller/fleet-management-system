@@ -43,7 +43,7 @@ This document details the Maintenance module's API endpoints, providing context 
     "description": "Annual oil change and safety inspection",
     "scheduledDate": "2026-12-01T10:00:00Z",
     "startedAt": "2026-12-01T10:05:00Z",
-    "totalCostCents": 0
+    "totalCost": 0
   },
   "requestId": "req_start_001"
 }
@@ -59,8 +59,8 @@ This document details the Maintenance module's API endpoints, providing context 
 ```json
 {
   "status": "COMPLETED",
-  "laborCostCents": 5000,
-  "partsCostCents": 12000
+  "laborCost": 50,
+  "partsCost": 120
 }
 ```
 
@@ -86,7 +86,7 @@ This document details the Maintenance module's API endpoints, providing context 
     "jobType": "ROUTINE",
     "description": "Annual oil change and safety inspection",
     "scheduledDate": "2026-12-01T10:00:00Z",
-    "totalCostCents": 0
+    "totalCost": 0
   },
   "requestId": "req_cancel_001"
 }
@@ -95,7 +95,7 @@ This document details the Maintenance module's API endpoints, providing context 
 ---
 
 ## 5. Maintenance Job Response
-**Context**: Standard response structure for a single maintenance job. Returned by creation, update, and retrieval endpoints. `totalCostCents` is calculated dynamically (labor + parts).
+**Context**: Standard response structure for a single maintenance job. Returned by creation, update, and retrieval endpoints. `totalCost` is calculated dynamically (labor + parts).
 
 ```json
 {
@@ -106,7 +106,7 @@ This document details the Maintenance module's API endpoints, providing context 
   "jobType": "ROUTINE",
   "description": "Annual oil change and safety inspection",
   "scheduledDate": "2026-12-01T10:00:00Z",
-  "totalCostCents": 0
+  "totalCost": 0
 }
 ```
 
@@ -127,7 +127,7 @@ This document details the Maintenance module's API endpoints, providing context 
     "jobType": "ROUTINE",
     "description": "Annual oil change and safety inspection",
     "scheduledDate": "2026-12-01T10:00:00Z",
-    "totalCostCents": 17000
+    "totalCost": 170
   },
   {
     "id": "e2f012cc-9999-4444-2222-abcdef123456",
@@ -137,7 +137,7 @@ This document details the Maintenance module's API endpoints, providing context 
     "jobType": "INSPECTION",
     "description": "Brake pad replacement",
     "scheduledDate": "2026-12-15T14:30:00Z",
-    "totalCostCents": 0
+    "totalCost": 0
   }
 ]
 ```

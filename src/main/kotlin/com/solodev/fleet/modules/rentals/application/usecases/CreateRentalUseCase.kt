@@ -10,19 +10,15 @@ import com.solodev.fleet.modules.vehicles.domain.model.Vehicle
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleState
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
-import kotlinx.coroutines.Dispatchers
-import org.jetbrains.exposed.sql.transactions.TransactionManager
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import com.solodev.fleet.shared.helpers.dbQuery
 import java.time.Instant
 import java.util.*
+import org.jetbrains.exposed.sql.transactions.TransactionManager
 
 class CreateRentalUseCase(
-    private val rentalRepository: RentalRepository,
-    private val vehicleRepository: VehicleRepository
+        private val rentalRepository: RentalRepository,
+        private val vehicleRepository: VehicleRepository
 ) {
-    /** Execute database operations in a suspended transaction. */
-    private suspend fun <T> dbQuery(block: suspend () -> T): T =
-        newSuspendedTransaction(Dispatchers.IO) { block() }
 
     suspend fun execute(request: RentalRequest): Rental = dbQuery {
         val vehicleId = VehicleId(request.vehicleId)
@@ -36,7 +32,9 @@ class CreateRentalUseCase(
         TransactionManager.current().exec("SELECT pg_advisory_xact_lock($lockId)")
 
         // 2. VALIDATE - Now safe from race conditions
-        val vehicle = vehicleRepository.findById(vehicleId) ?: throw IllegalArgumentException("Vehicle not found")
+        val vehicle =
+                vehicleRepository.findById(vehicleId)
+                        ?: throw IllegalArgumentException("Vehicle not found")
 
         require(vehicle.state == VehicleState.AVAILABLE) { "Vehicle is not available for rental" }
 
@@ -45,17 +43,18 @@ class CreateRentalUseCase(
         require(conflicts.isEmpty()) { "Vehicle is already rented during this period" }
 
         // 4. CREATE AND PERSIST RENTAL
-        val rental = Rental(
-            id = RentalId(UUID.randomUUID().toString()),
-            rentalNumber = "RNT-${System.currentTimeMillis()}",
-            vehicleId = vehicleId,
-            customerId = customerId,
-            status = RentalStatus.RESERVED,
-            startDate = startDate,
-            endDate = endDate,
-            totalAmountCents = calculateCost(vehicle, startDate, endDate),
-            dailyRateCents = dailyRate(vehicle)
-        )
+        val rental =
+                Rental(
+                        id = RentalId(UUID.randomUUID().toString()),
+                        rentalNumber = "RNT-${System.currentTimeMillis()}",
+                        vehicleId = vehicleId,
+                        customerId = customerId,
+                        status = RentalStatus.RESERVED,
+                        startDate = startDate,
+                        endDate = endDate,
+                        totalAmount = calculateCost(vehicle, startDate, endDate),
+                        dailyRateAmount = dailyRate(vehicle)
+                )
 
         rentalRepository.save(rental)
     }
@@ -65,5 +64,5 @@ class CreateRentalUseCase(
         return days * dailyRate(vehicle)
     }
 
-    private fun dailyRate(vehicle: Vehicle): Int = vehicle.dailyRateCents ?: 5000
+    private fun dailyRate(vehicle: Vehicle): Int = vehicle.dailyRateAmount ?: 5000
 }

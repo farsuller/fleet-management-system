@@ -8,5 +8,6 @@ data class AccountRequest(
         val accountName: String,
         val accountType: String,
         val parentAccountId: String? = null,
-        val description: String? = null
+        val description: String? = null,
+        val isActive: Boolean = true
 )

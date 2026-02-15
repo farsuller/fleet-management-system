@@ -1,5 +1,7 @@
 package com.solodev.fleet
 
+import com.solodev.fleet.modules.accounts.application.AccountingService
+import com.solodev.fleet.modules.accounts.application.ReconciliationService
 import com.solodev.fleet.modules.accounts.infrastructure.http.accountingRoutes
 import com.solodev.fleet.modules.accounts.infrastructure.persistence.*
 import com.solodev.fleet.modules.maintenance.infrastructure.http.maintenanceRoutes
@@ -39,13 +41,20 @@ fun Application.configureRouting(jwtService: JwtService, vehicleRepo: VehicleRep
     val ledgerRepo = LedgerRepositoryImpl()
     val paymentMethodRepo = PaymentMethodRepositoryImpl()
 
+    val accountingService = AccountingService(accountRepo = accountRepo, ledgerRepo = ledgerRepo)
+    val reconciliationService = ReconciliationService(invoiceRepo = invoiceRepo, accountRepo = accountRepo, ledgerRepo = ledgerRepo)
+
     routing {
         swaggerUI(path = "swagger", swaggerFile = "openapi.yaml")
         openAPI(path = "openapi", swaggerFile = "openapi.yaml")
 
         rateLimit(RateLimitName("public_api")) {
             vehicleRoutes(vehicleRepo)
-            rentalRoutes(rentalRepository = rentalRepo, vehicleRepository = vehicleRepo)
+            rentalRoutes(
+                rentalRepository = rentalRepo,
+                vehicleRepository = vehicleRepo,
+                accountingService = accountingService,
+                )
             customerRoutes(customerRepository = customerRepo)
             maintenanceRoutes(maintenanceRepository = maintenanceRepo)
         }
@@ -61,11 +70,12 @@ fun Application.configureRouting(jwtService: JwtService, vehicleRepo: VehicleRep
         authenticate("auth-jwt") {
             rateLimit(RateLimitName("authenticated_api")) {
                 accountingRoutes(
-                        invoiceRepository = invoiceRepo,
-                        paymentRepository = paymentRepo,
-                        accountRepository = accountRepo,
-                        ledgerRepository = ledgerRepo,
-                        paymentMethodRepository = paymentMethodRepo
+                    invoiceRepository = invoiceRepo,
+                    paymentRepository = paymentRepo,
+                    accountRepository = accountRepo,
+                    ledgerRepository = ledgerRepo,
+                    paymentMethodRepository = paymentMethodRepo,
+                    reconciliationService = reconciliationService
                 )
             }
         }

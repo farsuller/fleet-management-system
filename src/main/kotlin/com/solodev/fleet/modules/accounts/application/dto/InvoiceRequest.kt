@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 data class InvoiceRequest(
         val customerId: String,
         val rentalId: String? = null,
-        val subtotal: Double,
-        val tax: Double,
+        val subtotal: Int,
+        val tax: Int,
         val dueDate: String // ISO-8601
 )

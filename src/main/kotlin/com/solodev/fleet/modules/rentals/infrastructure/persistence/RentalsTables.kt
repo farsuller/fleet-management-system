@@ -39,8 +39,8 @@ object RentalsTable : UUIDTable("rentals") {
     val actualEndDate = timestamp("actual_end_date").nullable()
 
     // Pricing
-    val dailyRateCents = integer("daily_rate_cents")
-    val totalAmountCents = integer("total_amount_cents")
+    val dailyRate = integer("daily_rate")
+    val totalAmount = integer("total_amount")
     val currencyCode = varchar("currency_code", 3).default("PHP")
 
     // Odometer
@@ -62,7 +62,7 @@ object RentalsTable : UUIDTable("rentals") {
 /** Exposed table definition for rental periods (for double-booking prevention). */
 object RentalPeriodsTable : UUIDTable("rental_periods") {
     val rentalId =
-        reference("rental_id", RentalsTable, onDelete = ReferenceOption.CASCADE).uniqueIndex()
+            reference("rental_id", RentalsTable, onDelete = ReferenceOption.CASCADE).uniqueIndex()
     val vehicleId = reference("vehicle_id", VehiclesTable, onDelete = ReferenceOption.RESTRICT)
     val status = varchar("status", 20)
     // Note: period TSTZRANGE is handled by PostgreSQL trigger, not directly by Exposed
@@ -73,7 +73,7 @@ object RentalChargesTable : UUIDTable("rental_charges") {
     val rentalId = reference("rental_id", RentalsTable, onDelete = ReferenceOption.CASCADE)
     val chargeType = varchar("charge_type", 50)
     val description = text("description")
-    val amountCents = integer("amount_cents")
+    val amount = integer("amount")
     val currencyCode = varchar("currency_code", 3).default("PHP")
     val chargedAt = timestamp("charged_at")
     val chargedByUserId = uuid("charged_by_user_id").nullable()
@@ -83,7 +83,7 @@ object RentalChargesTable : UUIDTable("rental_charges") {
 object RentalPaymentsTable : UUIDTable("rental_payments") {
     val rentalId = reference("rental_id", RentalsTable, onDelete = ReferenceOption.CASCADE)
     val paymentMethod = varchar("payment_method", 50)
-    val amountCents = integer("amount_cents")
+    val amount = integer("amount")
     val currencyCode = varchar("currency_code", 3).default("PHP")
     val transactionReference = varchar("transaction_reference", 255).nullable()
     val status = varchar("status", 20)

@@ -29,19 +29,10 @@
         </encoder>
     </appender>
 
-    <!-- Use JSON in production, plain text in development -->
-    <if condition='property("ENVIRONMENT").equals("production")'>
-        <then>
-            <root level="INFO">
-                <appender-ref ref="JSON_CONSOLE"/>
-            </root>
-        </then>
-        <else>
-            <root level="INFO">
-                <appender-ref ref="PLAIN_CONSOLE"/>
-            </root>
-        </else>
-    </if>
+    <!-- Default Root Logger -->
+    <root level="INFO">
+        <appender-ref ref="PLAIN_CONSOLE"/>
+    </root>
 
     <!-- Reduce noise from framework loggers -->
     <logger name="org.eclipse.jetty" level="INFO"/>

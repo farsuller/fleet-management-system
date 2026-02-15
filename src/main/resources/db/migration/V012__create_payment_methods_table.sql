@@ -9,8 +9,8 @@ CREATE TABLE payment_methods (
     target_account_code VARCHAR(20) NOT NULL REFERENCES accounts(account_code),
     is_active BOOLEAN NOT NULL DEFAULT true,
     description TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Seed initial payment methods linked to the Chart of Accounts

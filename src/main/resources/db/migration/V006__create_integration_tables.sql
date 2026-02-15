@@ -11,15 +11,15 @@ CREATE TABLE outbox_events (
     metadata JSONB, -- Additional context (user_id, correlation_id, etc.)
     
     -- Publishing tracking
-    published_at TIMESTAMPTZ,
+    published_at TIMESTAMP WITH TIME ZONE,
     published_to_topic VARCHAR(255),
     publish_attempts INTEGER NOT NULL DEFAULT 0,
-    last_publish_attempt_at TIMESTAMPTZ,
+    last_publish_attempt_at TIMESTAMP WITH TIME ZONE,
     last_publish_error TEXT,
     
     -- Metadata
-    occurred_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Inbox processed messages table: Idempotent event consumption
@@ -32,7 +32,7 @@ CREATE TABLE inbox_processed_messages (
     offset_num BIGINT NOT NULL,
     event_type VARCHAR(100) NOT NULL,
     payload JSONB NOT NULL,
-    processed_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    processed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     processing_duration_ms INTEGER,
     
     -- Composite unique constraint to prevent duplicate processing
@@ -52,13 +52,13 @@ CREATE TABLE dlq_messages (
     error_message TEXT NOT NULL,
     stack_trace TEXT,
     retry_count INTEGER NOT NULL DEFAULT 0,
-    last_retry_at TIMESTAMPTZ,
+    last_retry_at TIMESTAMP WITH TIME ZONE,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'RETRYING', 'RESOLVED', 'IGNORED')),
-    resolved_at TIMESTAMPTZ,
+    resolved_at TIMESTAMP WITH TIME ZONE,
     resolved_by_user_id UUID REFERENCES users(id),
     resolution_notes TEXT,
-    failed_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    failed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Idempotency keys table: Track idempotency keys for API requests
@@ -71,8 +71,8 @@ CREATE TABLE idempotency_keys (
     response_status INTEGER,
     response_body JSONB,
     created_by_user_id UUID REFERENCES users(id),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     
     -- Automatically delete expired keys
     CONSTRAINT idempotency_key_not_expired CHECK (expires_at > CURRENT_TIMESTAMP)

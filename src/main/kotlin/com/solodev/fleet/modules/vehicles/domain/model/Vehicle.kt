@@ -32,7 +32,7 @@ data class Vehicle(
         val color: String? = null,
         val state: VehicleState = VehicleState.AVAILABLE,
         val mileageKm: Int = 0,
-        val dailyRateCents: Int? = null,
+        val dailyRateAmount: Int? = null,
         val currencyCode: String = "PHP",
         val passengerCapacity: Int? = null,
         val version: Long = 0
@@ -45,7 +45,7 @@ data class Vehicle(
         require(model.isNotBlank()) { "Model cannot be blank" }
         require(year in 1900..2100) { "Year must be between 1900 and 2100" }
         require(mileageKm >= 0) { "Mileage cannot be negative" }
-        dailyRateCents?.let { require(it >= 0) { "Daily rate cannot be negative" } }
+        dailyRateAmount?.let { require(it >= 0) { "Daily rate cannot be negative" } }
         passengerCapacity?.let { require(it > 0) { "Passenger capacity must be positive" } }
         require(currencyCode == "PHP") { "Only PHP currency is supported" }
     }

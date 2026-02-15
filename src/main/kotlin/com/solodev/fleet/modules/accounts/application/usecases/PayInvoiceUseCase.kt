@@ -18,17 +18,15 @@ class PayInvoiceUseCase(
 ) {
         suspend fun execute(
                 invoiceId: String,
-                amount: Double,
+                amount: Int,
                 paymentMethod: String,
                 notes: String? = null
         ): PaymentReceipt {
-                val amountCents = (amount * 100).toInt()
                 val invoice =
                         invoiceRepo.findById(UUID.fromString(invoiceId))
                                 ?: throw IllegalArgumentException("Invoice not found")
 
-                if (amountCents > invoice.balanceCents)
-                        throw IllegalArgumentException("Overpayment")
+                if (amount > invoice.balance) throw IllegalArgumentException("Overpayment")
 
                 // 1. Create Payment Record (The "Receipt" data)
                 val payment =
@@ -37,7 +35,7 @@ class PayInvoiceUseCase(
                                 paymentNumber = "PAY-${System.currentTimeMillis()}",
                                 customerId = invoice.customerId,
                                 invoiceId = invoice.id,
-                                amountCents = amountCents,
+                                amount = amount,
                                 paymentMethod = paymentMethod,
                                 status = PaymentStatus.COMPLETED,
                                 paymentDate = Instant.now(),
@@ -46,16 +44,16 @@ class PayInvoiceUseCase(
                 paymentRepo.save(payment)
 
                 // 2. Update Invoice state
-                val updatedPaidCents = invoice.paidCents + amountCents
+                val updatedPaidAmount = invoice.paidAmount + amount
                 val updatedInvoice =
                         invoice.copy(
-                                paidCents = updatedPaidCents,
+                                paidAmount = updatedPaidAmount,
                                 status =
-                                        if (invoice.totalCents <= updatedPaidCents)
+                                        if (invoice.totalAmount <= updatedPaidAmount)
                                                 InvoiceStatus.PAID
                                         else InvoiceStatus.ISSUED,
                                 paidDate =
-                                        if (invoice.totalCents <= updatedPaidCents) Instant.now()
+                                        if (invoice.totalAmount <= updatedPaidAmount) Instant.now()
                                         else null
                         )
                 val savedInvoice = invoiceRepo.save(updatedInvoice)
@@ -84,7 +82,7 @@ class PayInvoiceUseCase(
                         LedgerEntry(
                                 id = entryId,
                                 entryNumber = "JE-${System.currentTimeMillis()}",
-                                externalReference = "payment-${payment.paymentNumber}",
+                                externalReference = "invoice-${invoice.id}-payment-${payment.id}",
                                 entryDate = entryDate,
                                 description =
                                         "Payment ($paymentMethod) received for Invoice ${invoice.invoiceNumber}. ${notes ?: ""}",
@@ -94,8 +92,8 @@ class PayInvoiceUseCase(
                                                         id = UUID.randomUUID(),
                                                         entryId = entryId,
                                                         accountId = assetAccount.id,
-                                                        debitAmountCents = amountCents,
-                                                        creditAmountCents = 0,
+                                                        debitAmount = amount,
+                                                        creditAmount = 0,
                                                         description =
                                                                 "Payment for ${invoice.invoiceNumber} via $paymentMethod"
                                                 ),
@@ -103,8 +101,8 @@ class PayInvoiceUseCase(
                                                         id = UUID.randomUUID(),
                                                         entryId = entryId,
                                                         accountId = arAccount.id,
-                                                        debitAmountCents = 0,
-                                                        creditAmountCents = amountCents,
+                                                        debitAmount = 0,
+                                                        creditAmount = amount,
                                                         description =
                                                                 "Payment for ${invoice.invoiceNumber}"
                                                 )
@@ -115,7 +113,7 @@ class PayInvoiceUseCase(
                 // 4. Return Receipt (With the success message you requested)
                 return PaymentReceipt(
                         message =
-                                "Payment of ${amountCents / 100.0} ${invoice.currencyCode} processed successfully.",
+                                "Payment of $amount ${invoice.currencyCode} processed successfully.",
                         payment = payment,
                         updatedInvoice = savedInvoice
                 )

@@ -21,9 +21,10 @@ This document defines **domain boundaries** and **non-negotiable invariants** fo
 
 - Each context owns its business rules and data.
 - Integrate via:
-  - HTTP APIs for synchronous reads/commands where appropriate
-  - Kafka domain events for async integration and projections
-- Avoid distributed transactions; prefer events + reconciliation.
+  - HTTP APIs for synchronous reads/commands
+  - **Synchronous Transactional Postings** for Accounting (ensure atomic financial facts)
+  - Kafka domain events for async integration (Planned for external systems)
+- Avoid distributed transactions; prefer atomic updates + reconciliation.
 
 ## Core invariants
 

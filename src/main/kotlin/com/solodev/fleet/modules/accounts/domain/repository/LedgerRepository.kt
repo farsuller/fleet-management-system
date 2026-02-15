@@ -7,4 +7,7 @@ import java.time.Instant
 interface LedgerRepository {
     suspend fun save(entry: LedgerEntry): LedgerEntry
     suspend fun calculateAccountBalance(accountId: AccountId, upToDate: Instant): Long
+
+    suspend fun calculateSumForReference(reference: String, accountId: AccountId): Long
+    suspend fun calculateSumForPartialReference(prefix: String, accountId: AccountId): Long
 }
