@@ -51,6 +51,7 @@ dependencies {
     implementation(libs.micrometer.registry.prometheus)   // Prometheus integration for metrics
     implementation(libs.ktor.server.config.yaml)          // YAML support for application.yaml
     implementation(libs.logback.classic)                  // Standard logging implementation
+    implementation(libs.logstash.logback.encoder)
     
     // --- Database (Exposed ORM) ---
     implementation(libs.exposed.core)                      // Type-safe SQL DSL (prevents SQLi)
@@ -59,7 +60,13 @@ dependencies {
     implementation(libs.exposed.json)                      // JSONB support for PostgreSQL
     implementation(libs.hikaricp)                          // High-performance connection pooling
     implementation(libs.postgresql)                        // PostgreSQL database driver
-    
+
+    implementation(libs.jedis)
+
+
+    implementation(libs.resilience4j.circuitbreaker)       // Circuit breaker
+    implementation(libs.resilience4j.kotlin)               // Resilience4j Kotlin extensions
+
     // --- Database Migrations ---
     implementation(libs.flyway.core)                       // Database version control
     implementation(libs.flyway.database.postgresql)        // Flyway support for PostgreSQL

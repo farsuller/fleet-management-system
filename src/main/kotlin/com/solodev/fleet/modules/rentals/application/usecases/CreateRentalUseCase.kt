@@ -1,53 +1,63 @@
 package com.solodev.fleet.modules.rentals.application.usecases
 
+import com.solodev.fleet.modules.rentals.application.dto.RentalRequest
 import com.solodev.fleet.modules.rentals.domain.model.CustomerId
 import com.solodev.fleet.modules.rentals.domain.model.Rental
 import com.solodev.fleet.modules.rentals.domain.model.RentalId
 import com.solodev.fleet.modules.rentals.domain.model.RentalStatus
+import com.solodev.fleet.modules.rentals.domain.repository.RentalRepository
 import com.solodev.fleet.modules.vehicles.domain.model.Vehicle
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleState
-import com.solodev.fleet.modules.rentals.domain.repository.RentalRepository
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
-import com.solodev.fleet.modules.rentals.application.dto.RentalRequest
+import kotlinx.coroutines.Dispatchers
+import org.jetbrains.exposed.sql.transactions.TransactionManager
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.time.Instant
 import java.util.*
 
 class CreateRentalUseCase(
-        private val rentalRepository: RentalRepository,
-        private val vehicleRepository: VehicleRepository
+    private val rentalRepository: RentalRepository,
+    private val vehicleRepository: VehicleRepository
 ) {
-    suspend fun execute(request: RentalRequest): Rental {
+    /** Execute database operations in a suspended transaction. */
+    private suspend fun <T> dbQuery(block: suspend () -> T): T =
+        newSuspendedTransaction(Dispatchers.IO) { block() }
+
+    suspend fun execute(request: RentalRequest): Rental = dbQuery {
         val vehicleId = VehicleId(request.vehicleId)
         val customerId = CustomerId(request.customerId)
         val startDate = Instant.parse(request.startDate)
         val endDate = Instant.parse(request.endDate)
 
-        // Validate vehicle exists and is available
-        val vehicle =
-                vehicleRepository.findById(vehicleId)
-                        ?: throw IllegalArgumentException("Vehicle not found")
+        // 1. ACQUIRE PESSIMISTIC LOCK - Prevents concurrent reservations of the same
+        // vehicle
+        val lockId = UUID.fromString(vehicleId.value).hashCode().toLong()
+        TransactionManager.current().exec("SELECT pg_advisory_xact_lock($lockId)")
+
+        // 2. VALIDATE - Now safe from race conditions
+        val vehicle = vehicleRepository.findById(vehicleId) ?: throw IllegalArgumentException("Vehicle not found")
 
         require(vehicle.state == VehicleState.AVAILABLE) { "Vehicle is not available for rental" }
 
-        // Check for conflicts
+        // 3. CHECK FOR CONFLICTS
         val conflicts = rentalRepository.findConflictingRentals(vehicleId, startDate, endDate)
         require(conflicts.isEmpty()) { "Vehicle is already rented during this period" }
 
-        val rental =
-                Rental(
-                        id = RentalId(UUID.randomUUID().toString()),
-                        rentalNumber = "RNT-${System.currentTimeMillis()}",
-                        vehicleId = vehicleId,
-                        customerId = customerId,
-                        status = RentalStatus.RESERVED,
-                        startDate = startDate,
-                        endDate = endDate,
-                        totalAmountCents = calculateCost(vehicle, startDate, endDate),
-                        dailyRateCents = dailyRate(vehicle)
-                )
+        // 4. CREATE AND PERSIST RENTAL
+        val rental = Rental(
+            id = RentalId(UUID.randomUUID().toString()),
+            rentalNumber = "RNT-${System.currentTimeMillis()}",
+            vehicleId = vehicleId,
+            customerId = customerId,
+            status = RentalStatus.RESERVED,
+            startDate = startDate,
+            endDate = endDate,
+            totalAmountCents = calculateCost(vehicle, startDate, endDate),
+            dailyRateCents = dailyRate(vehicle)
+        )
 
-        return rentalRepository.save(rental)
+        rentalRepository.save(rental)
     }
 
     private fun calculateCost(vehicle: Vehicle, start: Instant, end: Instant): Int {

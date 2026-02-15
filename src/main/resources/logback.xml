@@ -1,12 +1,50 @@
 <configuration>
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <!-- JSON Console Appender for Production -->
+    <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <!-- Include standard fields -->
+            <includeMdcKeyName>requestId</includeMdcKeyName>
+            <includeMdcKeyName>userId</includeMdcKeyName>
+            
+            <!-- Custom field names -->
+            <fieldNames>
+                <timestamp>timestamp</timestamp>
+                <version>version</version>
+                <message>message</message>
+                <logger>logger</logger>
+                <thread>thread</thread>
+                <level>level</level>
+                <levelValue>levelValue</levelValue>
+            </fieldNames>
+            
+            <!-- Add custom fields -->
+            <customFields>{"application":"fleet-management","environment":"${ENVIRONMENT:-development}"}</customFields>
+        </encoder>
+    </appender>
+
+    <!-- Plain Text Console Appender for Development -->
+    <appender name="PLAIN_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
-    <root level="INFO">
-        <appender-ref ref="STDOUT"/>
-    </root>
+
+    <!-- Use JSON in production, plain text in development -->
+    <if condition='property("ENVIRONMENT").equals("production")'>
+        <then>
+            <root level="INFO">
+                <appender-ref ref="JSON_CONSOLE"/>
+            </root>
+        </then>
+        <else>
+            <root level="INFO">
+                <appender-ref ref="PLAIN_CONSOLE"/>
+            </root>
+        </else>
+    </if>
+
+    <!-- Reduce noise from framework loggers -->
     <logger name="org.eclipse.jetty" level="INFO"/>
     <logger name="io.netty" level="INFO"/>
+    <logger name="org.jetbrains.exposed.sql" level="DEBUG"/>
 </configuration>

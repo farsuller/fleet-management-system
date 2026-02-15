@@ -25,10 +25,9 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
 /** Configures the application's routing. */
-fun Application.configureRouting(jwtService: JwtService) {
+fun Application.configureRouting(jwtService: JwtService, vehicleRepo: VehicleRepositoryImpl) {
 
-    // Initialize the repository
-    val vehicleRepo = VehicleRepositoryImpl()
+    // Initialize other repositories
     val rentalRepo = RentalRepositoryImpl()
     val userRepo = UserRepositoryImpl()
     val tokenRepo = VerificationTokenRepositoryImpl()

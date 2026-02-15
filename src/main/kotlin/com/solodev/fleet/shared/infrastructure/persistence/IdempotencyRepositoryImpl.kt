@@ -4,6 +4,7 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.javatime.timestamp
 import org.jetbrains.exposed.sql.json.jsonb
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.Instant
 import java.util.*
@@ -23,7 +24,7 @@ class IdempotencyRepositoryImpl {
 
     /** Lookup an existing key to see if this request was already processed */
     fun find(key: String) = transaction {
-        IdempotencyKeys.select { IdempotencyKeys.idempotencyKey eq key }
+        IdempotencyKeys.selectAll().where { IdempotencyKeys.idempotencyKey eq key }
             .map {
                 StoredResponse(
                     it[IdempotencyKeys.responseStatus],

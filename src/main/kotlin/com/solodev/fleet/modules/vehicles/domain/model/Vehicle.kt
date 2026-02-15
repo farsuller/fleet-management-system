@@ -34,7 +34,8 @@ data class Vehicle(
         val mileageKm: Int = 0,
         val dailyRateCents: Int? = null,
         val currencyCode: String = "PHP",
-        val passengerCapacity: Int? = null
+        val passengerCapacity: Int? = null,
+        val version: Long = 0
 ) {
     init {
         require(vin.isNotBlank()) { "VIN cannot be blank" }
