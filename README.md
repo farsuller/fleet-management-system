@@ -143,15 +143,23 @@ The Fleet Management System is a comprehensive solution for managing vehicle ren
 
 ### Entity Relationship Diagram
 
+**Current Implementation:** 20+ tables across 7 modules
+
 ```
-┌─────────────────┐
-│     USERS       │
-│─────────────────│
-│ id (PK)         │
-│ email (UNIQUE)  │
-│ password_hash   │
-│ first_name      │
-│ last_name       │
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                          CORE ENTITIES                                        │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────┐                    ┌─────────────────┐
+│     USERS       │                    │  VERIFICATION   │
+│─────────────────│                    │     TOKENS      │
+│ id (PK)         │                    │─────────────────│
+│ email (UNIQUE)  │◄───────────────────│ user_id (FK)    │
+│ password_hash   │                    │ token (UNIQUE)  │
+│ first_name      │                    │ expires_at      │
+│ last_name       │                    │ created_at      │
+│ role            │                    └─────────────────┘
+│ is_verified     │
 │ is_active       │
 └─────────────────┘
          │
@@ -160,78 +168,247 @@ The Fleet Management System is a comprehensive solution for managing vehicle ren
 ┌─────────────────┐
 │   CUSTOMERS     │
 │─────────────────│
+│ id (PK)         │◄─────────────────────┐
+│ user_id (FK)    │                      │
+│ email (UNIQUE)  │                      │
+│ first_name      │                      │
+│ last_name       │                      │
+│ phone           │                      │
+│ driver_license  │                      │
+│ license_expiry  │                      │
+│ is_active       │                      │
+└─────────────────┘                      │
+         │                               │
+         │ 1:N                           │
+         ▼                               │
+┌─────────────────┐                      │
+│    RENTALS      │                      │
+│─────────────────│                      │
+│ id (PK)         │                      │
+│ rental_number   │                      │
+│ customer_id (FK)├──────────────────────┘
+│ vehicle_id (FK) ├──────────────────────┐
+│ status          │                      │
+│ start_date      │                      │
+│ end_date        │                      │
+│ daily_rate_cents│                      │
+│ total_price_cents                      │
+│ actual_start    │                      │
+│ actual_end      │                      │
+│ start_odo_km    │                      │
+│ end_odo_km      │                      │
+└─────────────────┘                      │
+                                         │ N:1
+                                         ▼
+                                ┌─────────────────┐
+                                │    VEHICLES     │
+                                │─────────────────│
+                                │ id (PK)         │
+                                │ plate_number    │
+                                │ make            │
+                                │ model           │
+                                │ year            │
+                                │ state           │
+                                │ daily_rate_cents│
+                                │ mileage_km      │
+                                │ version         │
+                                └─────────────────┘
+                                         │
+                                         │ 1:N
+                                         ▼
+                                ┌─────────────────┐
+                                │ ODOMETER_       │
+                                │   READINGS      │
+                                │─────────────────│
+                                │ id (PK)         │
+                                │ vehicle_id (FK) │
+                                │ reading_km      │
+                                │ recorded_at     │
+                                │ recorded_by     │
+                                └─────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                        MAINTENANCE MODULE                                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────┐
+│ MAINTENANCE_    │
+│     JOBS        │
+│─────────────────│
 │ id (PK)         │
-│ user_id (FK)    │◄─────────┐
-│ email (UNIQUE)  │          │
-│ first_name      │          │
-│ last_name       │          │
-│ phone           │          │
-│ driver_license  │          │
-│ license_expiry  │          │
-│ is_active       │          │
-└─────────────────┘          │
-         │                   │
-         │ 1:N               │
-         ▼                   │
-┌─────────────────┐          │
-│    RENTALS      │          │
-│─────────────────│          │
-│ id (PK)         │          │
-│ rental_number   │          │
-│ customer_id (FK)├──────────┘
-│ vehicle_id (FK) ├──────────┐
-│ status          │          │
-│ start_date      │          │
-│ end_date        │          │
-│ daily_rate      │          │
-│ total_amount    │          │
-└─────────────────┘          │
-                             │
-                             │ N:1
-                             ▼
-                    ┌─────────────────┐
-                    │    VEHICLES     │
-                    │─────────────────│
-                    │ id (PK)         │
-                    │ plate_number    │
-                    │ make            │
-                    │ model           │
-                    │ year            │
-                    │ status          │
-                    │ daily_rate      │
-                    │ odometer_km     │
-                    └─────────────────┘
-                             │
-                             │ 1:N
-                             ▼
-                    ┌─────────────────┐
-                    │ ODOMETER_       │
-                    │   READINGS      │
-                    │─────────────────│
-                    │ id (PK)         │
-                    │ vehicle_id (FK) │
-                    │ reading_km      │
-                    │ recorded_at     │
-                    └─────────────────┘
+│ job_number      │
+│ vehicle_id (FK) ├──────► VEHICLES
+│ status          │
+│ job_type        │
+│ priority        │
+│ scheduled_date  │
+│ started_at      │
+│ completed_at    │
+│ odometer_km     │
+│ labor_cost_cents│
+│ parts_cost_cents│
+│ assigned_to (FK)├──────► USERS
+│ completed_by(FK)├──────► USERS
+│ version         │
+└─────────────────┘
+         │
+         │ 1:N
+         ▼
+┌─────────────────┐
+│ MAINTENANCE_    │
+│     PARTS       │
+│─────────────────│
+│ id (PK)         │
+│ job_id (FK)     │
+│ part_number     │
+│ part_name       │
+│ quantity        │
+│ unit_cost_cents │
+│ supplier        │
+└─────────────────┘
+
+┌─────────────────┐
+│ MAINTENANCE_    │
+│   SCHEDULES     │
+│─────────────────│
+│ id (PK)         │
+│ vehicle_id (FK) ├──────► VEHICLES
+│ schedule_type   │
+│ interval_type   │
+│ mileage_interval│
+│ time_interval   │
+│ last_service_date
+│ next_service_date
+│ is_active       │
+└─────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                      ACCOUNTING MODULE (Double-Entry)                         │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────┐
+│    ACCOUNTS     │
+│ (Chart of Accts)│
+│─────────────────│
+│ id (PK)         │◄────────────────────┐
+│ account_code    │                     │
+│ account_name    │                     │
+│ account_type    │                     │
+│ parent_acct(FK) ├─────────┐           │
+│ is_active       │         │           │
+└─────────────────┘         │           │
+         ▲                  └───────────┘
+         │
+         │ N:1
+         │
+┌─────────────────┐         ┌─────────────────┐
+│ LEDGER_ENTRY_   │         │ LEDGER_ENTRIES  │
+│     LINES       │         │─────────────────│
+│─────────────────│         │ id (PK)         │
+│ id (PK)         │         │ entry_number    │
+│ entry_id (FK)   ├────────►│ external_ref    │
+│ account_id (FK) ├─────────┤ entry_date      │
+│ debit_amt_cents │         │ description     │
+│ credit_amt_cents│         │ created_by (FK) ├──► USERS
+│ description     │         └─────────────────┘
+└─────────────────┘
+
+┌─────────────────┐
+│    INVOICES     │
+│─────────────────│
+│ id (PK)         │◄────────────────────┐
+│ invoice_number  │                     │
+│ customer_id (FK)├──────► CUSTOMERS    │
+│ rental_id (FK)  ├──────► RENTALS      │
+│ status          │                     │
+│ subtotal_cents  │                     │
+│ tax_cents       │                     │
+│ total_cents     │                     │
+│ paid_cents      │                     │
+│ balance_cents   │                     │
+│ issue_date      │                     │
+│ due_date        │                     │
+│ paid_date       │                     │
+└─────────────────┘                     │
+         │                              │
+         │ 1:N                          │
+         ▼                              │
+┌─────────────────┐                     │
+│ INVOICE_LINE_   │                     │
+│     ITEMS       │                     │
+│─────────────────│                     │
+│ id (PK)         │                     │
+│ invoice_id (FK) │                     │
+│ description     │                     │
+│ quantity        │                     │
+│ unit_price_cents│                     │
+│ total_cents     │                     │
+└─────────────────┘                     │
+                                        │
+┌─────────────────┐                     │
+│    PAYMENTS     │                     │
+│─────────────────│                     │
+│ id (PK)         │                     │
+│ payment_number  │                     │
+│ customer_id (FK)├──────► CUSTOMERS    │
+│ invoice_id (FK) ├─────────────────────┘
+│ payment_method  │
+│ amount_cents    │
+│ status          │
+│ payment_date    │
+│ transaction_ref │
+└─────────────────┘
+
+┌─────────────────┐
+│ PAYMENT_METHODS │
+│─────────────────│
+│ id (PK)         │
+│ code (UNIQUE)   │
+│ display_name    │
+│ target_acct_code├──────► ACCOUNTS (account_code)
+│ is_active       │
+│ description     │
+└─────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                        INTEGRATION & SHARED                                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────┐
+│ IDEMPOTENCY_    │
+│      KEYS       │
+│─────────────────│
+│ id (PK)         │
+│ idempotency_key │
+│ response_status │
+│ response_body   │
+│ created_at      │
+│ expires_at      │
+└─────────────────┘
 ```
 
-### Key Relationships
+### Database Statistics
 
-1. **User ↔ Customer** (1:1, Optional)
-   - Customers can exist without user accounts (walk-in customers)
-   - Users with CUSTOMER role should have a linked customer record
+| Module | Tables | Key Features |
+|--------|--------|--------------|
+| **Users & Auth** | 2 | Users, Email verification tokens |
+| **Customers** | 1 | Customer profiles with driver licenses |
+| **Vehicles** | 2 | Fleet inventory, Odometer tracking |
+| **Rentals** | 1 | Rental lifecycle management |
+| **Maintenance** | 3 | Jobs, Parts, Schedules |
+| **Accounting** | 7 | Double-entry ledger, Invoices, Payments |
+| **Integration** | 1 | Idempotency keys for API safety |
+| **Total** | **20** | Production-ready schema |
 
-2. **Customer → Rental** (1:N)
-   - One customer can have multiple rentals over time
-   - Each rental belongs to exactly one customer
+### Key Constraints
 
-3. **Vehicle → Rental** (1:N)
-   - One vehicle can have multiple rentals (sequential, not concurrent)
-   - Conflict detection prevents double-booking
-
-4. **Vehicle → Odometer Readings** (1:N)
-   - Track mileage history for maintenance scheduling
-   - Readings are append-only and non-decreasing
+- **Double-Entry Validation**: Ledger entries must balance (debits = credits)
+- **Rental Conflicts**: Prevents double-booking via date range checks
+- **License Validation**: Driver license expiry must be future-dated
+- **Odometer Integrity**: Readings must be non-decreasing
+- **Financial Integrity**: All money stored as cents (integer) to avoid floating-point errors
+- **Audit Trail**: All tables have `created_at`, `updated_at` timestamps
+- **Optimistic Locking**: Version columns on critical tables (rentals, maintenance, vehicles)
 
 ---
 
