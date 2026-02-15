@@ -51,7 +51,7 @@ Improve correctness, reliability, and performance under real-world concurrency a
 
 ---
 
-## Definition of Done (Phase 6)
+## Definition of Done (Phase 4)
 
 - [ ] Concurrency correctness is demonstrated (especially rental overlap prevention)
 - [ ] Kafka consumers handle retries/DLQs safely under load
@@ -354,7 +354,7 @@ Implement Logback's `LogstashEncoder` to output logs in machine-readable JSON fo
 | Local Rate Limiting | ✅ Completed | Tiered Ktor Native Plugin |
 | Idempotency | ✅ Completed | Header-based key tracking |
 | Pagination | ✅ Completed | Cursor-based strategy |
-| Redis Caching | ⏳ Planned | Phase 6 Final |
+| Redis Caching | ⏳ Planned | Phase 8 Final |
 | Global Rate Limiting | ⏳ Planned | Bucket4j upgrade |
 | Circuit Breakers | ⏳ Planned | Reliability upgrade |
 | JSON Logging | ⏳ Planned | Observability upgrade |
@@ -369,42 +369,42 @@ src/main/kotlin/com/example/
 └── shared/
     ├── infrastructure/
     │   ├── ratelimiting/
-    │   │   ├── RateLimiter.kt             (Phase 6)
-    │   │   └── RateLimitingPlugin.kt      (Phase 6)
+    │   │   ├── RateLimiter.kt             (Phase 8)
+    │   │   └── RateLimitingPlugin.kt      (Phase 8)
     │   ├── circuitbreaker/
-    │   │   ├── CircuitBreaker.kt          (Phase 6)
-    │   │   └── CircuitBreakerConfig.kt    (Phase 6)
+    │   │   ├── CircuitBreaker.kt          (Phase 8)
+    │   │   └── CircuitBreakerConfig.kt    (Phase 8)
     │   ├── caching/
-    │   │   ├── CacheManager.kt            (Phase 6)
-    │   │   └── CacheStrategy.kt           (Phase 6)
+    │   │   ├── CacheManager.kt            (Phase 8)
+    │   │   └── CacheStrategy.kt           (Phase 8)
     │   └── logging/
-    │       ├── StructuredLogger.kt        (Phase 6)
-    │       └── LoggingPlugin.kt           (Phase 6)
+    │       ├── StructuredLogger.kt        (Phase 8)
+    │       └── LoggingPlugin.kt           (Phase 8)
     └── monitoring/
         ├── metrics/
-        │   ├── MetricsCollector.kt        (Phase 6)
-        │   └── GoldenSignals.kt           (Phase 6)
+        │   ├── MetricsCollector.kt        (Phase 8)
+        │   └── GoldenSignals.kt           (Phase 8)
         └── health/
-            └── HealthChecks.kt             (Phase 6)
+            └── HealthChecks.kt             (Phase 8)
 
 src/test/kotlin/com/example/
 ├── concurrency/
-│   ├── DoubleBookingTest.kt               (Phase 6)
-│   ├── ConcurrentUpdateTest.kt            (Phase 6)
-│   └── RaceConditionTest.kt               (Phase 6)
+│   ├── DoubleBookingTest.kt               (Phase 8)
+│   ├── ConcurrentUpdateTest.kt            (Phase 8)
+│   └── RaceConditionTest.kt               (Phase 8)
 ├── performance/
-│   ├── LoadTest.kt                        (Phase 6)
-│   └── StressTest.kt                      (Phase 6)
+│   ├── LoadTest.kt                        (Phase 8)
+│   └── StressTest.kt                      (Phase 8)
 └── security/
-    ├── AuthenticationTest.kt              (Phase 6)
-    ├── AuthorizationTest.kt               (Phase 6)
-    └── OwaspTop10Test.kt                  (Phase 6)
+    ├── AuthenticationTest.kt              (Phase 8)
+    ├── AuthorizationTest.kt               (Phase 8)
+    └── OwaspTop10Test.kt                  (Phase 8)
 
 docs/runbooks/
-├── incident-response.md                   (Phase 6)
-├── performance-tuning.md                  (Phase 6)
-├── circuit-breaker-recovery.md            (Phase 6)
-└── kafka-lag-mitigation.md                (Phase 6)
+├── incident-response.md                   (Phase 8)
+├── performance-tuning.md                  (Phase 8)
+├── circuit-breaker-recovery.md            (Phase 8)
+└── kafka-lag-mitigation.md                (Phase 8)
 ```
 
 ---
@@ -572,7 +572,7 @@ tail -f logs/application.log | jq .
 ### Project Documentation
 - `fleet-management-plan.md` - Overall project plan
 - `phase-5-reporting-and-accounting-correctness.md` - Next phase
-- `phase-6-deployment.md` - Deployment phase
+- `phase-8-deployment.md` - Deployment phase
 
 ### Skills Documentation
 - `skills/backend-development/SKILL.md` - Backend principles

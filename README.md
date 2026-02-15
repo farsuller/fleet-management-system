@@ -370,11 +370,11 @@ http://localhost:8080
 ### Detailed Documentation
 
 For complete API documentation with request/response examples, see:
-- **[API Test Scenarios](docs/guides/API-TEST-SCENARIOS.md)** - Complete test scenarios
-- **[Customer Module](docs/guides/module-customer-route-implementation.md)** - Customer API reference
-- **[Rental Module](docs/guides/module-rental-route-implementation.md)** - Rental API reference
-- **[Vehicle Module](docs/guides/module-vehicle-route-implementation.md)** - Vehicle API reference
-- **[User Module](docs/guides/module-user-route-implementation.md)** - User API reference
+- **[API Test Scenarios](docs/implementations/API-TEST-SCENARIOS.md)** - Complete test scenarios
+- **[Customer Module](docs/implementations/module-customer-route-implementation.md)** - Customer API reference
+- **[Rental Module](docs/implementations/module-rental-route-implementation.md)** - Rental API reference
+- **[Vehicle Module](docs/implementations/module-vehicle-route-implementation.md)** - Vehicle API reference
+- **[User Module](docs/implementations/module-user-route-implementation.md)** - User API reference
 
 ---
 
@@ -414,7 +414,7 @@ fleet-management/
 │           ├── ApplicationTest.kt
 │           └── MigrationTest.kt
 ├── docs/
-│   ├── guides/                             # Implementation guides
+│   ├── implementations/                    # Implementation & guide docs
 │   │   ├── README.md
 │   │   ├── API-TEST-SCENARIOS.md
 │   │   ├── module-customer-route-implementation.md
@@ -491,7 +491,7 @@ fleet-management/
 
 ### Integration Testing
 
-See [API-TEST-SCENARIOS.md](docs/guides/API-TEST-SCENARIOS.md) for complete API test scenarios with cURL examples.
+See [API-TEST-SCENARIOS.md](docs/implementations/API-TEST-SCENARIOS.md) for complete API test scenarios with cURL examples.
 
 ---
 
@@ -526,9 +526,9 @@ docker run -p 8080:8080 \
 
 ## 📖 Additional Documentation
 
-- **[Implementation Standards](docs/guides/IMPLEMENTATION-STANDARDS.md)** - Coding conventions and patterns
+- **[Implementation Standards](docs/implementations/IMPLEMENTATION-STANDARDS.md)** - Coding conventions and patterns
 - **[Database Schema Design](docs/db/schema-design.md)** - Detailed schema documentation
-- **[Running Locally Guide](docs/guides/RUNNING_LOCALLY.md)** - Local development setup
+- **[Running Locally Guide](docs/implementations/RUNNING_LOCALLY.md)** - Local development setup
 
 ---
 

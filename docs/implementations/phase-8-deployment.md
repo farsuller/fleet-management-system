@@ -1,4 +1,4 @@
-# Phase 6 — Deployment
+# Phase 8 — Deployment
 
 ## Status
 
@@ -17,7 +17,7 @@ Design and implement the production deployment strategy for the Fleet Management
 ## Depends on
 
 - Phase 1 baseline (health endpoints, config strategy)
-- Phases 2–6 as applicable (services exist to deploy)
+- Phases 2–7 as applicable (services exist to deploy)
 
 ---
 
@@ -54,7 +54,7 @@ Design and implement the production deployment strategy for the Fleet Management
 
 ---
 
-## Definition of Done (Phase 7)
+## Definition of Done (Phase 8)
 
 - [ ] Local environment can run the system reliably (`docker-compose up`)
 - [ ] **Render deployment is fully operational**:
@@ -260,25 +260,25 @@ fun Application.configureDatabases() {
 ### Deployment Artifacts
 ```
 .
-├── Dockerfile                              (Phase 7)
-├── docker-compose.yml                      (Phase 7)
-├── render.yaml                             (Phase 7)
-├── .dockerignore                           (Phase 7)
+├── Dockerfile                              (Phase 8)
+├── docker-compose.yml                      (Phase 8)
+├── render.yaml                             (Phase 8)
+├── .dockerignore                           (Phase 8)
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml                          (Phase 7)
-│       └── deploy.yml                      (Phase 7)
+│       ├── ci.yml                          (Phase 8)
+│       └── deploy.yml                      (Phase 8)
 ├── scripts/
-│   ├── deploy.sh                           (Phase 7)
-│   ├── rollback.sh                         (Phase 7)
-│   └── backup.sh                           (Phase 7)
+│   ├── deploy.sh                           (Phase 8)
+│   ├── rollback.sh                         (Phase 8)
+│   └── backup.sh                           (Phase 8)
 └── docs/
     └── deployment/
-        ├── render.md                       (Phase 7)
+        ├── render.md                       (Phase 8)
         ├── local-dev.md                    ✅ (Phase 1)
         ├── environment-variables.md        ✅ (Phase 1)
-        ├── backup-recovery.md              (Phase 7)
-        └── eks-checklist.md                (Phase 7 - Future)
+        ├── backup-recovery.md              (Phase 8)
+        └── eks-checklist.md                (Phase 9 - Future)
 ```
 
 ---
@@ -348,7 +348,7 @@ fun Application.configureDatabases() {
 |-------------|--------|-------|
 | All features implemented | ✅ | Ready to deploy |
 
-### Phase 7 Requirements
+### Phase 8 Requirements
 | Requirement | Status | Notes |
 |-------------|--------|-------|
 | Dockerfile | Not Started | Container image |
@@ -525,7 +525,7 @@ render pg:backups:download fleet-management-db
 
 ## Summary
 
-**Phase 7 Status**: **Not Started**
+**Phase 8 Status**: **Not Started**
 
 This phase will deploy the fleet management system to Render with managed Postgres and Redis. The deployment will be automated via GitHub integration with health checks and structured logging.
 

@@ -173,63 +173,63 @@ src/main/kotlin/com/example/
 │   ├── domain/
 │   │   ├── models/Vehicle.kt              ✅ (Phase 1)
 │   │   └── events/
-│   │       ├── VehicleRegistered.kt       (Phase 4)
-│   │       ├── VehicleStateChanged.kt     (Phase 4)
-│   │       └── OdometerRecorded.kt        (Phase 4)
+│   │       ├── VehicleRegistered.kt       (Phase 9)
+│   │       ├── VehicleStateChanged.kt     (Phase 9)
+│   │       └── OdometerRecorded.kt        (Phase 9)
 │   ├── application/
 │   │   └── usecases/                       ✅ (Phase 3)
 │   └── infrastructure/
 │       ├── persistence/                    ✅ (Phase 2)
 │       ├── http/                           ✅ (Phase 3)
 │       └── messaging/
-│           ├── VehicleEventPublisher.kt   (Phase 4)
-│           └── VehicleEventConsumer.kt    (Phase 4)
+│           ├── VehicleEventPublisher.kt   (Phase 9)
+│           └── VehicleEventConsumer.kt    (Phase 9)
 ├── rentals/
 │   ├── domain/
 │   │   └── events/
-│   │       ├── RentalReserved.kt          (Phase 4)
-│   │       ├── RentalActivated.kt         (Phase 4)
-│   │       └── RentalCompleted.kt         (Phase 4)
+│   │       ├── RentalReserved.kt          (Phase 9)
+│   │       ├── RentalActivated.kt         (Phase 9)
+│   │       └── RentalCompleted.kt         (Phase 9)
 │   └── infrastructure/
 │       └── messaging/
-│           ├── RentalEventPublisher.kt    (Phase 4)
-│           └── RentalEventConsumer.kt     (Phase 4)
+│           ├── RentalEventPublisher.kt    (Phase 9)
+│           └── RentalEventConsumer.kt     (Phase 9)
 ├── maintenance/
 │   ├── domain/
 │   │   └── events/
-│   │       ├── MaintenanceScheduled.kt    (Phase 4)
-│   │       └── MaintenanceCompleted.kt    (Phase 4)
+│   │       ├── MaintenanceScheduled.kt    (Phase 9)
+│   │       └── MaintenanceCompleted.kt    (Phase 9)
 │   └── infrastructure/
-│       └── messaging/                      (Phase 4)
+│       └── messaging/                      (Phase 9)
 ├── accounting/
 │   ├── domain/
 │   │   └── events/
-│   │       ├── ChargeCreated.kt           (Phase 4)
-│   │       └── PaymentReceived.kt         (Phase 4)
+│   │       ├── ChargeCreated.kt           (Phase 9)
+│   │       └── PaymentReceived.kt         (Phase 9)
 │   └── infrastructure/
 │       └── messaging/
 │           └── handlers/
-│               ├── RentalEventHandler.kt  (Phase 4)
-│               └── MaintenanceEventHandler.kt (Phase 4)
+│               ├── RentalEventHandler.kt  (Phase 9)
+│               └── MaintenanceEventHandler.kt (Phase 9)
 └── shared/
     ├── infrastructure/
     │   ├── persistence/
     │   │   ├── OutboxTable.kt             ✅ (Phase 2)
     │   │   └── InboxTable.kt              ✅ (Phase 2)
     │   └── messaging/
-    │       ├── OutboxPublisher.kt         (Phase 4)
-    │       ├── KafkaProducer.kt           (Phase 4)
-    │       ├── KafkaConsumer.kt           (Phase 4)
-    │       ├── EventSerializer.kt         (Phase 4)
-    │       └── DLQHandler.kt              (Phase 4)
+    │       ├── OutboxPublisher.kt         (Phase 9)
+    │       ├── KafkaProducer.kt           (Phase 9)
+    │       ├── KafkaConsumer.kt           (Phase 9)
+    │       ├── EventSerializer.kt         (Phase 9)
+    │       └── DLQHandler.kt              (Phase 9)
     └── events/
-        └── DomainEvent.kt                 (Phase 4)
+        └── DomainEvent.kt                 (Phase 9)
 
 docs/events/
-├── catalog-v1.md                          (Phase 4)
-├── topic-strategy.md                      (Phase 4)
-├── retry-and-dlq.md                       (Phase 4)
-└── replay-runbook.md                      (Phase 4)
+├── catalog-v1.md                          (Phase 9)
+├── topic-strategy.md                      (Phase 9)
+├── retry-and-dlq.md                       (Phase 9)
+└── replay-runbook.md                      (Phase 9)
 ```
 
 ---
@@ -407,11 +407,11 @@ kafka-consumer-groups --bootstrap-server localhost:9092 --describe --group fleet
 - [ ] Write integration tests
 - [ ] Document replay procedures
 
-### Phase 5: Hardening v2
+### Phase 4: Hardening v2
 1. Improve performance and concurrency safety
 2. Implement distributed rate limiting
 
-### Phase 6: Reporting and Accounting Correctness
+### Phase 5: Reporting and Accounting Correctness
 1. Use events to build read models for reporting
 2. Implement reconciliation processes
 3. Create financial reports from ledger
@@ -425,7 +425,7 @@ kafka-consumer-groups --bootstrap-server localhost:9092 --describe --group fleet
 ### Project Documentation
 - `fleet-management-plan.md` - Overall project plan
 - `phase-3-api-surface-v1.md` - Previous phase
-- `phase-6-reporting-and-accounting-correctness.md` - Next phase
+- `phase-5-reporting-and-accounting-correctness.md` - Next phase
 
 ### Skills Documentation
 - `skills/backend-development/SKILL.md` - Backend principles
@@ -442,7 +442,7 @@ kafka-consumer-groups --bootstrap-server localhost:9092 --describe --group fleet
 
 ## Summary
 
-**Phase 4 Status**: **Not Started**
+**Phase 9 Status**: **Not Started**
 
 This phase will implement event-driven communication between modules using Kafka. The transactional outbox pattern ensures reliable event publishing, while the inbox pattern guarantees idempotent consumption.
 
@@ -459,7 +459,7 @@ This phase will implement event-driven communication between modules using Kafka
 
 **Ready for Phase 5**: Not Yet
 
-Once Phase 4 is complete, events can be used to build read models and implement accounting reconciliation (Phase 5).
+Once Phase 9 is complete, events can be used to build read models and implement accounting reconciliation (Phase 5).
 
 ---
 

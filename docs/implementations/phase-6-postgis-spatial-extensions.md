@@ -1,4 +1,4 @@
-# Phase 7 — PostGIS Spatial Extensions
+# Phase 6 — PostGIS Spatial Extensions
 
 ## Status
 - Overall: **Planned**
@@ -158,7 +158,7 @@ object SpatialFunctions {
 
 ---
 
-## 🏁 Definition of Done (Phase 7)
+## 🏁 Definition of Done (Phase 6)
 - [ ] PostGIS extension active in production and local environments.
 - [ ] `LineString` geometries stored correctly for at least 3 test routes.
 - [ ] Spatial queries (`ST_Distance`) return accurate results in unit tests.

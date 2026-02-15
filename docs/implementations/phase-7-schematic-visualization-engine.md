@@ -1,4 +1,4 @@
-# Phase 8 — Schematic Visualization Engine
+# Phase 7 — Schematic Visualization Engine
 
 ## Status
 - Overall: **Planned**
@@ -20,7 +20,7 @@ Implement the core logic that transforms raw GPS/Sensor pings into a schematic p
 - **Logic Isolation**: Route matching is a pure domain function; `MatchingEngine` is an infrastructure implementation.
 - **Primary Use Case**: `ProcessLocationPingUseCase`
     1. Validate Ping (Idempotency + Rate Limit).
-    2. Snap to Route (Phase 7 infra).
+    2. Snap to Route (Phase 6 infra).
     3. Detect Anomaly (Signal Integrity logic).
     4. Broadcast Delta (Broadcaster infra).
 
@@ -102,7 +102,7 @@ data class VehicleUpdate(
 class MatchingEngine(private val database: Database) {
     suspend fun snapPointToRoute(routeId: UUID, lat: Double, lng: Double): Double {
         return database.transaction {
-            // Uses the SpatialFunction created in Phase 7
+            // Uses the SpatialFunction created in Phase 6
             val progress = Routes
                 .slice(SpatialFunctions.stLineLocatePoint(polyline, stPoint(lng, lat)))
                 .select { Routes.id eq routeId }
@@ -177,7 +177,7 @@ class DeltaBroadcaster {
 
 ---
 
-## 🏁 Definition of Done (Phase 8)
+## 🏁 Definition of Done (Phase 7)
 - [ ] Vehicles snap correctly to routes within 50m accuracy.
 - [ ] WebSocket clients receive updates within <500ms of a sensor ping.
 - [ ] Bandwidth reduction confirmed via header/payload size audit.

@@ -30,33 +30,44 @@ This directory contains comprehensive implementation guides for the Fleet Manage
 | **Vehicles** | [module-vehicle-route-implementation.md](./module-vehicle-route-implementation.md) | ✅ Complete | Vehicle fleet management |
 | **Customers** | [module-customer-route-implementation.md](./module-customer-route-implementation.md) | ✅ Complete | Customer profile and driver management |
 | **Rentals** | [module-rental-route-implementation.md](./module-rental-route-implementation.md) | ✅ Complete | Rental lifecycle management |
+| **Maintenance** | [module-maintenance-route-implementation.md](./module-maintenance-route-implementation.md) | ✅ Complete | Vehicle maintenance tracking |
+| **Accounting** | [module-accounting-route-implementation.md](./module-accounting-route-implementation.md) | ✅ Complete | Financial transactions & settlement |
 
-### Additional Modules (Planned)
+---
 
-| Module | Guide | Status | Description |
-|--------|-------|--------|-------------|
-| **Maintenance** | [module-maintenance-route-implementation.md](./module-maintenance-route-implementation.md) | 📝 Planned | Vehicle maintenance tracking |
-| **Accounting** | [module-accounting-route-implementation.md](./module-accounting-route-implementation.md) | 📝 Planned | Financial transactions |
+## 🏗️ Implementation Phases
+
+| Phase | Document | Description |
+|-------|----------|-------------|
+| **P0** | [phase-0-plan-requirements...](./phase-0-plan-requirements-dependencies-boundaries.md) | Requirements & boundaries |
+| **P1** | [phase-1-architecture-skeleton.md](./phase-1-architecture-skeleton.md) | Architecture baseline |
+| **P2** | [phase-2-postgresql-schema-v1.md](./phase-2-postgresql-schema-v1.md) | Database schema design |
+| **P3** | [phase-3-api-surface-v1.md](./phase-3-api-surface-v1.md) | API surface & routes |
+| **P4** | [phase-4-hardening-v2-implementation.md](./phase-4-hardening-v2-implementation.md) | Concurrency & Redis |
+| **P5** | [phase-5-reporting...](./phase-5-reporting-and-accounting-correctness.md) | Reporting & correctness |
+| **P6** | [phase-6-postgis-spatial-extensions.md](./phase-6-postgis-spatial-extensions.md) | Spatial data / PostGIS |
+| **P7** | [phase-7-schematic...](./phase-7-schematic-visualization-engine.md) | Real-time visualization |
+| **P8** | [phase-8-deployment.md](./phase-8-deployment.md) | Infrastructure & deployment |
+
+---
+
+## 🛠️ Infrastructure & Plugins
+
+- **[plugin-auth-jwt-implementation.md](./plugin-auth-jwt-implementation.md)** - JWT Security details
+- **[plugin-rate-limiting-implementation.md](./plugin-rate-limiting-implementation.md)** - Rate limiting policies
+- **[phase-3-hardening-implementation.md](./phase-3-hardening-implementation.md)** - Security & Validation hardening
+- **[phase-deferred-eventing-kafka...](./phase-deferred-eventing-kafka-integration.md)** - Kafka integration (Deferred)
 
 ---
 
 ## 🛠️ Development Standards
 
 - **[IMPLEMENTATION-STANDARDS.md](./IMPLEMENTATION-STANDARDS.md)**
-  - Coding conventions
-  - Architecture patterns
-  - Error handling standards
-  - API design principles
-
-- **[MODULE-CONSISTENCY-AUDIT.md](./MODULE-CONSISTENCY-AUDIT.md)**
+  - Coding conventions & patterns
+- **[IMPLEMENTATION-MODULE-CONSISTENCY-AUDIT.md](./IMPLEMENTATION-MODULE-CONSISTENCY-AUDIT.md)**
   - Cross-module consistency checks
-  - Common patterns verification
-  - Quality assurance checklist
-
 - **[API-IMPLEMENTATION-SUMMARY.md](./API-IMPLEMENTATION-SUMMARY.md)**
   - High-level API overview
-  - Endpoint summary table
-  - Integration points
 
 ---
 
