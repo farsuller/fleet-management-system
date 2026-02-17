@@ -88,27 +88,39 @@ fun Application.configureDatabases() {
 
     // Run Flyway Migrations
     val flyway =
-            Flyway.configure()
-                    .dataSource(dataSource)
-                    .locations("classpath:db/migration")
-                    .baselineOnMigrate(true)
-                    .load()
+            Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").load()
 
     try {
+        // Diagnostic: Check if files are visible to classloader
+        val classLoader = Thread.currentThread().contextClassLoader ?: this::class.java.classLoader
+        val resource = classLoader.getResource("db/migration")
+        val v001 = classLoader.getResource("db/migration/V001__create_users_schema.sql")
+
+        log.info("Classpath Diagnostic: db/migration resource=$resource")
+        log.info("Classpath Diagnostic: V001 file=$v001")
+        log.info("Current Working Directory: ${System.getProperty("user.dir")}")
+
         val info = flyway.info()
+        val all = info.all().size
         val pending = info.pending().size
         val applied = info.applied().size
         log.info(
-                "Flyway status: $applied applied, $pending pending migrations found in classpath:db/migration"
+                "Flyway status: $applied applied, $pending pending, $all total discovered in classpath:db/migration"
         )
 
         // Repair handles checksum mismatches (common in tests)
         flyway.repair()
 
         if (pending > 0) {
-            log.info("Executing Flyway migrations...")
-            flyway.migrate()
-            log.info("Flyway migrations completed successfully.")
+            log.info("Executing $pending Flyway migrations...")
+            val result = flyway.migrate()
+            log.info(
+                    "Flyway migrations completed successfully. Applied ${result.migrationsExecuted} migrations."
+            )
+        } else if (all == 0) {
+            log.warn(
+                    "WARNING: No migrations were discovered by Flyway! Check if db/migration exists in the JAR."
+            )
         }
     } catch (e: Exception) {
         log.error("Flyway migration error (JDBC URL: $jdbcUrl): ${e.message}")
