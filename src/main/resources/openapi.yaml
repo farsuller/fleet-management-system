@@ -122,6 +122,17 @@ components:
         firstName: { type: string }
         lastName: { type: string }
         email: { type: string, format: email }
+    RoleResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string, nullable: true }
+    AssignRoleRequest:
+      type: object
+      required: [roleName]
+      properties:
+        roleName: { type: string }
 
     # --- Rentals Module ---
     RentalRequest:
@@ -144,6 +155,32 @@ components:
         endDate: { type: string, format: date-time }
         actualEndDate: { type: string, format: date-time, nullable: true }
         totalPrice: { type: integer }
+
+    # --- Customers Module ---
+    CustomerRequest:
+      type: object
+      required: [email, firstName, lastName, phone, driversLicense, driverLicenseExpiry]
+      properties:
+        email: { type: string, format: email }
+        firstName: { type: string }
+        lastName: { type: string }
+        phone: { type: string }
+        driversLicense: { type: string }
+        driverLicenseExpiry: { type: string, format: date, example: "2028-12-31" }
+        address: { type: string }
+        city: { type: string }
+        state: { type: string }
+        postalCode: { type: string }
+        country: { type: string }
+    CustomerResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string }
+        fullName: { type: string }
+        phone: { type: string }
+        driversLicense: { type: string }
+        isActive: { type: boolean }
 
     # --- Maintenance Module ---
     MaintenanceRequest:
@@ -211,6 +248,75 @@ components:
         amount: { type: integer }
         paymentDate: { type: string, format: date-time }
         transactionReference: { type: string }
+    PaymentResponse:
+      type: object
+      properties:
+        id: { type: string }
+        paymentNumber: { type: string }
+        amount: { type: integer }
+        paymentMethod: { type: string }
+        status: { type: string }
+        paymentDate: { type: string, format: date-time }
+        notes: { type: string, nullable: true }
+    AccountRequest:
+      type: object
+      required: [accountCode, accountName, accountType]
+      properties:
+        accountCode: { type: string }
+        accountName: { type: string }
+        accountType: { type: string, enum: [ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE] }
+        parentAccountId: { type: string, format: uuid, nullable: true }
+        description: { type: string, nullable: true }
+        isActive: { type: boolean }
+    AccountResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        accountCode: { type: string }
+        accountName: { type: string }
+        accountType: { type: string }
+        parentAccountId: { type: string, format: uuid, nullable: true }
+        isActive: { type: boolean }
+        description: { type: string, nullable: true }
+        balance: { type: integer, format: int64 }
+    AccountBalanceResponse:
+      type: object
+      properties:
+        account: { type: string }
+        balance: { type: integer, format: int64 }
+    RevenueReportResponse:
+      type: object
+      properties:
+        startDate: { type: string, format: date-time }
+        endDate: { type: string, format: date-time }
+        totalRevenue: { type: integer, format: int64 }
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RevenueItem'
+    RevenueItem:
+      type: object
+      properties:
+        category: { type: string }
+        amount: { type: integer, format: int64 }
+        description: { type: string }
+    BalanceSheetResponse:
+      type: object
+      properties:
+        asOfDate: { type: string, format: date-time }
+        assets: { type: array, items: { $ref: '#/components/schemas/AccountBalanceInfo' } }
+        liabilities: { type: array, items: { $ref: '#/components/schemas/AccountBalanceInfo' } }
+        equity: { type: array, items: { $ref: '#/components/schemas/AccountBalanceInfo' } }
+        totalAssets: { type: integer, format: int64 }
+        totalLiabilities: { type: integer, format: int64 }
+        totalEquity: { type: integer, format: int64 }
+        isBalanced: { type: boolean }
+    AccountBalanceInfo:
+      type: object
+      properties:
+        code: { type: string }
+        name: { type: string }
+        balance: { type: integer, format: int64 }
     PaymentMethodRequest:
       type: object
       required: [code, displayName, targetAccountCode]
@@ -284,6 +390,21 @@ paths:
       responses:
         '200':
           description: Ok
+  /v1/users/roles:
+    get:
+      summary: List all available roles
+      tags: [Users]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/RoleResponse' } }
 
   /v1/users/{id}:
     parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
@@ -312,6 +433,24 @@ paths:
       responses:
         '200':
           description: Deleted
+    post:
+      summary: Assign role to user
+      tags: [Users]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssignRoleRequest' }
+      responses:
+        '200':
+          description: Role assigned
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/UserResponse' }
 
   # --- Vehicles ---
   /v1/vehicles:
@@ -458,6 +597,44 @@ paths:
         '200':
           description: Ok
 
+  # --- Customers ---
+  /v1/customers:
+    get:
+      summary: List all customers
+      tags: [Customers]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/CustomerResponse' } }
+    post:
+      summary: Create customer
+      tags: [Customers]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CustomerRequest' }
+      responses:
+        '201':
+          description: Created
+
+  /v1/customers/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      summary: Get customer detail
+      tags: [Customers]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+
   # --- Maintenance ---
   /v1/maintenance:
     post:
@@ -560,6 +737,26 @@ paths:
         '200':
           description: Ok
 
+  /v1/accounting/payments/customer/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      summary: List payments for customer
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+
+  /v1/accounting/payments/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    delete:
+      summary: Delete payment entry
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Deleted
+
   /v1/accounting/accounts:
     get:
       summary: List chart of accounts
@@ -568,6 +765,23 @@ paths:
       responses:
         '200':
           description: Ok
+
+  /v1/accounting/accounts/{code}/balance:
+    parameters: [{ name: code, in: path, required: true, schema: { type: string } }]
+    get:
+      summary: Get account balance
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/AccountBalanceResponse' }
 
   /v1/accounting/payment-methods:
     get:
@@ -588,6 +802,120 @@ paths:
       responses:
         '201':
           description: Created
+
+  /v1/accounting/payment-methods/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    put:
+      summary: Update payment method
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PaymentMethodRequest' }
+      responses:
+        '200':
+          description: Ok
+    delete:
+      summary: Delete payment method
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Deleted
+
+  /v1/accounts:
+    post:
+      summary: Create financial account
+      tags: [Finance]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AccountRequest' }
+      responses:
+        '201':
+          description: Created
+  /v1/accounts/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    put:
+      summary: Update account
+      tags: [Finance]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AccountRequest' }
+      responses:
+        '200':
+          description: Ok
+    delete:
+      summary: Delete account
+      tags: [Finance]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Deleted
+
+  /v1/reports/revenue:
+    get:
+      summary: Revenue analysis
+      tags: [Finance]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: startDate
+          in: query
+          schema: { type: string, format: date-time }
+        - name: endDate
+          in: query
+          schema: { type: string, format: date-time }
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/RevenueReportResponse' }
+
+  /v1/reports/balance-sheet:
+    get:
+      summary: Financial position report
+      tags: [Finance]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: asOf
+          in: query
+          schema: { type: string, format: date-time }
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/BalanceSheetResponse' }
+
+  /v1/reconciliation/invoices:
+    get:
+      summary: Verify invoice accounting
+      tags: [Reconciliation]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ok
+  /v1/reconciliation/integrity:
+    get:
+      summary: Verify ledger balance
+      tags: [Reconciliation]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Balanced
 
   # --- Infrastructure ---
   /health:
