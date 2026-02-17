@@ -20,11 +20,10 @@ ktor {
     }
 }
 
-tasks.jar {
+// Ensure resources are correctly packaged in all JARs (including fatJar)
+tasks.withType<Jar> {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    from("src/main/resources") {
-        include("**/*")
-    }
+    from(sourceSets.main.get().resources)
 }
 
 repositories {

@@ -87,8 +87,8 @@ fun Application.configureDatabases() {
     }
 
     // Diagnostic: Check if files are visible to classloader
-    val flywayClassLoader =
-            Thread.currentThread().contextClassLoader ?: this::class.java.classLoader
+    val flywayClassLoader: ClassLoader =
+            Thread.currentThread().contextClassLoader ?: Application::class.java.classLoader
     val resource = flywayClassLoader.getResource("db/migration")
     val v001 = flywayClassLoader.getResource("db/migration/V001__create_users_schema.sql")
     val appYaml = flywayClassLoader.getResource("application.yaml")
@@ -98,12 +98,12 @@ fun Application.configureDatabases() {
     log.info("Classpath Diagnostic: application.yaml file=$appYaml")
     log.info("Current Working Directory: ${System.getProperty("user.dir")}")
 
-    // Run Flyway Migrations
+    // Run Flyway Migrations - Using Flyway.configure(ClassLoader) to avoid type inference issues in
+    // Kotlin 2.1.0
     val flyway =
-            Flyway.configure()
+            Flyway.configure(flywayClassLoader)
                     .dataSource(dataSource)
                     .locations("classpath:db/migration")
-                    .classLoader(flywayClassLoader)
                     .load()
 
     try {
