@@ -95,6 +95,9 @@ services:
   - type: redis
     name: fleet-management-redis
     plan: free  # $0/month (persistent)
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: Allow from anywhere (for testing)
 
 
 # Managed Databases
