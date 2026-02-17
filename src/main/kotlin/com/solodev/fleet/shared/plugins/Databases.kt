@@ -89,33 +89,57 @@ fun Application.configureDatabases() {
     // Diagnostic: Check if files are visible to classloader
     val flywayClassLoader: ClassLoader =
             Thread.currentThread().contextClassLoader ?: Application::class.java.classLoader
-    val resource = flywayClassLoader.getResource("db/migration")
-    val v001 = flywayClassLoader.getResource("db/migration/V001__create_users_schema.sql")
-    val appYaml = flywayClassLoader.getResource("application.yaml")
 
-    log.info("Classpath Diagnostic: db/migration resource=$resource")
-    log.info("Classpath Diagnostic: V001 file=$v001")
-    log.info("Classpath Diagnostic: application.yaml file=$appYaml")
-    log.info("Current Working Directory: ${System.getProperty("user.dir")}")
+    // Workaround: Copy migrations to temp file system to bypass classpath scanning issues in Fat
+    // JAR
+    val migrationDir = java.io.File(System.getProperty("java.io.tmpdir"), "flyway/migration")
+    if (migrationDir.exists()) migrationDir.deleteRecursively()
+    migrationDir.mkdirs()
 
-    // Deep Diagnostic: Try to read the content to ensure it's not a generic permission/IO issue
-    try {
-        v001?.openStream()?.use { stream ->
-            val firstBytes = stream.readNBytes(10)
-            log.info(
-                    "Deep Diagnostic: V001 Content Start (hex): ${firstBytes.joinToString("") { "%02x".format(it) }}"
+    val migrationFiles =
+            listOf(
+                    "V001__create_users_schema.sql",
+                    "V002__create_vehicles_schema.sql",
+                    "V003__create_rentals_schema.sql",
+                    "V004__create_maintenance_schema.sql",
+                    "V005__create_accounting_schema.sql",
+                    "V006__create_integration_tables.sql",
+                    "V007__update_currency_to_php.sql",
+                    "V008__add_customer_is_active.sql",
+                    "V009__create_verification_tokens.sql",
+                    "V010__update_payment_method_check.sql",
+                    "V011__seed_chart_of_accounts.sql",
+                    "V012__create_payment_methods_table.sql",
+                    "V013__rename_currency_columns_to_whole_units.sql",
+                    "V014__refresh_accounting_functions.sql"
             )
+
+    log.info("Extracting ${migrationFiles.size} migrations to ${migrationDir.absolutePath}...")
+
+    var extractedCount = 0
+    migrationFiles.forEach { fileName ->
+        val resourcePath = "db/migration/$fileName"
+        val inputStream = flywayClassLoader.getResourceAsStream(resourcePath)
+        if (inputStream != null) {
+            val destFile = java.io.File(migrationDir, fileName)
+            java.nio.file.Files.copy(
+                    inputStream,
+                    destFile.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
+            )
+            extractedCount++
+        } else {
+            log.warn("Could not find migration file in classpath: $resourcePath")
         }
-                ?: log.warn("Deep Diagnostic: V001 resource found but stream is NULL")
-    } catch (e: Exception) {
-        log.error("Deep Diagnostic: Failed to read V001 stream: ${e.message}")
     }
 
-    // Run Flyway Migrations - Using robust path and verified ClassLoader
+    log.info("Extracted $extractedCount/${migrationFiles.size} migrations to filesystem.")
+
+    // Run Flyway Migrations - Pointing to filesystem to guarantee discovery
     val flyway =
             Flyway.configure(flywayClassLoader)
                     .dataSource(dataSource)
-                    .locations("classpath:/db/migration")
+                    .locations("filesystem:${migrationDir.absolutePath}")
                     .load()
 
     try {
