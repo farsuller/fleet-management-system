@@ -1,6 +1,6 @@
 # Multi-stage build for optimized production image
 # Stage 1: Build with Gradle and JDK 21
-FROM gradle:8-jdk21 AS build
+FROM gradle:9-jdk21 AS build
 
 WORKDIR /app
 
