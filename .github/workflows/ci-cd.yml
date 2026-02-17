@@ -67,13 +67,13 @@ jobs:
       
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-results
           path: build/test-results/
       
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: fleet-management-jar
           path: build/libs/*-all.jar
