@@ -42,19 +42,24 @@ fun Application.configureRouting(jwtService: JwtService, vehicleRepo: VehicleRep
     val paymentMethodRepo = PaymentMethodRepositoryImpl()
 
     val accountingService = AccountingService(accountRepo = accountRepo, ledgerRepo = ledgerRepo)
-    val reconciliationService = ReconciliationService(invoiceRepo = invoiceRepo, accountRepo = accountRepo, ledgerRepo = ledgerRepo)
+    val reconciliationService =
+            ReconciliationService(
+                    invoiceRepo = invoiceRepo,
+                    accountRepo = accountRepo,
+                    ledgerRepo = ledgerRepo
+            )
 
     routing {
+        // Interactive API Documentation
         swaggerUI(path = "swagger", swaggerFile = "openapi.yaml")
-        openAPI(path = "openapi", swaggerFile = "openapi.yaml")
 
         rateLimit(RateLimitName("public_api")) {
             vehicleRoutes(vehicleRepo)
             rentalRoutes(
-                rentalRepository = rentalRepo,
-                vehicleRepository = vehicleRepo,
-                accountingService = accountingService,
-                )
+                    rentalRepository = rentalRepo,
+                    vehicleRepository = vehicleRepo,
+                    accountingService = accountingService,
+            )
             customerRoutes(customerRepository = customerRepo)
             maintenanceRoutes(maintenanceRepository = maintenanceRepo)
         }
@@ -70,12 +75,12 @@ fun Application.configureRouting(jwtService: JwtService, vehicleRepo: VehicleRep
         authenticate("auth-jwt") {
             rateLimit(RateLimitName("authenticated_api")) {
                 accountingRoutes(
-                    invoiceRepository = invoiceRepo,
-                    paymentRepository = paymentRepo,
-                    accountRepository = accountRepo,
-                    ledgerRepository = ledgerRepo,
-                    paymentMethodRepository = paymentMethodRepo,
-                    reconciliationService = reconciliationService
+                        invoiceRepository = invoiceRepo,
+                        paymentRepository = paymentRepo,
+                        accountRepository = accountRepo,
+                        ledgerRepository = ledgerRepo,
+                        paymentMethodRepository = paymentMethodRepo,
+                        reconciliationService = reconciliationService
                 )
             }
         }
