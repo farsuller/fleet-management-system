@@ -11,7 +11,7 @@ COPY . .
 RUN gradle buildFatJar --no-daemon
 
 # Stage 2: Runtime with minimal JRE 21 Alpine
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 
 WORKDIR /app
 
