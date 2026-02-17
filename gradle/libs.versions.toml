@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.1.0"
-ktor = "3.0.3"
+ktor = "3.4.0"
 logback = "1.4.14"
 exposed = "0.50.1"
 hikaricp = "6.2.0"
