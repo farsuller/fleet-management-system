@@ -87,11 +87,11 @@ fun Application.configureDatabases() {
     }
 
     // Diagnostic: Check if files are visible to classloader
-    val classLoader =
-            Thread.currentThread().contextClassLoader ?: Application::class.java.classLoader
-    val resource = classLoader.getResource("db/migration")
-    val v001 = classLoader.getResource("db/migration/V001__create_users_schema.sql")
-    val appYaml = classLoader.getResource("application.yaml")
+    val flywayClassLoader =
+            Thread.currentThread().contextClassLoader ?: this::class.java.classLoader
+    val resource = flywayClassLoader.getResource("db/migration")
+    val v001 = flywayClassLoader.getResource("db/migration/V001__create_users_schema.sql")
+    val appYaml = flywayClassLoader.getResource("application.yaml")
 
     log.info("Classpath Diagnostic: db/migration resource=$resource")
     log.info("Classpath Diagnostic: V001 file=$v001")
@@ -103,7 +103,7 @@ fun Application.configureDatabases() {
             Flyway.configure()
                     .dataSource(dataSource)
                     .locations("classpath:db/migration")
-                    .classLoader(classLoader) // CRITICAL: Use verified classloader
+                    .classLoader(flywayClassLoader)
                     .load()
 
     try {
