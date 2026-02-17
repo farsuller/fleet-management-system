@@ -88,16 +88,21 @@ fun Application.configureDatabases() {
 
     // Run Flyway Migrations
     val flyway =
-            Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").load()
+            Flyway.configure()
+                    .dataSource(dataSource)
+                    .locations("db/migration", "classpath:db/migration", "classpath:/db/migration")
+                    .load()
 
     try {
         // Diagnostic: Check if files are visible to classloader
         val classLoader = Thread.currentThread().contextClassLoader ?: this::class.java.classLoader
         val resource = classLoader.getResource("db/migration")
         val v001 = classLoader.getResource("db/migration/V001__create_users_schema.sql")
+        val appYaml = classLoader.getResource("application.yaml")
 
         log.info("Classpath Diagnostic: db/migration resource=$resource")
         log.info("Classpath Diagnostic: V001 file=$v001")
+        log.info("Classpath Diagnostic: application.yaml file=$appYaml")
         log.info("Current Working Directory: ${System.getProperty("user.dir")}")
 
         val info = flyway.info()
