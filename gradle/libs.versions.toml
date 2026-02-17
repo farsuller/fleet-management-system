@@ -9,7 +9,7 @@ flyway = "11.1.0"
 
 bcrypt = "0.10.2"
 jedis = "5.1.0"
-resilience4j = "2.1.0"
+resilience4j = "2.3.0"
 logstash = "8.0"
 
 [libraries]
