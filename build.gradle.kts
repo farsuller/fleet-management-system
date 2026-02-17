@@ -21,6 +21,7 @@ ktor {
 }
 
 tasks.jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from("src/main/resources") {
         include("**/*")
     }
