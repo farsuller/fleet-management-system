@@ -91,36 +91,17 @@ services:
         - Dockerfile
         - gradle/**
 
+  # Redis Cache
+  - type: redis
+    name: fleet-management-redis
+    plan: free  # $0/month (persistent)
+
+
 # Managed Databases
 databases:
   # PostgreSQL Database
   - name: fleet-management-db
     databaseName: fleet_management
     user: fleet_user
-    
-    # PLAN OPTIONS:
-    # - free: $0/month (expires after 90 days, 256MB RAM, 1GB storage)
-    # - starter: $7/month (256MB RAM, 1GB storage, persistent)
-    # - standard: $20/month (1GB RAM, 10GB storage)
-    # 
-    # ⚠️ FREE DATABASE LIMITATIONS:
-    # - Expires after 90 days (must recreate or upgrade)
-    # - Limited to 1GB storage
-    # - Slower performance (shared resources)
-    # 
-    # ✅ FREE TIER WILL WORK for development/testing (90 days)
-    # 💵 Upgrade to STARTER ($7/mo) for production (persistent)
-    plan: free  # Change to "starter" for production
+    plan: free  # Expires after 90 days
 
-# Redis Cache
-redis:
-  - name: fleet-management-redis
-    
-    # PLAN OPTIONS:
-    # - free: $0/month (25MB RAM, persistent)
-    # - starter: $10/month (25MB RAM, persistent)
-    # - standard: $25/month (100MB RAM)
-    # 
-    # ✅ FREE REDIS is persistent (no expiration)
-    # 💵 Upgrade to STARTER ($10/mo) for better support
-    plan: free  # Change to "starter" for production
