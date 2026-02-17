@@ -4,28 +4,28 @@ ktor:
             - com.solodev.fleet.ApplicationKt.module
     deployment:
         # Port from environment (Render injects PORT)
-        port: ${PORT:8080}
+        port: "${PORT:8080}"
         # Bind to all interfaces for cloud deployment
         host: 0.0.0.0
 
 jwt:
     # JWT secret from environment (CRITICAL: Never hardcode in production)
-    secret: ${JWT_SECRET:change-me-in-production-use-env-var-min-64-chars}
-    issuer: ${JWT_ISSUER:http://0.0.0.0:8080/}
-    audience: ${JWT_AUDIENCE:http://0.0.0.0:8080/}
+    secret: "${JWT_SECRET:change-me-in-production-use-env-var-min-64-chars}"
+    issuer: "${JWT_ISSUER:http://0.0.0.0:8080/}"
+    audience: "${JWT_AUDIENCE:http://0.0.0.0:8080/}"
     realm: "Fleet Management Access"
     # Token expiration in milliseconds (default: 1 hour)
-    expiresIn: ${JWT_EXPIRATION:3600000}
+    expiresIn: "${JWT_EXPIRATION:3600000}"
 
 storage:
     # Database connection from environment
-    # Render provides DATABASE_URL in format: postgresql://user:pass@host:port/dbname
-    jdbcUrl: ${DATABASE_URL:jdbc:postgresql://127.0.0.1:5435/fleet_db}
-    username: ${DB_USER:fleet_user}
-    password: ${DB_PASSWORD:secret_123}
+    # Note: If Render provides postgres:// format, we might need to prepend jdbc:
+    jdbcUrl: "${DATABASE_URL:jdbc:postgresql://127.0.0.1:5435/fleet_db}"
+    username: "${DB_USER:fleet_user}"
+    password: "${DB_PASSWORD:secret_123}"
     driverClassName: "org.postgresql.Driver"
-    maximumPoolSize: ${DB_POOL_SIZE:10}
+    maximumPoolSize: "${DB_POOL_SIZE:10}"
 
 redis:
     # Redis connection from environment
-    url: ${REDIS_URL:redis://localhost:6379}
+    url: "${REDIS_URL:redis://localhost:6379}"

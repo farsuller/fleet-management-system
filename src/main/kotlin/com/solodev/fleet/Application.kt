@@ -34,7 +34,8 @@ fun Application.module() {
     configureSecurity()
     configureRateLimiting()
 
-    val jedis = Jedis("localhost", 6379)
+    val redisUrl = environment.config.propertyOrNull("redis.url")?.getString() ?: "redis://localhost:6379"
+    val jedis = Jedis(redisUrl)
     val cacheManager = RedisCacheManager(jedis)
 
     val vehicleRepository = VehicleRepositoryImpl(cacheManager)
