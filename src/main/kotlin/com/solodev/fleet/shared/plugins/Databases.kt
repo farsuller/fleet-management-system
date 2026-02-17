@@ -90,11 +90,13 @@ fun Application.configureDatabases() {
     val flywayClassLoader: ClassLoader =
             Thread.currentThread().contextClassLoader ?: Application::class.java.classLoader
 
-    // Nuclear Workaround: Copy migrations to LOCAL project directory (./migrations_temp)
-    // instead of /tmp to avoid potential restrictive mount issues on Render.
-    val migrationDir = java.io.File(System.getProperty("user.dir"), "migrations_temp")
+    // Workaround: Copy migrations to /tmp to bypass classpath scanning issues in Fat JAR
+    // Reverted to /tmp because /app proved to be read-only at runtime on Render.
+    val migrationDir = java.io.File(System.getProperty("java.io.tmpdir"), "fleet_migrations_v2")
     if (migrationDir.exists()) migrationDir.deleteRecursively()
-    migrationDir.mkdirs()
+    if (!migrationDir.mkdirs()) {
+        log.error("CRITICAL: Failed to create migration directory at ${migrationDir.absolutePath}")
+    }
 
     val migrationFiles =
             listOf(
@@ -114,9 +116,7 @@ fun Application.configureDatabases() {
                     "V014__refresh_accounting_functions.sql"
             )
 
-    log.info(
-            "Extracting ${migrationFiles.size} migrations to local directory: ${migrationDir.absolutePath}..."
-    )
+    log.info("Extracting ${migrationFiles.size} migrations to: ${migrationDir.absolutePath}...")
 
     migrationFiles.forEach { fileName ->
         val resourcePath = "db/migration/$fileName"
@@ -129,7 +129,7 @@ fun Application.configureDatabases() {
                     java.nio.file.StandardCopyOption.REPLACE_EXISTING
             )
         } else {
-            log.warn("Nuclear Discovery: Could not find migration in classpath: $resourcePath")
+            log.warn("Extraction: Could not find migration in classpath: $resourcePath")
         }
     }
 
@@ -139,18 +139,20 @@ fun Application.configureDatabases() {
                 "${it.name}(size=${it.length()}, readable=${it.canRead()})"
             }
                     ?: emptyList()
-    log.info("Nuclear Audit: Files in ${migrationDir.absolutePath}: $auditResults")
+    log.info("Migration Audit: Files in ${migrationDir.absolutePath}: $auditResults")
 
-    // Run Flyway Migrations - Using nuclear options to force recognition
+    // Run Flyway Migrations - Pointing to filesystem to guarantee discovery
+    // Adding trailing slash to path as some Flyway versions require it for directory walking
+    val filesystemLocation = "filesystem:${migrationDir.absolutePath}/"
     val flyway =
-            Flyway.configure() // No classloader constraints for filesystem
+            Flyway.configure()
                     .dataSource(dataSource)
-                    .locations("filesystem:${migrationDir.absolutePath}")
+                    .locations(filesystemLocation)
                     .sqlMigrationPrefix("V")
                     .sqlMigrationSeparator("__")
                     .sqlMigrationSuffixes(".sql")
-                    .validateOnMigrate(false) // Don't judge, just run
-                    .ignoreMigrationPatterns("*:*") // Skip pending/missing checks
+                    .validateOnMigrate(false)
+                    .ignoreMigrationPatterns("*:*")
                     .load()
 
     try {
