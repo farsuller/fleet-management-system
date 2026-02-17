@@ -1,0 +1,22 @@
+# GitGuardian Configuration
+# This file tells GitGuardian which files to ignore for secret scanning
+
+# Ignore .env.example files (they contain only placeholders, not real secrets)
+paths-ignore:
+  - .env.example
+  - **/.env.example
+  - **/*.example
+  - **/example.*
+
+# Ignore documentation files
+  - docs/**
+  - README.md
+  - **/*.md
+
+# Ignore test files with mock credentials
+  - **/test/**
+  - **/tests/**
+  - **/*test*
+
+# Ignore CI/CD workflow files (they use GitHub secrets, not hardcoded values)
+  - .github/workflows/**

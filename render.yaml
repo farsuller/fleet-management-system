@@ -1,0 +1,126 @@
+################################################################################
+# Render Platform Configuration
+################################################################################
+# This file defines the infrastructure for deploying the Fleet Management
+# System to Render cloud platform.
+#
+# Services:
+#   - Web service (Docker-based Kotlin/Ktor application)
+#   - PostgreSQL database (managed)
+#   - Redis cache (managed)
+################################################################################
+
+services:
+  # Main API Web Service
+  - type: web
+    name: fleet-management-api
+    env: docker
+    dockerfilePath: ./Dockerfile
+    
+    # PLAN OPTIONS:
+    # - free: $0/month (spins down after 15 min inactivity, 750 hrs/month limit)
+    # - starter: $7/month (always on, no spin down)
+    # - standard: $25/month (1GB RAM, 0.5 CPU)
+    # 
+    # ⚠️ FREE TIER LIMITATIONS:
+    # - Spins down after 15 minutes of inactivity
+    # - First request after spin down takes 30-60 seconds (cold start)
+    # - 750 free hours per month (good for testing/development)
+    # - Shared CPU (slower performance)
+    # 
+    # ✅ FREE TIER WILL WORK for development/testing
+    # 💵 Upgrade to STARTER ($7/mo) for production (always on)
+    plan: free  # Change to "starter" for production
+
+    
+    # Environment Variables
+    envVars:
+      # Port (injected by Render)
+      - key: PORT
+        value: 10000
+      
+      # Database connection (from managed PostgreSQL)
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fleet-management-db
+          property: connectionString
+      
+      # Redis connection (from managed Redis)
+      - key: REDIS_URL
+        fromService:
+          name: fleet-management-redis
+          type: redis
+          property: connectionString
+      
+      # JWT Configuration
+      - key: JWT_SECRET
+        generateValue: true  # Render auto-generates secure random value
+      
+      - key: JWT_ISSUER
+        value: fleet-management-api
+      
+      - key: JWT_AUDIENCE
+        value: fleet-management-users
+      
+      - key: JWT_EXPIRATION
+        value: 3600  # 1 hour in seconds
+      
+      # Application Environment
+      - key: APP_ENV
+        value: production
+      
+      # Database Pool Configuration
+      - key: DB_POOL_SIZE
+        value: 10
+      
+      # Logging
+      - key: LOG_LEVEL
+        value: INFO
+    
+    # Health Check Configuration
+    healthCheckPath: /health
+    
+    # Auto-deploy on git push
+    autoDeploy: true
+    
+    # Build configuration
+    buildFilter:
+      paths:
+        - src/**
+        - build.gradle.kts
+        - Dockerfile
+        - gradle/**
+
+# Managed Databases
+databases:
+  # PostgreSQL Database
+  - name: fleet-management-db
+    databaseName: fleet_management
+    user: fleet_user
+    
+    # PLAN OPTIONS:
+    # - free: $0/month (expires after 90 days, 256MB RAM, 1GB storage)
+    # - starter: $7/month (256MB RAM, 1GB storage, persistent)
+    # - standard: $20/month (1GB RAM, 10GB storage)
+    # 
+    # ⚠️ FREE DATABASE LIMITATIONS:
+    # - Expires after 90 days (must recreate or upgrade)
+    # - Limited to 1GB storage
+    # - Slower performance (shared resources)
+    # 
+    # ✅ FREE TIER WILL WORK for development/testing (90 days)
+    # 💵 Upgrade to STARTER ($7/mo) for production (persistent)
+    plan: free  # Change to "starter" for production
+    
+  # Redis Cache
+  - name: fleet-management-redis
+    
+    # PLAN OPTIONS:
+    # - free: $0/month (25MB RAM, persistent)
+    # - starter: $10/month (25MB RAM, persistent)
+    # - standard: $25/month (100MB RAM)
+    # 
+    # ✅ FREE REDIS is persistent (no expiration)
+    # 💵 Upgrade to STARTER ($10/mo) for better support
+    plan: free  # Change to "starter" for production
+    maxmemoryPolicy: allkeys-lru  # Evict least recently used keys when full

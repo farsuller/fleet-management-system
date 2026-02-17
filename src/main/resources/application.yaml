@@ -3,18 +3,29 @@ ktor:
         modules:
             - com.solodev.fleet.ApplicationKt.module
     deployment:
-        port: 8080
+        # Port from environment (Render injects PORT)
+        port: ${PORT:8080}
+        # Bind to all interfaces for cloud deployment
+        host: 0.0.0.0
 
 jwt:
-    secret: "change-me-in-production-use-env-var-min-64-chars"
-    issuer: "http://0.0.0.0:8080/"
-    audience: "http://0.0.0.0:8080/"
+    # JWT secret from environment (CRITICAL: Never hardcode in production)
+    secret: ${JWT_SECRET:change-me-in-production-use-env-var-min-64-chars}
+    issuer: ${JWT_ISSUER:http://0.0.0.0:8080/}
+    audience: ${JWT_AUDIENCE:http://0.0.0.0:8080/}
     realm: "Fleet Management Access"
-    expiresIn: 3600000
+    # Token expiration in milliseconds (default: 1 hour)
+    expiresIn: ${JWT_EXPIRATION:3600000}
 
 storage:
-    jdbcUrl: "jdbc:postgresql://127.0.0.1:5435/fleet_db"
-    username: "fleet_user"
-    password: "secret_123"
+    # Database connection from environment
+    # Render provides DATABASE_URL in format: postgresql://user:pass@host:port/dbname
+    jdbcUrl: ${DATABASE_URL:jdbc:postgresql://127.0.0.1:5435/fleet_db}
+    username: ${DB_USER:fleet_user}
+    password: ${DB_PASSWORD:secret_123}
     driverClassName: "org.postgresql.Driver"
-    maximumPoolSize: 10
+    maximumPoolSize: ${DB_POOL_SIZE:10}
+
+redis:
+    # Redis connection from environment
+    url: ${REDIS_URL:redis://localhost:6379}

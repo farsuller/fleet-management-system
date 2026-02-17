@@ -1,6 +1,187 @@
-.gradle
-.vscode
-.kotlin
-.idea
+################################################################################
+# Fleet Management System - .gitignore
+################################################################################
+# This file prevents sensitive data and build artifacts from being committed
+# to version control. Review this file carefully to ensure security.
+#
+# 📋 REQUIRED FILES FOR LOCAL DEVELOPMENT (NOT in this .gitignore):
+#   ✅ .env.example          - Template for environment variables (SAFE to commit)
+#   ✅ docker-compose.yml    - Local development infrastructure (SAFE to commit)
+#   ✅ gradle.properties     - Gradle configuration (SAFE to commit, no secrets)
+#   ✅ src/main/resources/application.yaml - App config with env var placeholders
+#
+# 🔒 SENSITIVE FILES (MUST be in this .gitignore):
+#   ❌ .env                  - Contains actual secrets (DATABASE_URL, JWT_SECRET)
+#   ❌ .env.local            - Local overrides with secrets
+#   ❌ .env.production       - Production secrets
+#   ❌ *.key, *.pem          - Private keys and certificates
+#   ❌ secrets/              - Any directory containing secrets
+#
+# 📝 TO RUN LOCALLY, YOU NEED:
+#   1. Copy .env.example to .env
+#   2. Fill in actual values for:
+#      - DATABASE_URL (e.g., jdbc:postgresql://localhost:5432/fleet_db)
+#      - REDIS_URL (e.g., redis://localhost:6379)
+#      - JWT_SECRET (generate a strong random string)
+#      - SMTP credentials (if testing email)
+#   3. Run: docker-compose up -d (starts PostgreSQL + Redis)
+#   4. Run: ./gradlew run (starts the application)
+################################################################################
+
+#------------------------------------------------------------------------------
+# 🔐 SECURITY: Secrets and Credentials (CRITICAL - NEVER COMMIT)
+#------------------------------------------------------------------------------
+# Environment files with actual secrets
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+.env.development
+
+# Secret files and directories
+secrets/
+*.secret
+*.key
+*.pem
+*.p12
+*.jks
+*.keystore
+
+# Database dumps (may contain sensitive data)
+*.sql
+*.dump
+*.backup
+
+# Configuration files with hardcoded credentials (if any)
+config/local.yaml
+config/production.yaml
+application-local.yaml
+application-production.yaml
+
+#------------------------------------------------------------------------------
+# 🏗️ BUILD ARTIFACTS: Gradle & Kotlin
+#------------------------------------------------------------------------------
+.gradle/
 build/
-build/kotlin
+build/kotlin/
+out/
+bin/
+target/
+
+# Gradle wrapper (keep gradle-wrapper.jar and gradle-wrapper.properties)
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# Gradle local properties (may contain sensitive paths)
+local.properties
+
+#------------------------------------------------------------------------------
+# 💻 IDE: IntelliJ IDEA, VS Code, Eclipse
+#------------------------------------------------------------------------------
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Eclipse
+.project
+.classpath
+.settings/
+.metadata/
+
+# NetBeans
+nbproject/
+nbbuild/
+dist/
+nbdist/
+
+#------------------------------------------------------------------------------
+# 🐳 DOCKER: Local Overrides
+#------------------------------------------------------------------------------
+# Docker Compose overrides (may contain local paths/secrets)
+docker-compose.override.yml
+docker-compose.local.yml
+
+# Docker volumes (persistent data)
+.docker/
+volumes/
+
+#------------------------------------------------------------------------------
+# 📊 LOGS & TEMPORARY FILES
+#------------------------------------------------------------------------------
+# Application logs
+logs/
+*.log
+*.log.*
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Test coverage reports
+coverage/
+.coverage
+htmlcov/
+
+#------------------------------------------------------------------------------
+# 📦 DEPENDENCIES & CACHES
+#------------------------------------------------------------------------------
+# Kotlin/JVM caches
+.kotlin/
+*.hprof
+
+#------------------------------------------------------------------------------
+# 🧪 TESTING: Test Data & Reports
+#------------------------------------------------------------------------------
+# Test databases (H2, SQLite)
+*.db
+*.h2.db
+*.trace.db
+
+# Test reports
+test-results/
+test-output/
+*.xml
+
+#------------------------------------------------------------------------------
+# 🚀 DEPLOYMENT: Platform-Specific
+#------------------------------------------------------------------------------
+# Render deployment files (keep render.yaml template)
+# render.override.yaml
+
+# Kubernetes secrets (keep templates only)
+k8s/secrets/
+*.secret.yaml
+
+# Terraform state (if using IaC)
+*.tfstate
+*.tfstate.backup
+.terraform/
+
+#------------------------------------------------------------------------------
+# ✅ SAFE TO COMMIT (Explicitly Allowed)
+#------------------------------------------------------------------------------
+# These files are SAFE and SHOULD be committed:
+# - .env.example (template with placeholder values)
+# - docker-compose.yml (infrastructure definition)
+# - gradle.properties (build configuration, no secrets)
+# - application.yaml (uses ${ENV_VAR} placeholders)
+# - render.yaml (deployment template)
+# - Dockerfile (container definition)
+# - README.md (documentation)
+# - All source code in src/
+
+################################################################################
+# END OF .gitignore
+################################################################################
