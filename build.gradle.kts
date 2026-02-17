@@ -14,6 +14,12 @@ application {
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=true")
 }
 
+ktor {
+    fatJar {
+        archiveFileName.set("fleet-management-all.jar")
+    }
+}
+
 repositories {
     mavenCentral()
     maven { url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap") }
