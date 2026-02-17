@@ -135,11 +135,17 @@ fun Application.configureDatabases() {
 
     log.info("Extracted $extractedCount/${migrationFiles.size} migrations to filesystem.")
 
+    // Audit the directory one last time before Flyway starts
+    val finalFiles = migrationDir.listFiles()?.map { it.name } ?: emptyList()
+    log.info("Final Verification: Files in ${migrationDir.absolutePath}: $finalFiles")
+
     // Run Flyway Migrations - Pointing to filesystem to guarantee discovery
     val flyway =
-            Flyway.configure(flywayClassLoader)
+            Flyway.configure() // Use default configuration for filesystem
                     .dataSource(dataSource)
                     .locations("filesystem:${migrationDir.absolutePath}")
+                    .sqlMigrationPrefix("V")
+                    .sqlMigrationSeparator("__")
                     .sqlMigrationSuffixes(".sql")
                     .load()
 
