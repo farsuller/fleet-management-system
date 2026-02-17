@@ -140,6 +140,7 @@ fun Application.configureDatabases() {
             Flyway.configure(flywayClassLoader)
                     .dataSource(dataSource)
                     .locations("filesystem:${migrationDir.absolutePath}")
+                    .sqlMigrationSuffixes(".sql")
                     .load()
 
     try {
