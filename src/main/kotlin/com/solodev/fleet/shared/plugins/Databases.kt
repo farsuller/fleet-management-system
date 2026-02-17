@@ -34,14 +34,15 @@ fun Application.configureDatabases() {
                 password = parts[1]
             }
 
-            // Reconstruct clean JDBC URL without credentials
+            // Reconstruct clean JDBC URL without credentials but WITH query parameters
             val host = uri.host
             val port = if (uri.port != -1) ":${uri.port}" else ""
             val path = uri.path
-            jdbcUrl = "jdbc:postgresql://$host$port$path"
+            val query = if (uri.query != null) "?${uri.query}" else ""
+            jdbcUrl = "jdbc:postgresql://$host$port$path$query"
         } catch (e: Exception) {
             environment.log.warn(
-                    "Failed to parse complex JDBC URL, falling back to simple prefixing"
+                    "Failed to parse complex JDBC URL (${e.message}), falling back to simple prefixing"
             )
             if (!jdbcUrl.startsWith("jdbc:")) jdbcUrl = "jdbc:$jdbcUrl"
         }
@@ -87,14 +88,28 @@ fun Application.configureDatabases() {
 
     // Run Flyway Migrations
     val flyway =
-            Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").load()
+            Flyway.configure()
+                    .dataSource(dataSource)
+                    .locations("classpath:db/migration")
+                    .baselineOnMigrate(true)
+                    .load()
 
     try {
-        flyway.repair()
-        flyway.migrate()
+        val info = flyway.info()
+        val pending = info.pending().size
+        val applied = info.applied().size
+        log.info(
+                "Flyway status: $applied applied, $pending pending migrations found in classpath:db/migration"
+        )
+
+        if (pending > 0) {
+            log.info("Executing Flyway migrations...")
+            flyway.migrate()
+            log.info("Flyway migrations completed successfully.")
+        }
     } catch (e: Exception) {
-        log.error("Flyway migration failed", e)
-        // In production, you might want to stop the app here
+        log.error("CRITICAL: Flyway migration failed: ${e.message}", e)
+        throw e // Fail fast in production
     }
 
     // Connect Exposed
