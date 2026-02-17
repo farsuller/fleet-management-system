@@ -148,7 +148,7 @@ fun Application.configureDatabases() {
         val pending = info.pending().size
         val applied = info.applied().size
         log.info(
-                "Flyway status: $applied applied, $pending pending, $all total discovered in classpath:/db/migration"
+                "Flyway status: $applied applied, $pending pending, $all total discovered in filesystem:${migrationDir.absolutePath}"
         )
 
         // Repair handles checksum mismatches (common in tests)
