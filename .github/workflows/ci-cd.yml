@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+# Establish a least-privilege security baseline for the GITHUB_TOKEN
+permissions:
+  contents: read
+
 jobs:
   # Job 1: Build and Test
   build-and-test:
