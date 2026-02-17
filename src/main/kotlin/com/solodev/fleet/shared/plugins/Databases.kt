@@ -18,14 +18,37 @@ import org.jetbrains.exposed.sql.Database
 fun Application.configureDatabases() {
     val config = environment.config.config("storage")
     var jdbcUrl = config.property("jdbcUrl").getString()
+    var username = config.property("username").getString()
+    var password = config.property("password").getString()
 
-    // Auto-fix for Render/Heroku: Prepend 'jdbc:' if URL starts with 'postgresql://'
-    if (jdbcUrl.startsWith("postgresql://")) {
+    // Robust fix for Render/Heroku: Parse "postgresql://user:pass@host/db" format
+    if (jdbcUrl.contains("@") || jdbcUrl.startsWith("postgresql://")) {
+        try {
+            val cleanUrl = jdbcUrl.removePrefix("jdbc:")
+            val uri = java.net.URI(cleanUrl)
+            val userInfo = uri.userInfo
+
+            if (userInfo != null && userInfo.contains(":")) {
+                val parts = userInfo.split(":", limit = 2)
+                username = parts[0]
+                password = parts[1]
+            }
+
+            // Reconstruct clean JDBC URL without credentials
+            val host = uri.host
+            val port = if (uri.port != -1) ":${uri.port}" else ""
+            val path = uri.path
+            jdbcUrl = "jdbc:postgresql://$host$port$path"
+        } catch (e: Exception) {
+            environment.log.warn(
+                    "Failed to parse complex JDBC URL, falling back to simple prefixing"
+            )
+            if (!jdbcUrl.startsWith("jdbc:")) jdbcUrl = "jdbc:$jdbcUrl"
+        }
+    } else if (!jdbcUrl.startsWith("jdbc:")) {
         jdbcUrl = "jdbc:$jdbcUrl"
     }
 
-    val username = config.property("username").getString()
-    val password = config.property("password").getString()
     val driverClassName = config.property("driverClassName").getString()
     val maximumPoolSize = config.property("maximumPoolSize").getString().toInt()
 
