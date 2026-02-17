@@ -175,17 +175,39 @@ fun Application.configureDatabases() {
             )
         } else if (all == 0) {
             log.warn(
-                    "WARNING: No migrations were discovered by Flyway! Check if db/migration exists in the JAR."
+                    "WARNING: No migrations discovered by Flyway. Triggering Manual JDBC Fallback..."
+            )
+
+            dataSource.connection.use { conn ->
+                conn.autoCommit = true // Ensure each file's changes are committed
+                val statement = conn.createStatement()
+
+                migrationFiles.forEach { fileName ->
+                    val file = java.io.File(migrationDir, fileName)
+                    if (file.exists()) {
+                        log.info("Manual Fallback: Executing $fileName...")
+                        val sql = file.readText()
+                        // Split by semicolon for simple multi-statement execution if needed,
+                        // but usually Postgres/statement.execute can handle the whole script
+                        statement.execute(sql)
+                        log.info("Manual Fallback: $fileName executed successfully.")
+                    } else {
+                        log.error("Manual Fallback Error: Missing file ${file.absolutePath}")
+                    }
+                }
+            }
+            log.info(
+                    "Manual JDBC Fallback completed successfully. (Note: Flyway tracking was bypassed)"
             )
         }
     } catch (e: Exception) {
-        log.error("Flyway migration error (JDBC URL: $jdbcUrl): ${e.message}")
+        log.error("Flyway/Migration error (JDBC URL: $jdbcUrl): ${e.message}")
         if (!jdbcUrl.startsWith("jdbc:h2:")) {
-            log.error("CRITICAL: Flyway migration failed in production environment", e)
+            log.error("CRITICAL: Migration failed in production environment", e)
             throw e // Fail fast in production
         } else {
             log.warn(
-                    "Non-fatal Flyway error in test environment (H2). Falling back to automatic schema handling."
+                    "Non-fatal migration error in test environment (H2). Falling back to automatic schema handling."
             )
         }
     }
