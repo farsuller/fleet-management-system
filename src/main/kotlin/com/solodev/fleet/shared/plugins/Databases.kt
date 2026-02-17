@@ -89,11 +89,11 @@ fun Application.configureDatabases() {
     // Diagnostic: Check if files are visible to classloader
     val flywayClassLoader: ClassLoader =
             Thread.currentThread().contextClassLoader ?: Application::class.java.classLoader
-    val resource = flywayClassLoader.getResource("db/migrations_v1")
-    val v001 = flywayClassLoader.getResource("db/migrations_v1/V001__create_users_schema.sql")
+    val resource = flywayClassLoader.getResource("db/migration")
+    val v001 = flywayClassLoader.getResource("db/migration/V001__create_users_schema.sql")
     val appYaml = flywayClassLoader.getResource("application.yaml")
 
-    log.info("Classpath Diagnostic: db/migrations_v1 resource=$resource")
+    log.info("Classpath Diagnostic: db/migration resource=$resource")
     log.info("Classpath Diagnostic: V001 file=$v001")
     log.info("Classpath Diagnostic: application.yaml file=$appYaml")
     log.info("Current Working Directory: ${System.getProperty("user.dir")}")
@@ -111,11 +111,11 @@ fun Application.configureDatabases() {
         log.error("Deep Diagnostic: Failed to read V001 stream: ${e.message}")
     }
 
-    // Run Flyway Migrations - Using unique path and verified ClassLoader to solve discovery issues
+    // Run Flyway Migrations - Using robust path and verified ClassLoader
     val flyway =
             Flyway.configure(flywayClassLoader)
                     .dataSource(dataSource)
-                    .locations("db/migrations_v1")
+                    .locations("classpath:/db/migration")
                     .load()
 
     try {
@@ -124,7 +124,7 @@ fun Application.configureDatabases() {
         val pending = info.pending().size
         val applied = info.applied().size
         log.info(
-                "Flyway status: $applied applied, $pending pending, $all total discovered in db/migrations_v1"
+                "Flyway status: $applied applied, $pending pending, $all total discovered in classpath:/db/migration"
         )
 
         // Repair handles checksum mismatches (common in tests)
