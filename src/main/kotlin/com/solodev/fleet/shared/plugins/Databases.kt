@@ -87,7 +87,8 @@ fun Application.configureDatabases() {
     }
 
     // Diagnostic: Check if files are visible to classloader
-    val classLoader = Thread.currentThread().contextClassLoader ?: Databases::class.java.classLoader
+    val classLoader =
+            Thread.currentThread().contextClassLoader ?: Application::class.java.classLoader
     val resource = classLoader.getResource("db/migration")
     val v001 = classLoader.getResource("db/migration/V001__create_users_schema.sql")
     val appYaml = classLoader.getResource("application.yaml")
