@@ -1,14 +1,14 @@
 # Multi-stage build for optimized production image
 # Stage 1: Build with Gradle and JDK 21
-FROM gradle:8-jdk21 AS build
+FROM gradle:8.14.3-jdk21 AS build
 
 WORKDIR /app
 
 # Copy project files
 COPY . .
 
-# Build Fat JAR (includes all dependencies)
-RUN gradle buildFatJar --no-daemon
+# Use gradlew for consistency with local builds
+RUN chmod +x ./gradlew && ./gradlew buildFatJar --no-daemon
 
 # Stage 2: Runtime with minimal JRE 21 Alpine
 FROM eclipse-temurin:21-jre-alpine
