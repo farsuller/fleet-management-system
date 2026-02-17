@@ -111,8 +111,9 @@ databases:
     # ✅ FREE TIER WILL WORK for development/testing (90 days)
     # 💵 Upgrade to STARTER ($7/mo) for production (persistent)
     plan: free  # Change to "starter" for production
-    
-  # Redis Cache
+
+# Redis Cache
+redis:
   - name: fleet-management-redis
     
     # PLAN OPTIONS:
@@ -123,4 +124,3 @@ databases:
     # ✅ FREE REDIS is persistent (no expiration)
     # 💵 Upgrade to STARTER ($10/mo) for better support
     plan: free  # Change to "starter" for production
-    maxmemoryPolicy: allkeys-lru  # Evict least recently used keys when full
