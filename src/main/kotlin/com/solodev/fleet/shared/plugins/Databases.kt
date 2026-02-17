@@ -89,21 +89,33 @@ fun Application.configureDatabases() {
     // Diagnostic: Check if files are visible to classloader
     val flywayClassLoader: ClassLoader =
             Thread.currentThread().contextClassLoader ?: Application::class.java.classLoader
-    val resource = flywayClassLoader.getResource("db/migration")
-    val v001 = flywayClassLoader.getResource("db/migration/V001__create_users_schema.sql")
+    val resource = flywayClassLoader.getResource("db/migrations_v1")
+    val v001 = flywayClassLoader.getResource("db/migrations_v1/V001__create_users_schema.sql")
     val appYaml = flywayClassLoader.getResource("application.yaml")
 
-    log.info("Classpath Diagnostic: db/migration resource=$resource")
+    log.info("Classpath Diagnostic: db/migrations_v1 resource=$resource")
     log.info("Classpath Diagnostic: V001 file=$v001")
     log.info("Classpath Diagnostic: application.yaml file=$appYaml")
     log.info("Current Working Directory: ${System.getProperty("user.dir")}")
 
-    // Run Flyway Migrations - Using Flyway.configure(ClassLoader) to avoid type inference issues in
-    // Kotlin 2.1.0
+    // Deep Diagnostic: Try to read the content to ensure it's not a generic permission/IO issue
+    try {
+        v001?.openStream()?.use { stream ->
+            val firstBytes = stream.readNBytes(10)
+            log.info(
+                    "Deep Diagnostic: V001 Content Start (hex): ${firstBytes.joinToString("") { "%02x".format(it) }}"
+            )
+        }
+                ?: log.warn("Deep Diagnostic: V001 resource found but stream is NULL")
+    } catch (e: Exception) {
+        log.error("Deep Diagnostic: Failed to read V001 stream: ${e.message}")
+    }
+
+    // Run Flyway Migrations - Using unique path and verified ClassLoader to solve discovery issues
     val flyway =
             Flyway.configure(flywayClassLoader)
                     .dataSource(dataSource)
-                    .locations("classpath:db/migration")
+                    .locations("db/migrations_v1")
                     .load()
 
     try {
@@ -112,7 +124,7 @@ fun Application.configureDatabases() {
         val pending = info.pending().size
         val applied = info.applied().size
         log.info(
-                "Flyway status: $applied applied, $pending pending, $all total discovered in classpath:db/migration"
+                "Flyway status: $applied applied, $pending pending, $all total discovered in db/migrations_v1"
         )
 
         // Repair handles checksum mismatches (common in tests)
