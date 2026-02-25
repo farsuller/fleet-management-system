@@ -1,5 +1,6 @@
 -- V001: Create Users and Authentication Schema
 -- This migration creates tables for user management and authentication
+
 -- Users table: Core user information
 CREATE TABLE users (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,

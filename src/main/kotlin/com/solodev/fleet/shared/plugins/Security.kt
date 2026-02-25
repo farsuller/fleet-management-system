@@ -17,7 +17,8 @@ enum class UserRole {
     FLEET_MANAGER, // Manage vehicles and inventory
     CUSTOMER_SUPPORT, // View customers and handle basic issues
     RENTAL_AGENT, // Manage active rental lifecycles
-    CUSTOMER // Basic self-service access
+    CUSTOMER, // Basic self-service access
+    DRIVER // Vehicle telemetry and shift management
 }
 
 /** Extension to extract and map roles from the JWT 'roles' claim into our UserRole enum. */

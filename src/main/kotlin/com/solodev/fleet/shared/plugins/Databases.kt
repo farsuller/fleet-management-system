@@ -137,7 +137,8 @@ fun Application.configureDatabases() {
                     "V011__seed_chart_of_accounts.sql",
                     "V012__create_payment_methods_table.sql",
                     "V013__rename_currency_columns_to_whole_units.sql",
-                    "V014__refresh_accounting_functions.sql"
+                    "V014__refresh_accounting_functions.sql",
+                    "V015__add_driver_role.sql"
             )
 
     log.info("Extracting ${migrationFiles.size} migrations to: ${migrationDir.absolutePath}...")
