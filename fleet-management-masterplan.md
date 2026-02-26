@@ -13,27 +13,28 @@ This plan is designed to be appended to `[skills/backend-development/SKILL.md](s
 
 ### ✅ **Completed Features** (Phases 1-5)
 
-| Phase | Status | Features Delivered | Verification |
-|-------|--------|-------------------|-------------|
-| **Phase 1: Foundation** | ✅ **100%** | API Framework, Error Handling, Request Tracking | Live server tested |
-| **Phase 2: Core Data** | ✅ **100%** | Database Schema (20+ tables), Data Integrity, Migration System | All migrations applied |
-| **Phase 3: Business Features** | ✅ **100%** | **User Management**, **Customer Management**, **Vehicle Fleet**, **Rental Operations**, **Maintenance Tracking**, **Payment & Invoicing**, **Accounting Ledger** | All endpoints operational |
-| **Phase 4: Enterprise Features** | ✅ **100%** | Role-Based Access Control, Duplicate Prevention, Rate Limiting, Performance Caching | Security verified |
-| **Phase 5: Financial Features** | ✅ **100%** | **Chart of Accounts**, **Double-Entry Ledger**, **Revenue Reports**, **Balance Sheet**, Reconciliation | Transactional correctness |
+| Phase | Status | Features Delivered | Completion |
+|-------|--------|-------------------|------------|
+| **Phase 1: Foundation** | ✅ **100%** | API Framework, Error Handling, Request Tracking | 100% |
+| **Phase 2: Core Data** | ✅ **100%** | Database Schema (20+ tables), Data Integrity, Migration System | 100% |
+| **Phase 3: Business Features** | ✅ **100%** | Users, Customers, Vehicles, Rentals, Maintenance, Accounting | 100% |
+| **Phase 4: Hardening** | ✅ **100%** | RBAC, Idempotency, Rate Limiting, Caching | 100% |
+| **Phase 5: Financials** | ✅ **100%** | Ledger, Invoices, Payments, Financial Reports | 100% |
+| **Phase 8: Deployment** | ✅ **100%** | **Production Hosting (Render)**, **Supabase Migration**, **Dockerfile**, **render.yaml** | 100% |
 
-### 🏗️ **Planned Features** (Phases 6-8)
+### 🏗️ **Planned & In-Progress** (Phases 6-7)
 
 | Phase | Status | Features Planned | Notes |
 |-------|--------|-----------------|-------|
-| **Phase 6: GPS Features** | 🏗️ **Planning** | **GPS Tracking**, **Route Matching**, **Distance Calculation**, Location Intelligence | Documentation complete |
-| **Phase 7: Monitoring Features** | 🏗️ **Planning** | **Live Fleet Dashboard**, **Real-Time Vehicle Positions**, **Movement Visualization**, Anomaly Detection | Documentation complete |
-| **Phase 8: Deployment** | 🏗️ **Planning** | Production Hosting, Environment Configuration, Cloud Scalability | Render-ready |
+| **Phase 6: Spatial** | 🏗️ **In Progress** | **PostGIS Integration**, **GPS Tracking**, **Geofencing** | Active development |
+| **Phase 7: Visuals** | 🏗️ **Planning** | **Schematic Visualization**, **Delta-Encoded WebSockets** | Plan approved |
 
 ### 📦 **Current System Capabilities**
 
-#### **Database** (PostgreSQL + Redis)
+#### **Database** (Supabase + Redis)
+- ✅ **Supabase**: Primary production database (Postgres 15 + PostGIS)
 - ✅ **20+ Tables**: Users, Customers, Vehicles, Rentals, Maintenance, Accounting, Integration
-- ✅ **14 Migrations**: V001-V014 (all applied)
+- ✅ **15 Migrations**: V001-V015 (PostGIS enabled)
 - ✅ **Constraints**: Double-booking prevention, Double-entry validation, Optimistic locking
 - ✅ **Redis Caching**: VehicleRepository (5-min TTL)
 
@@ -64,7 +65,7 @@ This plan is designed to be appended to `[skills/backend-development/SKILL.md](s
 - ✅ **Core Business Logic**: All CRUD operations functional
 - ✅ **Financial Integrity**: Double-entry accounting operational
 - ✅ **Security**: Production-grade hardening applied
-- ⚠️ **Deployment Files**: Need Dockerfile, render.yaml (Phase 8)
+- ✅ **Deployment Files**: `Dockerfile`, `render.yaml` (Phase 8)
 
 ---
 
@@ -210,29 +211,19 @@ The system includes a proprietary **Custom Schematic Route-Based Visualization**
 - Reports generated from ledger + immutable rental/maintenance facts.
 - Optionally add report snapshots for performance (never overwrite facts).
 
-### Phase 6 — Deployment
+### Phase 6 — PostGIS Spatial Extensions
 
-- Details and implementation tracker: `phase-6-deployment.md`
+- Details and implementation tracker: `phase-6-postgis-spatial-extensions.md`
 
-- Docker Compose/Testcontainers for local.
-- Kubernetes/EKS manifests (Deployment/Service/ConfigMap/Secret/HPA) with:
-  - Readiness/liveness probes (wired to health endpoints)
-  - Environment-driven configuration (no hardcoded secrets)
-  - Reasonable resource requests/limits and autoscaling guidance
+- [ ] Enable spatial intelligence for route geometries.
+- [ ] Implement snapping and distance-based progress calculation.
 
-### Phase 7 — PostGIS Spatial Extensions
+### Phase 7 — Schematic Visualization Engine
 
-- Details and implementation tracker: `phase-7-postgis-spatial-extensions.md`
+- Details and implementation tracker: `phase-7-schematic-visualization-engine.md`
 
-- Enable spatial intelligence for route geometries.
-- Implement snapping and distance-based progress calculation.
-
-### Phase 8 — Schematic Visualization Engine
-
-- Details and implementation tracker: `phase-8-schematic-visualization-engine.md`
-
-- Core matching logic and Delta-Encoded WebSocket broadcasting.
-- Real-time fleet monitor and anomaly/fraud detection.
+- [ ] Core matching logic and Delta-Encoded WebSocket broadcasting.
+- [ ] Real-time fleet monitor and anomaly/fraud detection.
 
 ## Schemas (PostgreSQL blueprint)
 

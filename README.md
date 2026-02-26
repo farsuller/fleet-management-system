@@ -552,51 +552,76 @@ The system is developed in distinct phases, moving from architecture to complex 
 
 ### Prerequisites
 
-- **JDK 17+** - [Download](https://adoptium.net/)
-- **PostgreSQL 15+** - [Download](https://www.postgresql.org/download/)
+Regardless of your operating system, you will need:
+- **JDK 17 or 21** - [Adoptium (Recommended)](https://adoptium.net/)
+- **Docker Desktop** - [Download](https://www.docker.com/products/docker-desktop/) (Required for local DB & Redis)
 - **Git** - [Download](https://git-scm.com/)
+- **Postman** (Optional) - For API testing
 
-### Installation
+---
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/fleet-management.git
-   cd fleet-management
+### 💻 OS-Specific Setup
+
+#### 🪟 Windows Setup
+1. **Enable WSL2**: Ensure WSL2 is enabled and Docker Desktop is configured to use the WSL2 backend.
+2. **Clone the repository**:
+   ```powershell
+   git clone https://github.com/farsuller/fleet-management-system.git
+   cd fleet-management-system
    ```
-
-2. **Set up the database**
-   ```bash
-   # Start PostgreSQL with Docker Compose
+3. **Environment Setup**:
+   ```powershell
+   copy .env.example .env
+   ```
+4. **Start Infrastructure**:
+   ```powershell
    docker-compose up -d
-   
-   # Or create database manually
-   createdb fleet_management
+   ```
+5. **Run Application**:
+   ```powershell
+   ./gradlew run
    ```
 
-3. **Configure environment**
+#### 🍎 macOS Setup
+1. **Install Homebrew** (if not already installed): `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
+2. **Clone the repository**:
+   ```bash
+   git clone https://github.com/farsuller/fleet-management-system.git
+   cd fleet-management-system
+   ```
+3. **Environment Setup**:
    ```bash
    cp .env.example .env
-   # Edit .env with your database credentials
    ```
-
-4. **Run database migrations**
+4. **Start Infrastructure**:
    ```bash
-   ./gradlew flywayMigrate
+   docker-compose up -d
    ```
-
-5. **Build the project**
-   ```bash
-   ./gradlew build
-   ```
-
-6. **Run the application**
+5. **Run Application**:
    ```bash
    ./gradlew run
    ```
 
-The server will start at `http://localhost:8080`
+---
 
-### Quick Test
+### 🔑 Configuration (Environment Variables)
+
+The system supports two database targets:
+
+1. **Local Development (Default)**: Uses the `.env` file pointing to `localhost:5435` (Docker).
+2. **Cloud Development (Supabase)**: Uses `.env.supabase` for connecting to the managed Supabase instance.
+
+**To switch to local dev:**
+Ensure your `.env` has:
+```env
+DATABASE_URL=jdbc:postgresql://127.0.0.1:5435/fleet_db
+DB_USER=fleet_user
+DB_PASSWORD=secret_123
+```
+
+---
+
+### 🛠️ Quick Test
 
 ```bash
 # Health check
