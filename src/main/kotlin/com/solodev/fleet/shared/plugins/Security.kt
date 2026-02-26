@@ -78,15 +78,13 @@ fun Application.configureSecurity() {
     val jwtAudience = environment.config.property("jwt.audience").getString()
     val jwtRealm = environment.config.property("jwt.realm").getString()
 
-    log.info("JWT Configuration: Issuer = $jwtIssuer, Audience = $jwtAudience, Realm = $jwtRealm")
-
     install(Authentication) {
         jwt("auth-jwt") {
             realm = jwtRealm
             verifier(
                     JWT.require(Algorithm.HMAC256(jwtSecret))
-                            // .withIssuer(jwtIssuer)
-                            // .withAudience(jwtAudience)
+                            .withIssuer(jwtIssuer)
+                            .withAudience(jwtAudience)
                             .build()
             )
             validate { credential ->
@@ -102,8 +100,7 @@ fun Application.configureSecurity() {
                         HttpStatusCode.Unauthorized,
                         ApiResponse.error(
                                 code = "UNAUTHORIZED",
-                                message =
-                                        "Token is invalid, expired, or truncated. Please log in again and copy the full token.",
+                                message = "Token is invalid or expired. Please log in again.",
                                 requestId = call.requestId
                         )
                 )
