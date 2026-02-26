@@ -78,17 +78,20 @@ fun Application.configureSecurity() {
     val jwtAudience = environment.config.property("jwt.audience").getString()
     val jwtRealm = environment.config.property("jwt.realm").getString()
 
+    log.info("JWT Configuration: Issuer = $jwtIssuer, Audience = $jwtAudience, Realm = $jwtRealm")
+
     install(Authentication) {
         jwt("auth-jwt") {
             realm = jwtRealm
             verifier(
                     JWT.require(Algorithm.HMAC256(jwtSecret))
-                            .withIssuer(jwtIssuer)
-                            .withAudience(jwtAudience)
+                            // .withIssuer(jwtIssuer)
+                            // .withAudience(jwtAudience)
                             .build()
             )
             validate { credential ->
-                if (credential.payload.getClaim("id").asString() != "") {
+                val id = credential.payload.getClaim("id").asString()
+                if (!id.isNullOrEmpty()) {
                     JWTPrincipal(credential.payload)
                 } else {
                     null
