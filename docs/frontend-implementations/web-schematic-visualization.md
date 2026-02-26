@@ -1,8 +1,8 @@
 # Web Frontend — Schematic Visualization (Kotlin/JS + Compose for Web)
 
 ## Status
-- Overall: **Planned**
-- Implementation Date: TBD
+- Overall: **Ready for Implementation**
+- Refined Date: 2026-02-26
 - **Verification Responsibility**:
     - **Lead Developer (USER)**: Frontend unit tests, visual regression tests, E2E tests
     - **Architect (Antigravity)**: Performance benchmarks (FPS, render time, bundle size)
@@ -306,7 +306,7 @@ object DeltaDecoder {
     fun merge(current: VehicleRouteState?, delta: VehicleStateDelta): VehicleRouteState {
         return VehicleRouteState(
             vehicleId = delta.vehicleId,
-            routeId = current?.routeId ?: UUID.randomUUID(),
+            routeId = delta.routeId ?: current?.routeId ?: throw IllegalStateException("Unknown route for vehicle"),
             progress = delta.progress ?: current?.progress ?: 0.0,
             bearing = delta.bearing ?: current?.bearing,
             status = delta.status ?: current?.status ?: VehicleStatus.IDLE,
@@ -491,6 +491,15 @@ data class Point(val x: Double, val y: Double)
 
 ### 1. Unit Tests
 ```kotlin
+import com.solodev.fleet.shared.VehicleRouteState
+import com.solodev.fleet.shared.VehicleStatus
+import com.solodev.fleet.web.utils.DeltaDecoder
+import com.solodev.fleet.web.utils.VehicleStateDelta
+import kotlinx.datetime.Instant
+import java.util.UUID
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
 class DeltaDecoderTest {
     @Test
     fun `should merge delta with null current state`() {

@@ -1,8 +1,8 @@
 # Phase 7 — Schematic Visualization Engine (Backend)
 
 ## Status
-- Overall: **Planned**
-- Implementation Date: TBD
+- Overall: **Ready for Implementation**
+- Refined Date: 2026-02-26
 - **Verification Responsibility**:
     - **Lead Developer (USER)**: Unit testing matching logic, WebSocket integration tests
     - **Architect (Antigravity)**: Validate Delta-encoding efficiency and Redis Pub/Sub concurrency safety
@@ -11,6 +11,16 @@
 
 ## Purpose
 Implement the backend logic that transforms raw GPS/Sensor pings into schematic progress values (0.0-1.0) and broadcasts these updates via Delta-Encoded WebSockets to connected frontend clients. This is the server-side component of the real-time tracking system.
+
+---
+
+## Horizontal Scaling & Load Balancing
+
+To support **1,000+ concurrent drivers**, the backend architecture is designed for horizontal scaling across multiple Render instances:
+
+1.  **Distributed State (Redis)**: Vehicle positions and WebSocket deltas are stored in Redis, ensuring all backend nodes have access to the same fleet status.
+2.  **Redis Pub/Sub**: Real-time updates received by `Server Node A` are broadcast via Redis to `Server Node B` and `C`, ensuring every Admin connected via WebSocket sees the live movement.
+3.  **Sticky Sessions (Optional)**: While the architecture is stateless, configuring sticky sessions on the load balancer reduces WebSocket handshake overhead during high-traffic periods.
 
 ---
 
@@ -199,16 +209,10 @@ data class VehicleStateDelta(
 ### 1. Matching Engine (PostGIS Integration)
 ```kotlin
 // tracking/infrastructure/spatial/MatchingEngine.kt
-class MatchingEngine(private val database: Database) {
-    suspend fun snapPointToRoute(routeId: UUID, lat: Double, lng: Double): Double {
-        return database.transaction {
-            // Uses the SpatialFunction created in Phase 6
-            val progress = Routes
-                .slice(SpatialFunctions.stLineLocatePoint(polyline, stPoint(lng, lat)))
-                .select { Routes.id eq routeId }
-                .single()[0] as Double
-            progress
-        }
+// NOTE: This uses the PostGISAdapter from Phase 6 for optimized snapping
+class MatchingEngine(private val postGISAdapter: PostGISAdapter) {
+    suspend fun snapPointToRoute(routeId: UUID, vehicleId: UUID, location: Location): RouteSnapResult {
+        return postGISAdapter.snapToRoute(vehicleId, location, routeId)
     }
 }
 ```
@@ -216,32 +220,43 @@ class MatchingEngine(private val database: Database) {
 ### 2. Delta Broadcaster (Backend)
 ```kotlin
 // tracking/infrastructure/websocket/DeltaBroadcaster.kt
-class DeltaBroadcaster {
-    private val lastStates = ConcurrentHashMap<UUID, VehicleRouteState>()
+class DeltaBroadcaster(
+    private val redisCache: RedisCacheManager,
+    private val vehicleRepository: VehicleRepository
+) {
     private val sessions = ConcurrentHashMap<String, DefaultWebSocketServerSession>()
 
     suspend fun broadcastIfChanged(vehicleId: UUID, newState: VehicleRouteState) {
-        val lastState = lastStates[vehicleId]
+        val redisKey = "vehicle_state:$vehicleId"
+        val lastState = redisCache.get<VehicleRouteState>(redisKey)
         
-        // Create delta payload (only changed fields)
-        val delta = VehicleStateDelta(
-            vehicleId = vehicleId,
-            progress = if (lastState?.progress != newState.progress) newState.progress else null,
-            bearing = if (lastState?.bearing != newState.bearing) newState.bearing else null,
-            status = if (lastState?.status != newState.status) newState.status else null,
-            distanceFromRoute = if (lastState?.distanceFromRoute != newState.distanceFromRoute) newState.distanceFromRoute else null,
-            timestamp = newState.timestamp
-        )
+        val delta = if (lastState == null) {
+            VehicleStateDelta.full(newState)
+        } else {
+            VehicleStateDelta.diff(lastState, newState)
+        }
         
-        // Only broadcast if there are changes
         if (delta.hasChanges()) {
-            sessions.values.forEach { it.sendSerialized(delta) }
-            lastStates[vehicleId] = newState
+            val message = Json.encodeToString(delta)
+            sessions.values.forEach { it.send(Frame.Text(message)) }
+            redisCache.set(redisKey, newState, Duration.ofHours(1))
         }
     }
     
-    fun addSession(sessionId: String, session: DefaultWebSocketServerSession) {
+    suspend fun addSession(sessionId: String, session: DefaultWebSocketServerSession) {
         sessions[sessionId] = session
+        sendInitialState(session)
+    }
+
+    private suspend fun sendInitialState(session: DefaultWebSocketServerSession) {
+        val activeVehicles = vehicleRepository.findAllActive()
+        activeVehicles.forEach { vehicle ->
+            val state = redisCache.get<VehicleRouteState>("vehicle_state:${vehicle.id}")
+            if (state != null) {
+                val delta = VehicleStateDelta.full(state)
+                session.send(Frame.Text(Json.encodeToString(delta)))
+            }
+        }
     }
     
     fun removeSession(sessionId: String) {

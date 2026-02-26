@@ -1,11 +1,30 @@
 # Phase 6 — PostGIS Spatial Extensions
 
 ## Status
-- Overall: **Planned**
-- Implementation Date: TBD
+- Overall: **Ready for Implementation**
+- Refined Date: 2026-02-26
 - **Verification Responsibility**:
     - **Lead Developer (USER)**: Write/Run Testcontainers integration tests & Flyway migration validation.
     - **Tech Lead (Antigravity)**: Audit `PostGISColumnType` implementation and spatial SQL performance.
+
+---
+
+## What is PostGIS?
+
+**PostGIS** is an open-source spatial database extender for the **PostgreSQL** object-relational database. It adds support for geographic objects, allowing SQL queries to be run using spatial data: location, geometry, and distance.
+
+### 💼 Business Usage
+In a Fleet Management context, PostGIS is the "brain" behind location-based decision making:
+- **Route Compliance**: Automatically verify if a driver is staying on the pre-approved path or taking unauthorized detours.
+- **Accurate Billing**: Calculate exact distances traveled along road networks rather than simple "straight line" (crow-fly) estimates.
+- **Safety Monitoring**: Power geofencing alerts (e.g., when a vehicle enters a high-risk or restricted area).
+- **Service Optimization**: Identify which vehicles are truly closest to a pickup point based on road distance, not just map coordinates.
+
+### ⚙️ Technical Usage
+Technically, PostGIS transforms a standard database into a **Spatial Engine**:
+- **Spatial Indexing (GIST)**: Allows the database to search millions of coordinates in milliseconds (e.g., "Find the nearest road segment to this GPS point").
+- **Geometry Data Types**: Stores complex shapes like `LINESTRING` (roads) and `POLYGON` (geofences) directly as binary database columns.
+- **Spatial Functions**: Provides 500+ SQL functions like `ST_Distance` (length), `ST_Contains` (is vehicle inside area?), and `ST_Snap` (attaching raw pings to road paths).
 
 ---
 
@@ -106,9 +125,10 @@ The [Coordinate Reception Toggle](file:///e:/Antigravity%20Projects/fleet-manage
 
 #### Metrics (Micrometer)
 ```kotlin
-// tracking/infrastructure/metrics/SpatialMetrics.kt
+// shared/infrastructure/metrics/SpatialMetrics.kt
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
+import java.util.concurrent.TimeUnit
 
 class SpatialMetrics(private val registry: MeterRegistry) {
     private val snapTimer = Timer.builder("postgis.snap.duration")
@@ -118,9 +138,6 @@ class SpatialMetrics(private val registry: MeterRegistry) {
     
     private val snapErrors = registry.counter("postgis.snap.errors", "type", "snap_failure")
     private val offRouteCounter = registry.counter("postgis.vehicle.off_route")
-    private val cacheHitRate = registry.gauge("postgis.cache.hit_rate", postGISAdapter) { adapter ->
-        adapter.getCacheStats().hitRate()
-    }
     
     fun recordSnapDuration(duration: Long) {
         snapTimer.record(duration, TimeUnit.MILLISECONDS)
@@ -785,6 +802,13 @@ object SpatialFunctions {
      */
     fun stMakePoint(lng: Double, lat: Double): String =
         "ST_SetSRID(ST_MakePoint($lng, $lat), 4326)"
+
+    /**
+     * Returns a point interpolated along a line.
+     * Used to find the exact snapped coordinate on the route.
+     */
+    fun stLineInterpolatePoint(line: Expression<*>, fraction: Expression<Double>): Function<PGgeometry> =
+        CustomFunction("ST_LineInterpolatePoint", PostGISColumnType(), line, fraction)
 }
 ```
 
@@ -813,50 +837,38 @@ class PostGISAdapter {
     
     /**
      * Snap a GPS location to the nearest point on a route polyline.
-     * Returns the progress (0.0 to 1.0) along the route.
+     * PERFORMANCE: Combines distance, progress, and interpolation into a SINGLE DB round-trip.
      */
     fun snapToRoute(vehicleId: UUID, location: Location, routeId: UUID): RouteSnapResult {
         return transaction {
-            val routeLine = getRoutePolyline(routeId)
             val point = locationToPoint(location)
+            val pointExp = point.asExpression()
             
-            // Calculate distance from route
-            val distance = SpatialFunctions.stDistance(
-                routeLine.asExpression(),
-                point.asExpression()
-            ).alias("distance")
-            
-            val distanceMeters = Routes
-                .slice(distance)
+            // Define optimized spatial functions using the DB's internal 'polyline' column
+            val distanceFunc = SpatialFunctions.stDistance(Routes.polyline, pointExp).alias("distance")
+            val progressFunc = SpatialFunctions.stLineLocatePoint(Routes.polyline, pointExp).alias("progress")
+            val snappedGeomFunc = SpatialFunctions.stLineInterpolatePoint(
+                Routes.polyline, 
+                SpatialFunctions.stLineLocatePoint(Routes.polyline, pointExp)
+            ).alias("snapped_geom")
+
+            val result = Routes
+                .slice(distanceFunc, progressFunc, snappedGeomFunc)
                 .select { Routes.id eq routeId }
-                .single()[distance]
-            
+                .single()
+
+            val distanceMeters = result[distanceFunc]
+            val progressValue = result[progressFunc]
+            val snappedGeom = result[snappedGeomFunc].geometry as Point
+
             // Check if vehicle is off-route (>100m threshold)
-            if (distanceMeters > 100.0) {
-                return@transaction RouteSnapResult(
-                    progress = 0.0,
-                    distanceFromRoute = distanceMeters,
-                    isOffRoute = true,
-                    snappedLocation = null
-                )
-            }
-            
-            // Calculate progress along route
-            val progress = SpatialFunctions.stLineLocatePoint(
-                routeLine.asExpression(),
-                point.asExpression()
-            ).alias("progress")
-            
-            val progressValue = Routes
-                .slice(progress)
-                .select { Routes.id eq routeId }
-                .single()[progress]
+            val isOffRoute = distanceMeters > 100.0
             
             RouteSnapResult(
-                progress = progressValue,
+                progress = if (isOffRoute) 0.0 else progressValue,
                 distanceFromRoute = distanceMeters,
-                isOffRoute = false,
-                snappedLocation = calculateSnappedLocation(routeLine, progressValue)
+                isOffRoute = isOffRoute,
+                snappedLocation = Location(latitude = snappedGeom.y, longitude = snappedGeom.x)
             )
         }
     }
@@ -924,9 +936,22 @@ class PostGISAdapter {
     }
     
     private fun calculateSnappedLocation(routeLine: PGgeometry, progress: Double): Location {
-        // Implementation would use ST_LineInterpolatePoint
-        // Simplified for documentation
-        TODO("Implement using ST_LineInterpolatePoint")
+        // Implementation uses ST_LineInterpolatePoint to find exact coordinate on the road
+        return transaction {
+            val progressExp = doubleLiteral(progress)
+            val snappedGeomFunc = SpatialFunctions.stLineInterpolatePoint(
+                routeLine.asExpression(),
+                progressExp
+            ).alias("snapped")
+
+            val snappedGeom = Routes.slice(snappedGeomFunc)
+                .selectAll()
+                .limit(1)
+                .single()[snappedGeomFunc]
+
+            val point = snappedGeom.geometry as Point
+            Location(latitude = point.y, longitude = point.x)
+        }
     }
     
     fun getCacheStats() = routeCache.stats()
@@ -1000,6 +1025,94 @@ class UpdateVehicleLocationUseCase(
         // 8. Persist location history (async, non-blocking)
         vehicleRepository.saveLocationHistory(sensorPing, snapResult)
     }
+    
+    private suspend fun getAssignedRoute(vehicleId: UUID): UUID {
+        return vehicleRepository.findById(vehicleId)?.assignedRouteId 
+            ?: throw NoRouteAssignedException(vehicleId)
+    }
+}
+
+// tracking/domain/logic/DrivingEventDetector.kt
+class DrivingEventDetector {
+    fun detect(ping: SensorPing, snap: RouteSnapResult): List<DrivingEvent> {
+        val events = mutableListOf<DrivingEvent>()
+        
+        // 1. Check for route departure
+        if (snap.isOffRoute) {
+            events.add(DrivingEvent(
+                vehicleId = ping.vehicleId,
+                type = EventType.ROUTE_DEPARTURE,
+                location = ping.location,
+                severity = EventSeverity.MEDIUM,
+                timestamp = ping.timestamp
+            ))
+        }
+        
+        // 2. Check for harsh braking (> 3.0 m/s²)
+        ping.accelerometer?.let { accel ->
+            if (accel.x < -3.0) { // Assuming X is forward/backward
+                events.add(DrivingEvent(
+                    vehicleId = ping.vehicleId,
+                    type = EventType.HARSH_BRAKE,
+                    location = ping.location,
+                    severity = EventSeverity.HIGH,
+                    timestamp = ping.timestamp
+                ))
+            }
+        }
+        
+        return events
+    }
+}
+
+// tracking/infrastructure/persistence/VehicleRepositoryImpl.kt
+class VehicleRepositoryImpl : VehicleRepository {
+    override suspend fun findById(id: UUID): Vehicle? {
+        return transaction {
+            Vehicles.select { Vehicles.id eq id }
+                .map { rowToVehicle(it) }
+                .singleOrNull()
+        }
+    }
+
+    override suspend fun findAllActive(): List<Vehicle> {
+        return transaction {
+            Vehicles.select { Vehicles.state eq VehicleState.IN_TRANSIT }
+                .map { rowToVehicle(it) }
+        }
+    }
+
+    override suspend fun saveLocationHistory(ping: SensorPing, snap: RouteSnapResult) {
+        transaction {
+            // 1. Update vehicle real-time state
+            Vehicles.update({ Vehicles.id eq ping.vehicleId }) {
+                it[lastLocation] = locationToPoint(ping.location)
+                it[lastBearing] = ping.bearing ?: 0.0
+                it[currentProgress] = snap.progress
+            }
+            
+            // 2. Insert into historical log (partitioned by day in prod)
+            LocationHistory.insert {
+                it[vehicleId] = ping.vehicleId
+                it[location] = locationToPoint(ping.location)
+                it[timestamp] = ping.timestamp
+            }
+        }
+    }
+}
+
+// tracking/infrastructure/http/SensorRoutes.kt
+fun Route.sensorRoutes(batchProcessor: SensorPingBatchProcessor) {
+    authenticate("auth-jwt") {
+        post("/v1/sensors/ping") {
+            val ping = call.receive<SensorPing>()
+            
+            // Push to async buffer - Very fast, doesn't wait for DB
+            batchProcessor.enqueue(ping)
+            
+            call.respond(HttpStatusCode.Accepted)
+        }
+    }
 }
 ```
 
@@ -1016,9 +1129,8 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
 
-class WebSocketBroadcaster {
+class WebSocketBroadcaster(private val redisCache: RedisCacheManager) {
     private val connections = ConcurrentHashMap<String, DefaultWebSocketSession>()
-    private val lastStates = ConcurrentHashMap<UUID, VehicleRouteState>()
     
     fun addConnection(sessionId: String, session: DefaultWebSocketSession) {
         connections[sessionId] = session
@@ -1026,25 +1138,24 @@ class WebSocketBroadcaster {
     
     fun removeConnection(sessionId: String) {
         connections.remove(sessionId)
-        // Clean up resources
     }
     
     /**
      * Broadcast vehicle state update using delta encoding.
-     * Only sends changed fields to minimize payload size (~80% reduction).
+     * OPTIMIZATION: Uses Redis to track 'lastState' across horizontal instances.
      */
     suspend fun broadcast(newState: VehicleRouteState) {
-        val lastState = lastStates[newState.vehicleId]
+        val redisKey = "vehicle_state:${newState.vehicleId}"
+        val lastState = redisCache.get<VehicleRouteState>(redisKey)
         
         val delta = if (lastState == null) {
-            // First update, send full state
             VehicleStateDelta.full(newState)
         } else {
-            // Send only changed fields
             VehicleStateDelta.diff(lastState, newState)
         }
         
-        lastStates[newState.vehicleId] = newState
+        // Update Redis with a short TTL (1 hour) for real-time tracking
+        redisCache.set(redisKey, newState, Duration.ofHours(1))
         
         val message = Json.encodeToString(delta)
         connections.values.forEach { session ->
@@ -1214,7 +1325,55 @@ WHERE id = 'some-uuid';
 
 ---
 
+---
+
+## Scalability for 1000+ Drivers
+
+If you have 1000 drivers each pinging every 10 seconds, that equals **360,000 pings/hour (100 pings/second)**. Our architecture handles this via:
+
+1.  **Ingestion Buffer (Phase 6)**: The `SensorPingBatchProcessor` acts as a dampener. It collects pings for 5 seconds and flushes them as a **single bulk update**. This prevents 100 DB connections from fighting for the same table.
+2.  **Stateless API**: The `/v1/sensors/ping` endpoint just puts the data in the buffer and returns `202 Accepted`. It is virtually non-blocking.
+3.  **Global Fast State (Redis)**: Cross-instance state (e.g., deltas for WebSockets) is stored in Redis, meaning you can run **10-20 server instances** on Render without data fragmentation.
+4.  **Single-SQL Snapping**: By combining distance, progress, and interpolation into one query, we reduce the total SQL overhead per driver to the absolute minimum.
+
+---
+
 ## Application Method
+
+To activate Phase 6 with high-scale support, register the Ktor module in your `Application.kt`:
+
+```kotlin
+// Application.kt
+fun Application.module() {
+    val redisCache = RedisCacheManager(config)
+    val broadcaster = WebSocketBroadcaster(redisCache)
+    val postGISAdapter = PostGISAdapter()
+    val vehicleRepo = VehicleRepositoryImpl()
+    val eventDetector = DrivingEventDetector()
+    
+    val updateLocationUseCase = UpdateVehicleLocationUseCase(
+        postGISAdapter, 
+        vehicleRepo, 
+        broadcaster, 
+        eventDetector
+    )
+    
+    // High-Scale Ingestion Buffer (100 pings per second capacity)
+    val batchProcessor = SensorPingBatchProcessor(
+        updateLocationUseCase,
+        batchSize = 250,      // Dampens DB writes
+        flushInterval = Duration.ofSeconds(5)
+    )
+
+    routing {
+        // Setup WebSocket endpoint
+        configureWebSockets(broadcaster)
+        
+        // Setup Sensor Ingestion (Admin/Driver API)
+        sensorRoutes(batchProcessor)
+    }
+}
+```
 
 ## Technical Risks & Blockers
 

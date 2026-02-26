@@ -94,6 +94,17 @@ fun Application.configureSecurity() {
                     null
                 }
             }
+            challenge { defaultScheme, realm ->
+                call.respond(
+                        HttpStatusCode.Unauthorized,
+                        ApiResponse.error(
+                                code = "UNAUTHORIZED",
+                                message =
+                                        "Token is invalid, expired, or truncated. Please log in again and copy the full token.",
+                                requestId = call.requestId
+                        )
+                )
+            }
         }
     }
 }
