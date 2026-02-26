@@ -38,6 +38,7 @@
 .env.production
 .env.staging
 .env.development
+.env.supabase
 
 # Secret files and directories
 secrets/

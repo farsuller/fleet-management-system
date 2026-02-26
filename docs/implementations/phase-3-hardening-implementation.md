@@ -683,99 +683,15 @@ To understand the "Sense" of Idempotency, test these three specific scenarios:
 
 ---
 
-## 📱 Mobile / Client Integration (Android/iOS)
+---
 
-When integrating these hardened endpoints into a mobile app, follow these patterns:
+## 📱 Mobile / Client Integration (Moved)
 
-### **1. Generating the Idempotency-Key (Android/Kotlin)**
-Always generate a fresh UUID for every new "Action" (like a button tap).
-```kotlin
-// Inside your ViewModel or Repository
-val idempotencyKey = java.util.UUID.randomUUID().toString()
+The details for integrating hardening patterns (Idempotency, Retries, Clean Architecture) into mobile applications have been moved to the dedicated frontend documentation to better distinguish between system hardening and client-side implementation.
 
-// Add to your Retrofit/Ktor-Client headers:
-// .header("Idempotency-Key", idempotencyKey)
-```
+👉 **See: [Android Driver App — Mobile Integration Patterns](file:///e:/Antigravity%20Projects/fleet-management/docs/frontend-implementations/android-driver-app.md#%F0%9F%93%B1-mobile--client-integration-hardening-patterns)**
 
-### **2. Handling Retries on Mobile**
-If a mobile request fails due to a `SocketTimeoutException` or `NoRouteToHostException`:
-1.  **Do NOT** generate a new UUID.
-2.  **REUSE** the same UUID from the first attempt.
-3.  This ensures that if the first request actually reached the server but the response was dropped, the second attempt will safely return the cached success.
-
-### **3. Ktor Client Example (Android/Mobile)**
-If you are using the Ktor Client on Android, you can either pass it manually or use a simple `DefaultRequest` plugin.
-
-**Manual usage per call:**
-```kotlin
-suspend fun submitPayment(invoiceId: String, amount: Long) {
-    // 1. Generate the key ONCE for this transaction
-    val transactionId = java.util.UUID.randomUUID().toString()
-
-    client.post("https://api.v1/accounting/invoices/$invoiceId/pay") {
-        contentType(ContentType.Application.Json)
-        // 2. Attach the key to the header
-        header("Idempotency-Key", transactionId)
-        setBody(PaymentRequest(amount = amount))
-    }
-}
-```
-
-**Why generating it "just once" matters:**
-If the request times out, you call `submitPayment` again. By keeping the **same** `transactionId`, the server knows it's the same attempt. If you generated a *new* UUID on every retry, you'd risk paying twice if the first request actually reached the server but the response was blocked by a weak mobile signal!
-
-### **4. Full Android Clean Architecture Example (Koin + Ktor + MVVM)**
-If you are using **MVVM**, **Clean Architecture**, and **Koin**, follow this flow for the `Pay Invoice` feature:
-
-#### **A. The ViewModel (Presentation)**
-The ViewModel is the best place to generate the key because it outlives simple screen rotations.
-```kotlin
-class InvoiceViewModel(private val payInvoiceUseCase: PayInvoiceUseCase) : ViewModel() {
-    
-    fun processPayment(invoiceId: String, amount: Long) {
-        // 1. Generate the key ONCE at the start of the user action
-        val idempotencyKey = UUID.randomUUID().toString()
-        
-        viewModelScope.launch {
-            val result = payInvoiceUseCase.execute(idempotencyKey, invoiceId, amount)
-            // handle success/failure
-        }
-    }
-}
-```
-
-#### **B. The Use Case (Domain)**
-```kotlin
-class PayInvoiceUseCase(private val repository: InvoiceRepository) {
-    suspend fun execute(key: String, id: String, amount: Long) = 
-        repository.pay(key, id, amount)
-}
-```
-
-#### **C. The Repository Implementation (Data/Infrastructure)**
-Using Ktor Client with your Koin-injected `HttpClient`.
-```kotlin
-class InvoiceRepositoryImpl(private val client: HttpClient) : InvoiceRepository {
-    override suspend fun pay(key: String, id: String, amount: Long) {
-        client.post("https://api.v1/accounting/invoices/$id/pay") {
-            header("Idempotency-Key", key) // Pass the key generated in the VM
-            setBody(PaymentRequest(amount))
-        }
-    }
-}
-```
-
-#### **D. Koin Module (DI)**
-```kotlin
-val accountingModule = module {
-    single { HttpClient(Android) { install(ContentNegotiation) { json() } } }
-    single<InvoiceRepository> { InvoiceRepositoryImpl(get()) }
-    factory { PayInvoiceUseCase(get()) }
-    viewModel { InvoiceViewModel(get()) }
-}
-```
-
-**Why this works**: By following this flow, the **Idempotency-Key** is treated as part of the "Command" data. It is consistently passed from the user's intent (ViewModel) down to the actual execution (Ktor), ensuring it stays identical even if the Repository triggers an automatic retry for network issues.
+---
 
 ---
 

@@ -86,6 +86,30 @@ fun Application.configureDatabases() {
         }
     }
 
+    /*
+     * RATIONALE FOR MANUAL MIGRATION LOGIC:
+     *
+     * In many cloud environments (like Render/Docker with Alpine), Flyway's internal
+     * 'ClassPathScanner' can fail to discover migration scripts inside a Fat JAR
+     * due to how different ClassLoaders and VFS (Virtual File Systems) are handled.
+     *
+     * To ensure 100% deployment reliability, we implement a 3-stage "Scanner Bypass":
+     *
+     * 1. EXTRACTION: We manually extract known SQL files from the JAR classpath
+     *    and write them to a temporary filesystem directory (/tmp).
+     *    Note: We use /tmp because the application root (/app) is typically read-only at runtime.
+     *
+     * 2. FLYWAY ATTEMPT: We point Flyway to the 'filesystem:' location we just created.
+     *    Explicit prefixes/separators are set to avoid any strict discovery defaults.
+     *
+     * 3. MANUAL FALLBACK (The Fail-safe): If Flyway still reports 0 discovered files
+     *    (due to library-specific filesystem scanning issues), the code manually iterates
+     *    over the extracted files and executes the SQL directly via JDBC Statement.
+     *
+     * This multi-layered approach guarantees that the database schema is initialized
+     * regardless of library-specific discovery bugs.
+     */
+
     // Diagnostic: Obtain verified classloader
     val flywayClassLoader: ClassLoader =
             Thread.currentThread().contextClassLoader ?: Application::class.java.classLoader
@@ -113,7 +137,8 @@ fun Application.configureDatabases() {
                     "V011__seed_chart_of_accounts.sql",
                     "V012__create_payment_methods_table.sql",
                     "V013__rename_currency_columns_to_whole_units.sql",
-                    "V014__refresh_accounting_functions.sql"
+                    "V014__refresh_accounting_functions.sql",
+                    "V015__add_driver_role.sql"
             )
 
     log.info("Extracting ${migrationFiles.size} migrations to: ${migrationDir.absolutePath}...")

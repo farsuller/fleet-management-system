@@ -1,11 +1,106 @@
 # Android Driver App — GPS Tracking & Coordinate Transmission
 
 ## Status
-- Overall: **Planned**
-- Implementation Date: TBD
+- Overall: **Ready for Implementation**
+- Refined Date: 2026-02-26
 - **Verification Responsibility**:
     - **Lead Developer (USER)**: Android instrumentation tests, GPS accuracy tests
     - **Architect (Antigravity)**: Battery optimization, background service reliability
+
+---
+
+## 👥 Persona Comparison (Unified App Experience)
+
+Instead of separate binaries, the Fleet Management system uses a **Unified Mobile App**. The application dynamically switches its interface and capabilities based on the logged-in user's roles.
+
+| Feature/Usage | **Driver Persona** | **Customer Persona** |
+|:---|:---|:---|
+| **Primary User** | Professional Fleet Drivers | End-customers / Renters |
+| **Core Goal** | Telemetry, safety monitoring, route compliance | Booking, payments, vehicle unlocking |
+| **Data Flow** | **High Write / Continuous**: GPS pings, sensor data (gyro, accel) every few seconds. | **High Read / Discrete**: Browsing catalog, checking rental status, making payments. |
+| **Connectivity** | Must handle long periods of offline/tunnel travel. | Usually high-quality network (LTE/Wi-Fi) during booking. |
+| **Hardware Use** | Heavy use of GPS, Accelerometer, Gyroscope. | Camera (license scans), NFC/Bluetooth (unlocking). |
+| **UI Focus** | Low-interaction, high-visibility status. | Rich browsing, interactive maps, payment forms. |
+| **Activation** | Requires `DRIVER` role. Started manually or by shift. | Default for all registered `CUSTOMER` users. |
+
+---
+
+## 🛠️ Unified Architecture: The Role Dispatcher
+
+The application uses a **Dispatcher Pattern** to handle RBAC-based feature toggling. This ensures that sensitive driver telemetry code is only active when a qualified driver is logged in.
+
+### **1. Identity Flow**
+1. **Login**: User provides credentials.
+2. **Token Receipt**: Server returns a JWT containing `roles: ["CUSTOMER", "DRIVER"]`.
+3. **Dispatch**: The app decrypts the JWT and routes the user:
+    - If `roles` contains `DRIVER` → Show **Driver Dashboard** (or prompt to enter Driver Mode).
+    - If `roles` only contains `CUSTOMER` → Show standard **Rental Catalog**.
+
+### **2. Feature Toggling Logic**
+```kotlin
+// Simplified Dispatcher logic
+class AppDependencyDispatcher(private val userSession: UserSession) {
+    
+    fun getInitialDestination(): Screen {
+        return when {
+            userSession.hasRole(UserRole.DRIVER) -> Screen.DriverDashboard
+            else -> Screen.CustomerHome
+        }
+    }
+
+    fun shouldStartTelemetry(): Boolean {
+        // Only start background services if the user is a driver AND is 'On Clock'
+        return userSession.hasRole(UserRole.DRIVER) && userSession.isShiftActive
+    }
+}
+```
+
+### **3. Permission Management**
+To maintain a clean user experience, permissions are requested **Contextually**:
+- **Customer**: Requires Camera (for license) and minimal GPS (to find nearby cars).
+- **Driver**: Transitions to a "Driver Mode" setup phase where High-Accuracy GPS and Background Location permissions are requested only once the driver attempts to start their shift.
+
+---
+
+## 🏎️ Driver App: Feature Laydown
+
+The Driver App is built for reliability and "set-and-forget" operation. It is the primary sensor for the Fleet Management system.
+
+### **1. Advanced Telemetry Engine**
+- **Foreground Tracking**: Continuous tracking via Android Foreground Service with persistent notification.
+- **Smart Sampling**: Adaptive collection rates (10s moving / 60s idle) to save battery.
+- **Sensor Fusion**: Combined data from GPS, Accelerometer, and Gyroscope for 3D vehicle state telemetry.
+
+### **2. Operational Resilience**
+- **Offline Buffer**: High-speed Room DB stores coordinate batches when network is lost.
+- **WorkManager Sync**: Automatic, battery-aware background synchronization with exponential backoff.
+- **Work Hours Geofencing**: Automatic start/stop of tracking based on configured schedules and map boundaries.
+
+### **3. Safety & Compliance**
+- **Harsh Event Detection**: Local analysis of sensor data to flag harsh braking, swerving, or rapid acceleration.
+- **Shift Management**: Integration with driver schedules to prevent accidental off-duty tracking.
+- **Interactive Console**: Simple dashboard showing trip duration, current state, and connectivity status.
+
+---
+
+## 📱 Customer App: Feature Laydown
+
+The Customer App focuses on the rental experience, transactional integrity, and visual clarity.
+
+### **1. Fleet Catalog & Booking**
+- **Rich Browsing**: Cursor-based paginated list of vehicles with high-res images and specs.
+- **Smart Search**: Filter by vehicle type, capacity, price range, and location.
+- **Dynamic Pricing**: Real-time cost calculation based on travel duration and vehicle tier.
+
+### **2. Secure Transactions**
+- **Verified Payments**: Idempotency-backed payment processing to prevent double-charging.
+- **Digital Invoicing**: View current balance, payment history, and downloadable PDF invoices.
+- **Wallet Support**: Manage saved payment methods and loyalty points.
+
+### **3. Digital Key & Rental Control**
+- **Vehicle Unlock**: Bluetooth/NFC integration for keyless entry (Role-protected).
+- **Rental Lifecycle**: Guided pickup (photo inspection), active trip tracking, and drop-off workflow.
+- **Customer Support**: In-app incident reporting and 24/7 help desk connectivity.
 
 ---
 
@@ -981,3 +1076,86 @@ Log.i(TAG, "Location update", mapOf(
 - [Coordinate Reception Toggle](file:///e:/Antigravity%20Projects/fleet-management/docs/implementations/feature-coordinate-reception-toggle.md)
 - [Web Frontend - Schematic Visualization](file:///e:/Antigravity%20Projects/fleet-management/docs/frontend-implementations/web-schematic-visualization.md)
 - **[Work Hours & Geofencing Protection](file:///e:/Antigravity%20Projects/fleet-management/docs/frontend-implementations/android-work-hours-geofencing.md)** ← Prevents off-hours database pollution
+
+---
+
+## 📱 Mobile / Client Integration (Hardening Patterns)
+
+When integrating the Fleet Management API into mobile apps, use these patterns to ensure reliability and data integrity.
+
+### **1. Generating the Idempotency-Key (Android/Kotlin)**
+Always generate a fresh UUID for every new "Action" (like a button tap).
+```kotlin
+// Inside your ViewModel or Repository
+val idempotencyKey = java.util.UUID.randomUUID().toString()
+
+// Add to your Retrofit/Ktor-Client headers:
+// .header("Idempotency-Key", idempotencyKey)
+```
+
+### **2. Handling Retries on Mobile**
+If a mobile request fails due to a `SocketTimeoutException` or `NoRouteToHostException`:
+1.  **Do NOT** generate a new UUID.
+2.  **REUSE** the same UUID from the first attempt.
+3.  This ensures that if the first request actually reached the server but the response was dropped, the second attempt will safely return the cached success.
+
+### **3. Ktor Client Example (Android/Mobile)**
+If you are using the Ktor Client on Android, you can either pass it manually or use a simple `DefaultRequest` plugin.
+
+**Manual usage per call:**
+```kotlin
+suspend fun submitPayment(invoiceId: String, amount: Long) {
+    // 1. Generate the key ONCE for this transaction
+    val transactionId = java.util.UUID.randomUUID().toString()
+
+    client.post("https://api.v1/accounting/invoices/$invoiceId/pay") {
+        contentType(ContentType.Application.Json)
+        // 2. Attach the key to the header
+        header("Idempotency-Key", transactionId)
+        setBody(PaymentRequest(amount = amount))
+    }
+}
+```
+
+**Why generating it "just once" matters:**
+If the request times out, you call `submitPayment` again. By keeping the **same** `transactionId`, the server knows it's the same attempt. If you generated a *new* UUID on every retry, you'd risk paying twice if the first request actually reached the server but the response was blocked by a weak mobile signal!
+
+### **4. Full Android Clean Architecture Example (Koin + Ktor + MVVM)**
+If you are using **MVVM**, **Clean Architecture**, and **Koin**, follow this flow for features requiring idempotency:
+
+#### **A. The ViewModel (Presentation)**
+The ViewModel is the best place to generate the key because it outlives simple screen rotations.
+```kotlin
+class InvoiceViewModel(private val payInvoiceUseCase: PayInvoiceUseCase) : ViewModel() {
+    
+    fun processPayment(invoiceId: String, amount: Long) {
+        // 1. Generate the key ONCE at the start of the user action
+        val idempotencyKey = UUID.randomUUID().toString()
+        
+        viewModelScope.launch {
+            val result = payInvoiceUseCase.execute(idempotencyKey, invoiceId, amount)
+            // handle success/failure
+        }
+    }
+}
+```
+
+#### **B. The Use Case (Domain)**
+```kotlin
+class PayInvoiceUseCase(private val repository: InvoiceRepository) {
+    suspend fun execute(key: String, id: String, amount: Long) = 
+        repository.pay(key, id, amount)
+}
+```
+
+#### **C. The Repository Implementation (Data/Infrastructure)**
+```kotlin
+class InvoiceRepositoryImpl(private val client: HttpClient) : InvoiceRepository {
+    override suspend fun pay(key: String, id: String, amount: Long) {
+        client.post("https://api.v1/accounting/invoices/$id/pay") {
+            header("Idempotency-Key", key) // Pass the key generated in the VM
+            setBody(PaymentRequest(amount))
+        }
+    }
+}
+```

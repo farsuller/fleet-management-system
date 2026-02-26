@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.ktor.server.rate.limit)           // API protection against brute force/DOS
     implementation(libs.ktor.server.openapi)              // OpenAPI spec generation
     implementation(libs.ktor.server.swagger)              // Swagger UI for API testing
+    implementation(libs.ktor.server.websockets)           // WebSocket support for real-time tracking
     
     // --- Observability & Configuration ---
     implementation(libs.ktor.server.call.logging)         // Request/Response logging
@@ -72,6 +73,8 @@ dependencies {
     implementation(libs.exposed.json)                      // JSONB support for PostgreSQL
     implementation(libs.hikaricp)                          // High-performance connection pooling
     implementation(libs.postgresql)                        // PostgreSQL database driver
+    implementation(libs.postgis.jdbc)                      // PostgreSQL geometry parsing
+    implementation(libs.jts.core)                         // Topology suite for geometry logic
 
     implementation(libs.jedis)
 
@@ -88,4 +91,5 @@ dependencies {
     testImplementation(libs.ktor.client.content.negotiation) // Ktor client for testing endpoints
     testImplementation(libs.kotlin.test.junit)             // Kotlin-style JUnit testing
     testImplementation(libs.h2)                            // In-memory DB for fast testing
+    testImplementation(libs.testcontainers.postgresql)     // Real PostgreSQL/PostGIS for spatial tests
 }
