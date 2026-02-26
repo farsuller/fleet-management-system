@@ -51,6 +51,7 @@ secrets/
 
 # Database dumps (may contain sensitive data)
 *.sql
+!src/main/resources/db/migration/*.sql
 *.dump
 *.backup
 
