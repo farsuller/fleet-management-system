@@ -20,13 +20,16 @@ This document provides sample payloads for the Vehicle API, designed to help fro
       "licensePlate": "ABC-1234",
       "make": "Toyota",
       "model": "Camry",
-      "year": 2024",
+      "year": 2024,
       "color": "Silver",
       "state": "AVAILABLE",
       "mileageKm": 15000,
-      "dailyRate": 2500,
+      "dailyRate": 2500.0,
       "currencyCode": "PHP",
-      "passengerCapacity": 5
+      "passengerCapacity": 5,
+      "lastLocation": { "latitude": 14.702, "longitude": 121.103 },
+      "routeProgress": 0.45,
+      "bearing": 120.5
     },
     {
       "id": "7c8d9e0f-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
@@ -53,6 +56,11 @@ This document provides sample payloads for the Vehicle API, designed to help fro
 **Permissions**: Admin Only
 
 **Request**:
+> [!IMPORTANT]
+> **VIN (Vehicle Identification Number)**: This 17-digit identifier is the unique "DNA" of the vehicle. 
+> - **Business**: Used for insurance, legal compliance (ISO 3779), and tracking lifecycle/recalls.
+> - **Technical**: Acts as a unique database constraint. Must be exactly 17 characters and should ideally pass a mathematical checksum for real-world integration.
+
 ```json
 {
   "vin": "1HGBH41JXMN109186",
@@ -62,7 +70,7 @@ This document provides sample payloads for the Vehicle API, designed to help fro
   "year": 2024,
   "color": "Silver",
   "mileageKm": 0,
-  "dailyRate": 2500,
+  "dailyRate": 2500.0,
   "passengerCapacity": 5
 }
 ```

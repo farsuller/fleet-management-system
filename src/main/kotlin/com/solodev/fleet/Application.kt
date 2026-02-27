@@ -34,17 +34,35 @@ fun Application.module() {
     configureSecurity()
     configureRateLimiting()
 
-    val redisUrl = environment.config.propertyOrNull("redis.url")?.getString() ?: "redis://localhost:6379"
-    val jedis = Jedis(redisUrl)
-    val cacheManager = RedisCacheManager(jedis)
+    val redisEnabled =
+            environment.config.propertyOrNull("redis.enabled")?.getString()?.toBoolean() ?: true
+    val cacheManager =
+            if (redisEnabled) {
+                try {
+                    val redisUrl =
+                            environment.config.propertyOrNull("redis.url")?.getString()
+                                    ?: "redis://localhost:6379"
+                    val jedis = Jedis(redisUrl)
+                    RedisCacheManager(jedis)
+                } catch (e: Exception) {
+                    log.error("Failed to initialize Redis cache, falling back to no-cache mode", e)
+                    null
+                }
+            } else {
+                null
+            }
 
     val vehicleRepository = VehicleRepositoryImpl(cacheManager)
 
-    val secret = environment.config.propertyOrNull("jwt.secret")?.getString()
-        ?: "change-me-in-production-use-env-var-min-64-chars"
-    val issuer = environment.config.propertyOrNull("jwt.issuer")?.getString() ?: "http://0.0.0.0:8080/"
-    val audience = environment.config.propertyOrNull("jwt.audience")?.getString() ?: "http://0.0.0.0:8080/"
-    val expiresIn = environment.config.propertyOrNull("jwt.expiresIn")?.getString()?.toLong() ?: 3600000L
+    val secret =
+            environment.config.propertyOrNull("jwt.secret")?.getString()
+                    ?: "change-me-in-production-use-env-var-min-64-chars"
+    val issuer =
+            environment.config.propertyOrNull("jwt.issuer")?.getString() ?: "http://0.0.0.0:8080/"
+    val audience =
+            environment.config.propertyOrNull("jwt.audience")?.getString() ?: "http://0.0.0.0:8080/"
+    val expiresIn =
+            environment.config.propertyOrNull("jwt.expiresIn")?.getString()?.toLong() ?: 3600000L
 
     val jwtService = JwtService(secret, issuer, audience, expiresIn)
 

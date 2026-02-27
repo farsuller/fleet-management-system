@@ -26,7 +26,8 @@ class ApplicationTest {
                             "jwt.issuer" to "test-issuer",
                             "jwt.audience" to "test-audience",
                             "jwt.realm" to "test-realm",
-                            "jwt.expiresIn" to "3600000"
+                            "jwt.expiresIn" to "3600000",
+                            "redis.enabled" to "false"
                     )
         }
     }

@@ -28,3 +28,4 @@ storage:
 redis:
     # Redis connection from environment
     url: "$REDIS_URL:redis://localhost:6379"
+    enabled: "$REDIS_ENABLED:true"

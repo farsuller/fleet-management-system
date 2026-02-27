@@ -1,6 +1,7 @@
 package com.solodev.fleet.modules.vehicles.application.dto
 
 import com.solodev.fleet.modules.vehicles.domain.model.Vehicle
+import com.solodev.fleet.shared.domain.model.Location
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -16,7 +17,10 @@ data class VehicleResponse(
         val mileageKm: Int,
         val dailyRate: Double?,
         val currencyCode: String,
-        val passengerCapacity: Int?
+        val passengerCapacity: Int?,
+        val lastLocation: Location? = null,
+        val routeProgress: Double = 0.0,
+        val bearing: Double = 0.0
 ) {
         companion object {
                 fun fromDomain(v: Vehicle) =
@@ -32,7 +36,10 @@ data class VehicleResponse(
                                 mileageKm = v.mileageKm,
                                 dailyRate = v.dailyRateAmount?.let { it / 100.0 },
                                 currencyCode = v.currencyCode,
-                                passengerCapacity = v.passengerCapacity
+                                passengerCapacity = v.passengerCapacity,
+                                lastLocation = v.lastLocation,
+                                routeProgress = v.routeProgress,
+                                bearing = v.bearing
                         )
         }
 }

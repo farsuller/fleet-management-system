@@ -4,6 +4,7 @@ import com.solodev.fleet.modules.vehicles.domain.model.Vehicle
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleState
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
+import com.solodev.fleet.shared.domain.model.Location
 import com.solodev.fleet.shared.exceptions.ConflictException
 import com.solodev.fleet.shared.helpers.dbQuery
 import com.solodev.fleet.shared.infrastructure.cache.RedisCacheManager
@@ -12,6 +13,8 @@ import java.time.Instant
 import java.util.*
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.postgis.PGgeometry
+import org.postgis.Point
 
 /**
  * PostgreSQL implementation of VehicleRepository using Exposed ORM.
@@ -38,8 +41,20 @@ class VehicleRepositoryImpl(private val cacheManager: RedisCacheManager? = null)
                     dailyRateAmount = this[VehiclesTable.dailyRate],
                     currencyCode = this[VehiclesTable.currencyCode],
                     passengerCapacity = this[VehiclesTable.passengerCapacity],
+                    lastLocation = this[VehiclesTable.lastLocation]?.toLocation(),
+                    routeProgress = this[VehiclesTable.routeProgress],
+                    bearing = this[VehiclesTable.bearing],
                     version = this[VehiclesTable.version]
             )
+
+    private fun PGgeometry.toLocation(): Location {
+        val point = this.geometry as Point
+        return Location(point.y, point.x)
+    }
+
+    private fun Location.toPGgeometry(): PGgeometry {
+        return PGgeometry("SRID=4326;POINT($longitude $latitude)")
+    }
 
     override suspend fun findById(id: VehicleId): Vehicle? {
         // If caching is enabled, use Cache-Aside pattern
@@ -96,6 +111,9 @@ class VehicleRepositoryImpl(private val cacheManager: RedisCacheManager? = null)
                         it[dailyRate] = vehicle.dailyRateAmount
                         it[currencyCode] = vehicle.currencyCode
                         it[passengerCapacity] = vehicle.passengerCapacity
+                        it[lastLocation] = vehicle.lastLocation?.toPGgeometry()
+                        it[routeProgress] = vehicle.routeProgress
+                        it[bearing] = vehicle.bearing
                         it[updatedAt] = now
                         // version is incremented by DB trigger
                     }
@@ -121,6 +139,9 @@ class VehicleRepositoryImpl(private val cacheManager: RedisCacheManager? = null)
                 it[dailyRate] = vehicle.dailyRateAmount
                 it[currencyCode] = vehicle.currencyCode
                 it[passengerCapacity] = vehicle.passengerCapacity
+                it[lastLocation] = vehicle.lastLocation?.toPGgeometry()
+                it[routeProgress] = vehicle.routeProgress
+                it[bearing] = vehicle.bearing
                 it[createdAt] = now
                 it[updatedAt] = now
                 it[version] = 0
