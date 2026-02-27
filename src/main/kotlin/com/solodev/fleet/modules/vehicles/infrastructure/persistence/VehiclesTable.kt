@@ -1,5 +1,6 @@
 package com.solodev.fleet.modules.vehicles.infrastructure.persistence
 
+import com.solodev.fleet.shared.infrastructure.persistence.geometry
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.javatime.timestamp
 
@@ -22,6 +23,9 @@ object VehiclesTable : UUIDTable("vehicles") {
     val transmission = varchar("transmission", 20).nullable()
     val dailyRate = integer("daily_rate").nullable()
     val currencyCode = varchar("currency_code", 3).default("PHP")
+    val lastLocation = geometry("last_location").nullable()
+    val routeProgress = double("route_progress").default(0.0)
+    val bearing = double("bearing").default(0.0)
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
     val version = long("version").default(0)

@@ -39,11 +39,9 @@ services:
       - key: PORT
         value: 10000
       
-      # Database connection (from managed PostgreSQL)
+      # Database connection (Manually set in Render Dashboard to Supabase)
       - key: DATABASE_URL
-        fromDatabase:
-          name: fleet-management-db
-          property: connectionString
+        sync: false # Do not overwrite if set in dashboard
       
       # Redis connection (from managed Redis)
       - key: REDIS_URL
@@ -63,7 +61,7 @@ services:
         value: fleet-management-users
       
       - key: JWT_EXPIRATION
-        value: 3600  # 1 hour in seconds
+        value: 3600000  # 1 hour in MILLISECONDS
       
       # Application Environment
       - key: APP_ENV
@@ -100,11 +98,5 @@ services:
         description: Allow from anywhere (for testing)
 
 
-# Managed Databases
-databases:
-  # PostgreSQL Database
-  - name: fleet-management-db
-    databaseName: fleet_management
-    user: fleet_user
-    plan: free  # Expires after 90 days
+# ⚠️ Managed Databases Removed (Moved to Supabase)
 

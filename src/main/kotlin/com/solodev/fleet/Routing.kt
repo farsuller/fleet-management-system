@@ -10,6 +10,9 @@ import com.solodev.fleet.modules.rentals.infrastructure.http.customerRoutes
 import com.solodev.fleet.modules.rentals.infrastructure.http.rentalRoutes
 import com.solodev.fleet.modules.rentals.infrastructure.persistence.CustomerRepositoryImpl
 import com.solodev.fleet.modules.rentals.infrastructure.persistence.RentalRepositoryImpl
+import com.solodev.fleet.modules.tracking.application.usecases.UpdateVehicleLocationUseCase
+import com.solodev.fleet.modules.tracking.infrastructure.http.trackingRoutes
+import com.solodev.fleet.modules.tracking.infrastructure.persistence.PostGISAdapter
 import com.solodev.fleet.modules.users.infrastructure.http.userRoutes
 import com.solodev.fleet.modules.users.infrastructure.persistence.UserRepositoryImpl
 import com.solodev.fleet.modules.users.infrastructure.persistence.VerificationTokenRepositoryImpl
@@ -49,6 +52,9 @@ fun Application.configureRouting(jwtService: JwtService, vehicleRepo: VehicleRep
                     ledgerRepo = ledgerRepo
             )
 
+    val spatialAdapter = PostGISAdapter()
+    val updateVehicleLocation = UpdateVehicleLocationUseCase(vehicleRepo, spatialAdapter)
+
     routing {
         // Interactive API Documentation
         swaggerUI(path = "swagger", swaggerFile = "openapi.yaml")
@@ -62,6 +68,10 @@ fun Application.configureRouting(jwtService: JwtService, vehicleRepo: VehicleRep
             )
             customerRoutes(customerRepository = customerRepo)
             maintenanceRoutes(maintenanceRepository = maintenanceRepo)
+            trackingRoutes(
+                    updateVehicleLocation = updateVehicleLocation,
+                    spatialAdapter = spatialAdapter
+            )
         }
 
         rateLimit(RateLimitName("auth_strict")) {

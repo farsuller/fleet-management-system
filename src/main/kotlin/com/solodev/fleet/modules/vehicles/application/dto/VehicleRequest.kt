@@ -10,7 +10,9 @@ data class VehicleRequest(
         val model: String,
         val year: Int,
         val color: String? = null,
-        val mileageKm: Int = 0
+        val mileageKm: Int = 0,
+        val dailyRate: Double? = null,
+        val passengerCapacity: Int? = null
 ) {
         init {
                 require(vin.isNotBlank()) { "VIN cannot be blank" }
@@ -20,5 +22,7 @@ data class VehicleRequest(
                 require(model.isNotBlank()) { "Model cannot be blank" }
                 require(year in 1900..2100) { "Year must be between 1900 and 2100" }
                 require(mileageKm >= 0) { "Mileage cannot be negative" }
+                dailyRate?.let { require(it >= 0) { "Daily rate cannot be negative" } }
+                passengerCapacity?.let { require(it > 0) { "Passenger capacity must be positive" } }
         }
 }

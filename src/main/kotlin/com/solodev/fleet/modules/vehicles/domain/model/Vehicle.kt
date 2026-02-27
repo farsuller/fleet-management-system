@@ -1,7 +1,10 @@
 package com.solodev.fleet.modules.vehicles.domain.model
 
-/** Value object representing a unique vehicle identifier. */
+import com.solodev.fleet.shared.domain.model.Location
+import kotlinx.serialization.Serializable
+
 @JvmInline
+@Serializable
 value class VehicleId(val value: String) {
     init {
         require(value.isNotBlank()) { "Vehicle ID cannot be blank" }
@@ -9,6 +12,7 @@ value class VehicleId(val value: String) {
 }
 
 /** Vehicle state in the fleet lifecycle. */
+@Serializable
 enum class VehicleState {
     AVAILABLE,
     RENTED,
@@ -22,6 +26,7 @@ enum class VehicleState {
  * Represents a vehicle in the fleet management system. This is a pure domain model with no
  * framework dependencies.
  */
+@Serializable
 data class Vehicle(
         val id: VehicleId,
         val vin: String,
@@ -35,6 +40,9 @@ data class Vehicle(
         val dailyRateAmount: Int? = null,
         val currencyCode: String = "PHP",
         val passengerCapacity: Int? = null,
+        val lastLocation: Location? = null,
+        val routeProgress: Double = 0.0,
+        val bearing: Double = 0.0,
         val version: Long = 0
 ) {
     init {

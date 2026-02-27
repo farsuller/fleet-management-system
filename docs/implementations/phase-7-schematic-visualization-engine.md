@@ -434,6 +434,11 @@ class BroadcastPerformanceTest {
 
 ## Implementation Steps
 
+### Phase 0: Backend Spatial Polish (Carryover from Phase 6)
+- [ ] Implement **Bearing Calculation** in `UpdateVehicleLocationUseCase`
+- [ ] Integrate **Geofence Entry/Exit** detection and event generation
+- [ ] Define **Off-Route Thresholds** and status alerting
+
 ### Phase 1: Delta Broadcasting (3-4 hours)
 - [ ] Implement `DeltaBroadcaster` with delta logic
 - [ ] Implement `VehicleStateDelta` model
