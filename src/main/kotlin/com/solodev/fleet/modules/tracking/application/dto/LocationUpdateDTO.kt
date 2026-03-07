@@ -7,5 +7,8 @@ import kotlinx.serialization.Serializable
 data class LocationUpdateDTO(
         val latitude: Double,
         val longitude: Double,
-        val routeId: String? = null // Optional: Snap to a specific route if provided
+        val routeId: String? = null,
+        val speed: Double? = null,
+        val heading: Double? = null,
+        val accuracy: Double? = null// Optional: Snap to a specific route if provided
 )

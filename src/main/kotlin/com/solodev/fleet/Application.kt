@@ -6,7 +6,13 @@ import com.solodev.fleet.shared.plugins.*
 import com.solodev.fleet.shared.utils.JwtService
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
+import io.ktor.server.websocket.WebSockets
+import io.ktor.server.websocket.pingPeriod
+import io.ktor.server.websocket.timeout
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import redis.clients.jedis.Jedis
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Entry point for the application. Starts the Netty engine using the configuration defined in
@@ -34,37 +40,46 @@ fun Application.module() {
     configureSecurity()
     configureRateLimiting()
 
-    val redisEnabled =
-            environment.config.propertyOrNull("redis.enabled")?.getString()?.toBoolean() ?: true
-    val cacheManager =
-            if (redisEnabled) {
-                try {
-                    val redisUrl =
-                            environment.config.propertyOrNull("redis.url")?.getString()
-                                    ?: "redis://localhost:6379"
-                    val jedis = Jedis(redisUrl)
-                    RedisCacheManager(jedis)
-                } catch (e: Exception) {
-                    log.error("Failed to initialize Redis cache, falling back to no-cache mode", e)
-                    null
-                }
-            } else {
-                null
-            }
+    install(WebSockets) {
+        pingPeriod = 30.seconds
+        timeout = 30.seconds
+        maxFrameSize = Long.MAX_VALUE
+        masking = false
+    }
 
+    var jedis: Jedis? = null
+    val redisEnabled = environment.config.propertyOrNull("redis.enabled")?.getString()?.toBoolean() ?: true
+    val cacheManager = if (redisEnabled) {
+        try {
+            val redisUrl = environment.config.propertyOrNull("redis.url")?.getString()
+                ?: "redis://localhost:6379"
+            jedis = Jedis(redisUrl)
+            RedisCacheManager(jedis)
+        } catch (e: Exception) {
+            log.error("Failed to initialize Redis cache, falling back to no-cache mode", e)
+            null
+        }
+    } else {
+        null
+    }
+
+    // Initialize Micrometer registry
+    val registry: MeterRegistry = SimpleMeterRegistry()
     val vehicleRepository = VehicleRepositoryImpl(cacheManager)
 
-    val secret =
-            environment.config.propertyOrNull("jwt.secret")?.getString()
-                    ?: "change-me-in-production-use-env-var-min-64-chars"
-    val issuer =
-            environment.config.propertyOrNull("jwt.issuer")?.getString() ?: "http://0.0.0.0:8080/"
-    val audience =
-            environment.config.propertyOrNull("jwt.audience")?.getString() ?: "http://0.0.0.0:8080/"
-    val expiresIn =
-            environment.config.propertyOrNull("jwt.expiresIn")?.getString()?.toLong() ?: 3600000L
+    val secret = environment.config.propertyOrNull("jwt.secret")?.getString()
+        ?: "change-me-in-production-use-env-var-min-64-chars"
+    val issuer = environment.config.propertyOrNull("jwt.issuer")?.getString() ?: "http://0.0.0.0:8080/"
+    val audience = environment.config.propertyOrNull("jwt.audience")?.getString() ?: "http://0.0.0.0:8080/"
+    val expiresIn = environment.config.propertyOrNull("jwt.expiresIn")?.getString()?.toLong() ?: 3600000L
 
     val jwtService = JwtService(secret, issuer, audience, expiresIn)
 
-    configureRouting(jwtService, vehicleRepository)
+
+    configureRouting(
+        jwtService = jwtService,
+        vehicleRepo = vehicleRepository,
+        jedis = jedis,
+        registry = registry
+    )
 }

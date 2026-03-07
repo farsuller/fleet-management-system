@@ -144,7 +144,8 @@ fun Application.configureDatabases() {
             "V014__refresh_accounting_functions.sql",
             "V015__add_driver_role.sql",
             "V017__Add_PostGIS.sql",
-            "V018__Seed_Village_Routes.sql"
+            "V018__Seed_Village_Routes.sql",
+            "V019__create_location_history_table.sql",
         )
 
     log.info("Extracting ${migrationFiles.size} migrations to: ${migrationDir.absolutePath}...")

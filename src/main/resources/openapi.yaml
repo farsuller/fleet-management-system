@@ -334,6 +334,119 @@ components:
         displayName: { type: string }
         isActive: { type: boolean }
 
+    # --- Tracking Module ---
+    LocationUpdateRequest:
+      type: object
+      required: [latitude, longitude]
+      properties:
+        latitude: { type: number, format: double, example: 14.5995 }
+        longitude: { type: number, format: double, example: 121.0244 }
+        routeId: { type: string, format: uuid, nullable: true }
+        speed: { type: number, format: double, nullable: true, example: 45.5 }
+        heading:
+          type: number
+          format: double
+          nullable: true
+          example: 180.0
+          description: "Bearing in degrees (0–360)"
+        accuracy:
+          type: number
+          format: double
+          nullable: true
+          example: 5.0
+          description: "GPS accuracy radius in meters"
+    LocationUpdateResponse:
+      type: object
+      properties:
+        message: { type: string, example: "Location update processed successfully" }
+        vehicleId: { type: string, format: uuid }
+        timestamp: { type: string, format: date-time }
+        progress:
+          type: string
+          example: "42.00%"
+          description: "Vehicle progress along its route as a percentage string"
+    VehicleRouteLocation:
+      type: object
+      properties:
+        latitude: { type: number, format: double }
+        longitude: { type: number, format: double }
+    VehicleStateResponse:
+      type: object
+      properties:
+        vehicleId: { type: string, format: uuid }
+        routeId: { type: string, format: uuid, nullable: true }
+        progress: { type: number, format: double, example: 0.42, description: "Route progress [0.0–1.0]" }
+        segmentId: { type: string, nullable: true }
+        speed: { type: number, format: double, example: 45.5 }
+        heading: { type: number, format: double, example: 180.0 }
+        status: { type: string, enum: [IN_TRANSIT, IDLE, OFF_ROUTE] }
+        distanceFromRoute: { type: number, format: double, example: 8.5, description: "Meters from nearest route segment" }
+        location: { $ref: '#/components/schemas/VehicleRouteLocation' }
+        timestamp: { type: string, format: date-time }
+    VehicleStatusSummary:
+      type: object
+      properties:
+        vehicleId: { type: string, format: uuid }
+        routeId: { type: string, format: uuid, nullable: true }
+        status: { type: string, enum: [IN_TRANSIT, IDLE, OFF_ROUTE] }
+        speed: { type: number, format: double }
+        progress: { type: number, format: double }
+        distanceFromRoute: { type: number, format: double }
+        timestamp: { type: string, format: date-time }
+    FleetStatusResponse:
+      type: object
+      properties:
+        totalVehicles: { type: integer, example: 8 }
+        activeVehicles: { type: integer, example: 3 }
+        vehicles:
+          type: array
+          items: { $ref: '#/components/schemas/VehicleStatusSummary' }
+    TrackingRecordLocation:
+      type: object
+      properties:
+        lat: { type: number, format: double }
+        lng: { type: number, format: double }
+    TrackingRecord:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        progress: { type: number, format: double, description: "Route progress [0.0–1.0]" }
+        speed: { type: number, format: double }
+        heading: { type: number, format: double, nullable: true }
+        status: { type: string, enum: [IN_TRANSIT, IDLE, OFF_ROUTE] }
+        distanceFromRoute: { type: number, format: double }
+        location: { $ref: '#/components/schemas/TrackingRecordLocation' }
+        timestamp: { type: string, format: date-time }
+    TrackingHistoryResponse:
+      type: object
+      properties:
+        vehicleId: { type: string, format: uuid }
+        totalRecords: { type: integer }
+        records:
+          type: array
+          items: { $ref: '#/components/schemas/TrackingRecord' }
+    VehicleStateDelta:
+      type: object
+      description: "WebSocket push message. Always contains vehicleId and timestamp. All other fields are omitted when unchanged (delta encoding)."
+      required: [vehicleId, timestamp]
+      properties:
+        vehicleId: { type: string, format: uuid }
+        progress: { type: number, format: double, nullable: true, description: "Route progress [0.0–1.0]; null if unchanged" }
+        bearing: { type: number, format: double, nullable: true, description: "Direction of travel in degrees (0–360); null if unchanged" }
+        status: { type: string, enum: [IN_TRANSIT, IDLE, OFF_ROUTE], nullable: true, description: "null if unchanged" }
+        distanceFromRoute: { type: number, format: double, nullable: true, description: "Meters from route; null if unchanged" }
+        timestamp: { type: string, format: date-time }
+    RouteDTO:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        distance: { type: number, format: double, description: "Total route length in meters" }
+        waypoints:
+          type: array
+          items: { $ref: '#/components/schemas/VehicleRouteLocation' }
+
 paths:
   # --- Authentication & Users ---
   /v1/auth/verify:
@@ -925,3 +1038,207 @@ paths:
       responses:
         '200':
           description: Ok
+
+  # --- Tracking ---
+  /v1/tracking/routes:
+    get:
+      summary: List available routes
+      tags: [Tracking]
+      description: Returns all configured routes. No authentication required.
+      responses:
+        '200':
+          description: List of routes
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/RouteDTO' }
+
+  /v1/tracking/vehicles/{id}/location:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Vehicle UUID
+        schema: { type: string, format: uuid }
+    post:
+      summary: Update vehicle GPS location
+      tags: [Tracking]
+      security: [{ bearerAuth: [] }]
+      description: |
+        Submits a GPS sensor ping for the specified vehicle. The location is snapped to the
+        nearest route segment via PostGIS, vehicle status is derived (IN_TRANSIT / IDLE / OFF_ROUTE),
+        state is persisted to the location history table, and a delta is broadcast to all connected
+        WebSocket clients via `RedisDeltaBroadcaster`.
+
+        **Rate limit:** 60 updates per vehicle per minute. Exceeding this returns `429`.
+
+        **Idempotency:** Supply the `Idempotency-Key` header to deduplicate retries within 24 hours.
+        Duplicate requests with the same key return the cached response immediately.
+
+        **Circuit breaker:** PostGIS snapping is guarded by a circuit breaker (threshold: 5 failures).
+        When open, returns `503` until the service recovers.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: Optional unique key to prevent duplicate processing on retry
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LocationUpdateRequest' }
+      responses:
+        '200':
+          description: Location processed and broadcast
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/LocationUpdateResponse' }
+        '400':
+          description: Invalid payload (missing required fields, out-of-range coordinates)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '401':
+          description: Missing or invalid JWT
+        '429':
+          description: Rate limit exceeded (60 updates/min per vehicle)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      error:
+                        properties:
+                          code: { type: string, example: "RATE_LIMIT_EXCEEDED" }
+        '503':
+          description: PostGIS circuit breaker open — spatial service temporarily unavailable
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+
+  /v1/tracking/vehicles/{vehicleId}/state:
+    parameters:
+      - name: vehicleId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      summary: Get current vehicle route state
+      tags: [Tracking]
+      security: [{ bearerAuth: [] }]
+      description: Returns the last known route state for a vehicle including progress, speed, heading, status, and GPS coordinates.
+      responses:
+        '200':
+          description: Vehicle route state
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/VehicleStateResponse' }
+        '401':
+          description: Missing or invalid JWT
+
+  /v1/tracking/fleet/status:
+    get:
+      summary: Get fleet-wide tracking status
+      tags: [Tracking]
+      security: [{ bearerAuth: [] }]
+      description: Returns a summary of all tracked vehicles including their current operational status and route progress.
+      responses:
+        '200':
+          description: Fleet status summary
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/FleetStatusResponse' }
+        '401':
+          description: Missing or invalid JWT
+
+  /v1/tracking/vehicles/{vehicleId}/history:
+    parameters:
+      - name: vehicleId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      summary: Get vehicle location history
+      tags: [Tracking]
+      security: [{ bearerAuth: [] }]
+      description: Returns paginated location tracking records for a given vehicle ordered newest-first.
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 100, example: 50 }
+          description: Maximum number of records to return
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0, example: 0 }
+          description: Number of records to skip for pagination
+      responses:
+        '200':
+          description: Tracking history records
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/TrackingHistoryResponse' }
+        '401':
+          description: Missing or invalid JWT
+
+  /v1/fleet/live:
+    get:
+      summary: Live fleet WebSocket stream
+      tags: [Tracking]
+      security: [{ bearerAuth: [] }]
+      x-websocket: true
+      description: |
+        **WebSocket endpoint** — upgrade via `ws://host/v1/fleet/live`.
+        Authenticate by sending the `Authorization: Bearer <JWT>` header on the upgrade request.
+
+        ### Connection lifecycle
+        1. On connect, the server sends `initial_state` frames for all vehicles that have a
+           cached route state in Redis.
+        2. Thereafter, `VehicleStateDelta` frames are pushed whenever a vehicle's state changes
+           following a successful `POST /v1/tracking/vehicles/{id}/location` call.
+        3. Frames use **delta encoding**: only fields that changed since the last broadcast are
+           populated. `vehicleId` and `timestamp` are always present.
+        4. If state is unchanged (identical ping), no frame is sent.
+
+        ### Message shape
+        ```json
+        {
+          "vehicleId": "c9352986-639a-4841-bed9-9ff99f2e3349",
+          "progress": 0.45,
+          "bearing": 180.0,
+          "status": "IN_TRANSIT",
+          "distanceFromRoute": 8.5,
+          "timestamp": "2026-03-07T14:32:22Z"
+        }
+        ```
+        See `VehicleStateDelta` schema for the full field reference.
+
+        > **Note:** OpenAPI 3.0 does not natively model WebSocket channels.
+        > This entry documents the upgrade path and message contract only.
+      responses:
+        '101':
+          description: Switching Protocols — WebSocket connection established
+        '401':
+          description: Unauthorized — JWT missing or invalid

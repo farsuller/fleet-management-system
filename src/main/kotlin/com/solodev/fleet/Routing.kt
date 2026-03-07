@@ -12,25 +12,35 @@ import com.solodev.fleet.modules.rentals.infrastructure.persistence.CustomerRepo
 import com.solodev.fleet.modules.rentals.infrastructure.persistence.RentalRepositoryImpl
 import com.solodev.fleet.modules.tracking.application.usecases.UpdateVehicleLocationUseCase
 import com.solodev.fleet.modules.tracking.infrastructure.http.trackingRoutes
+import com.solodev.fleet.modules.tracking.infrastructure.metrics.SpatialMetrics
 import com.solodev.fleet.modules.tracking.infrastructure.persistence.PostGISAdapter
+import com.solodev.fleet.modules.tracking.infrastructure.persistence.LocationHistoryRepository
+import com.solodev.fleet.modules.tracking.infrastructure.websocket.RedisDeltaBroadcaster
 import com.solodev.fleet.modules.users.infrastructure.http.userRoutes
 import com.solodev.fleet.modules.users.infrastructure.persistence.UserRepositoryImpl
 import com.solodev.fleet.modules.users.infrastructure.persistence.VerificationTokenRepositoryImpl
 import com.solodev.fleet.modules.vehicles.infrastructure.http.vehicleRoutes
 import com.solodev.fleet.modules.vehicles.infrastructure.persistence.VehicleRepositoryImpl
+import com.solodev.fleet.shared.infrastructure.cache.RedisCacheManager
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.requestId
 import com.solodev.fleet.shared.utils.JwtService
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
-import io.ktor.server.plugins.openapi.*
 import io.ktor.server.plugins.ratelimit.*
 import io.ktor.server.plugins.swagger.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.micrometer.core.instrument.MeterRegistry
+import redis.clients.jedis.Jedis
 
 /** Configures the application's routing. */
-fun Application.configureRouting(jwtService: JwtService, vehicleRepo: VehicleRepositoryImpl) {
+fun Application.configureRouting(
+    jwtService: JwtService,
+    vehicleRepo: VehicleRepositoryImpl,
+    jedis: Jedis?,
+    registry: MeterRegistry
+) {
 
     // Initialize other repositories
     val rentalRepo = RentalRepositoryImpl()
@@ -52,9 +62,18 @@ fun Application.configureRouting(jwtService: JwtService, vehicleRepo: VehicleRep
                     ledgerRepo = ledgerRepo
             )
 
+    // Phase 7: Tracking & Live Broadcasting
     val spatialAdapter = PostGISAdapter()
-    val updateVehicleLocation = UpdateVehicleLocationUseCase(vehicleRepo, spatialAdapter)
-
+    val redisCache = RedisCacheManager(jedis) // or null if Redis disabled
+    val spatialMetrics = SpatialMetrics(registry) // Micrometer registry from observability
+    val deltaBroadcaster = RedisDeltaBroadcaster(redisCache, vehicleRepo)
+    val locationHistoryRepository = LocationHistoryRepository()  // Persist tracking records
+    val updateVehicleLocation = UpdateVehicleLocationUseCase(
+        postGISAdapter = spatialAdapter,
+        broadcaster = deltaBroadcaster,
+        metrics = spatialMetrics,
+        historyRepository = locationHistoryRepository
+    )
     routing {
         // Interactive API Documentation
         swaggerUI(path = "swagger", swaggerFile = "openapi.yaml")
@@ -69,8 +88,10 @@ fun Application.configureRouting(jwtService: JwtService, vehicleRepo: VehicleRep
             customerRoutes(customerRepository = customerRepo)
             maintenanceRoutes(maintenanceRepository = maintenanceRepo)
             trackingRoutes(
-                    updateVehicleLocation = updateVehicleLocation,
-                    spatialAdapter = spatialAdapter
+                updateVehicleLocation = updateVehicleLocation,
+                spatialAdapter = spatialAdapter,
+                deltaBroadcaster = deltaBroadcaster,
+                historyRepository = locationHistoryRepository
             )
         }
 

@@ -1,6 +1,6 @@
 package com.solodev.fleet.modules.vehicles.domain.model
 
-import kotlin.test.Test
+import org.junit.jupiter.api.Test
 import kotlin.test.assertFailsWith
 
 class VehicleTest {
@@ -28,7 +28,7 @@ class VehicleTest {
     @Test
     fun `should fail if VIN is less than 17 characters`() {
         val shortVin = "ABC-123"
-        assertFailsWith<IllegalArgumentException> {
+        val exception = assertFailsWith<IllegalArgumentException> {
             Vehicle(
                     id = validVehicleId,
                     vin = shortVin,
@@ -38,13 +38,13 @@ class VehicleTest {
                     year = validYear
             )
         }
-                .also { assert(it.message?.contains("17 characters") == true) }
+        assert(exception.message?.contains("17 characters") == true)
     }
 
     @Test
     fun `should fail if VIN is more than 17 characters`() {
         val longVin = "1HGBH41JXMN109186-EXTRA"
-        assertFailsWith<IllegalArgumentException> {
+        val exception = assertFailsWith<IllegalArgumentException> {
             Vehicle(
                     id = validVehicleId,
                     vin = longVin,
@@ -54,7 +54,7 @@ class VehicleTest {
                     year = validYear
             )
         }
-                .also { assert(it.message?.contains("17 characters") == true) }
+        assert(exception.message?.contains("17 characters") == true)
     }
 
     @Test

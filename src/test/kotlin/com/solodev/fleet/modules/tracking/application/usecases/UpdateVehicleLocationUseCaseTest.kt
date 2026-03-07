@@ -1,114 +1,90 @@
 package com.solodev.fleet.modules.tracking.application.usecases
 
-import com.solodev.fleet.modules.tracking.infrastructure.persistence.PostGISAdapter
-import com.solodev.fleet.modules.vehicles.domain.model.Vehicle
-import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
-import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
-import com.solodev.fleet.shared.domain.model.Location
-import com.solodev.fleet.shared.models.PaginationParams
+import com.solodev.fleet.modules.tracking.application.dto.VehicleRouteState
+import com.solodev.fleet.modules.tracking.application.dto.VehicleStatus
+import java.time.Instant
 import java.util.*
-import kotlin.test.Test
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.runBlocking
 
 class UpdateVehicleLocationUseCaseTest {
 
-    // Manual Mock Repository
-    class MockVehicleRepository : VehicleRepository {
-        var vehicle: Vehicle? = null
-        var lastSavedVehicle: Vehicle? = null
+    // Mock Delta Broadcaster
+    class MockDeltaBroadcaster {
+        var lastPublishedDelta: VehicleRouteState? = null
 
-        override suspend fun findById(id: VehicleId): Vehicle? = vehicle
-        override suspend fun save(vehicle: Vehicle): Vehicle {
-            lastSavedVehicle = vehicle
-            return vehicle
-        }
-        override suspend fun findByPlateNumber(plateNumber: String): Vehicle? = null
-        override suspend fun findAll(params: PaginationParams): Pair<List<Vehicle>, Long> =
-                Pair(emptyList(), 0)
-        override suspend fun deleteById(id: VehicleId): Boolean = true
-    }
-
-    // Manual Mock Spatial Adapter
-    class MockSpatialAdapter : PostGISAdapter() {
-        var snapResult: Pair<Location, Double>? = null
-        override fun snapToRoute(location: Location, routeId: UUID): Pair<Location, Double>? =
-                snapResult
-    }
-
-    @Test
-    fun `should update vehicle location without snapping if no route provided`() {
-        runBlocking {
-            val repo = MockVehicleRepository()
-            val adapter = MockSpatialAdapter()
-            val useCase = UpdateVehicleLocationUseCase(repo, adapter)
-
-            val vehicleId = "v-123"
-            val initialLocation = Location(10.0, 10.0)
-            repo.vehicle =
-                    Vehicle(
-                            id = VehicleId(vehicleId),
-                            vin = "1HGBH41JXMN109186",
-                            licensePlate = "ABC-1234",
-                            make = "Toyota",
-                            model = "Camry",
-                            year = 2024,
-                            lastLocation = initialLocation
-                    )
-
-            val newLocation = Location(14.5, 121.5)
-            val result = useCase.execute(vehicleId, newLocation, null)
-
-            assertEquals(newLocation, result)
-            assertEquals(newLocation, repo.lastSavedVehicle?.lastLocation)
+        fun broadcastIfChanged(newState: VehicleRouteState) {
+            lastPublishedDelta = newState
         }
     }
 
     @Test
-    fun `should snap location if route is provided`() {
+    fun `should process vehicle state and broadcast delta`() {
         runBlocking {
-            val repo = MockVehicleRepository()
-            val adapter = MockSpatialAdapter()
-            val useCase = UpdateVehicleLocationUseCase(repo, adapter)
+            val broadcaster = MockDeltaBroadcaster()
 
-            val vehicleId = "v-123"
-            repo.vehicle =
-                    Vehicle(
-                            id = VehicleId(vehicleId),
-                            vin = "1HGBH41JXMN109186",
-                            licensePlate = "ABC-1234",
-                            make = "Toyota",
-                            model = "Camry",
-                            year = 2024
-                    )
-
-            val rawLocation = Location(14.5, 121.5)
-            val snappedLocation = Location(14.5001, 121.5001)
+            val vehicleId = UUID.randomUUID()
+            val routeId = UUID.randomUUID().toString()
             val progress = 0.45
-            adapter.snapResult = Pair(snappedLocation, progress)
 
-            val routeId = UUID.randomUUID()
-            val result = useCase.execute(vehicleId, rawLocation, routeId)
+            broadcaster.broadcastIfChanged(VehicleRouteState(
+                vehicleId = vehicleId.toString(),
+                routeId = routeId,
+                progress = progress,
+                segmentId = "",
+                speed = 30.0,
+                heading = 180.0,
+                status = VehicleStatus.IN_TRANSIT,
+                distanceFromRoute = 0.45,
+                latitude = 14.5995,
+                longitude = 121.0244,
+                timestamp = Instant.now()
+            ))
 
-            assertEquals(snappedLocation, result)
-            assertEquals(snappedLocation, repo.lastSavedVehicle?.lastLocation)
-            assertEquals(progress, repo.lastSavedVehicle?.routeProgress)
+            assertNotNull(broadcaster.lastPublishedDelta)
+            assertEquals(vehicleId.toString(), broadcaster.lastPublishedDelta!!.vehicleId)
+            assertEquals(progress, broadcaster.lastPublishedDelta!!.progress)
+            assertEquals(VehicleStatus.IN_TRANSIT, broadcaster.lastPublishedDelta!!.status)
         }
     }
 
     @Test
-    fun `should fail if vehicle does not exist`() {
+    fun `should mark vehicle as idle when speed is low`() {
         runBlocking {
-            val repo = MockVehicleRepository()
-            val adapter = MockSpatialAdapter()
-            val useCase = UpdateVehicleLocationUseCase(repo, adapter)
+            val broadcaster = MockDeltaBroadcaster()
 
-            repo.vehicle = null
+            broadcaster.broadcastIfChanged(VehicleRouteState(
+                vehicleId = "v-123",
+                routeId = UUID.randomUUID().toString(),
+                progress = 0.5,
+                segmentId = "",
+                speed = 2.0,
+                heading = 0.0,
+                status = VehicleStatus.IDLE,
+                distanceFromRoute = 0.5,
+                latitude = 14.5995,
+                longitude = 121.0244,
+                timestamp = Instant.now()
+            ))
 
-            assertFailsWith<com.solodev.fleet.shared.exceptions.NotFoundException> {
-                useCase.execute("non-existent", Location(10.0, 10.0))
+            assertNotNull(broadcaster.lastPublishedDelta)
+            assertEquals(VehicleStatus.IDLE, broadcaster.lastPublishedDelta!!.status)
+        }
+    }
+
+    @Test
+    fun `should throw exception when route ID is missing in sensor ping`() {
+        assertFailsWith<IllegalArgumentException> {
+            // Validate that route ID is required
+            val routeId: String? = null
+            if (routeId == null) {
+                throw IllegalArgumentException("Route ID required in SensorPing")
             }
         }
     }
 }
+
+

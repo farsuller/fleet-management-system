@@ -1,60 +1,67 @@
 package com.solodev.fleet.modules.tracking.application.usecases
 
+import com.solodev.fleet.modules.tracking.application.dto.SensorPing
+import com.solodev.fleet.modules.tracking.application.dto.VehicleRouteState
+import com.solodev.fleet.modules.tracking.application.dto.VehicleStatus
+import com.solodev.fleet.modules.tracking.infrastructure.metrics.SpatialMetrics
+import com.solodev.fleet.modules.tracking.infrastructure.persistence.LocationHistoryRepository
 import com.solodev.fleet.modules.tracking.infrastructure.persistence.PostGISAdapter
-import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
-import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
-import com.solodev.fleet.shared.domain.model.Location
-import com.solodev.fleet.shared.exceptions.NotFoundException
-import java.util.*
-import org.slf4j.LoggerFactory
+import com.solodev.fleet.modules.tracking.infrastructure.websocket.RedisDeltaBroadcaster
+import java.util.UUID
 
-/**
- * Use case to process real-time vehicle location updates. Handles route snapping and persistence of
- * spatial data.
- */
 class UpdateVehicleLocationUseCase(
-        private val vehicleRepository: VehicleRepository,
-        private val spatialAdapter: PostGISAdapter
+    private val postGISAdapter: PostGISAdapter,
+    private val broadcaster: RedisDeltaBroadcaster,
+    private val metrics: SpatialMetrics,
+    private val historyRepository: LocationHistoryRepository
 ) {
-    private val logger = LoggerFactory.getLogger(javaClass)
+    suspend fun execute(ping: SensorPing) {
+        val startTime = System.currentTimeMillis()
 
-    suspend fun execute(vehicleId: String, rawLocation: Location, routeId: UUID? = null): Location {
-        logger.info("Updating location for vehicle $vehicleId: $rawLocation")
+        // 1. Snap to route using PostGIS
+        val routeId = ping.routeId?.let { UUID.fromString(it) }
+            ?: throw IllegalArgumentException("Route ID required in SensorPing")
 
-        val vehicle =
-                vehicleRepository.findById(VehicleId(vehicleId))
-                        ?: throw NotFoundException(
-                                "VEHICLE_NOT_FOUND",
-                                "Vehicle not found: $vehicleId"
-                        )
+        val snapResult = postGISAdapter.snapToRoute(
+            location = ping.location,
+            routeId = routeId
+        ) ?: throw IllegalStateException("Failed to snap point to route")
 
-        var finalLocation = rawLocation
-        var progress = vehicle.routeProgress
+        // 2. Determine if off-route (> 100m tolerance)
+        val distanceFromRoute = snapResult.second * 1000.0 // Convert progress to meters estimate
+        val isOffRoute = distanceFromRoute > 100.0
 
-        // If a route is provided, snap the location to the digital rail
-        if (routeId != null) {
-            val snapped = spatialAdapter.snapToRoute(rawLocation, routeId)
-            if (snapped != null) {
-                finalLocation = snapped.first
-                progress = snapped.second
-                logger.debug(
-                        "Snapped location for $vehicleId to $finalLocation (Progress: $progress)"
-                )
-            }
+        val status = when {
+            isOffRoute -> VehicleStatus.OFF_ROUTE
+            ping.speed == null || ping.speed < 5.0 -> VehicleStatus.IDLE
+            else -> VehicleStatus.IN_TRANSIT
         }
 
-        // Update the vehicle entity with new spatial data
-        val updatedVehicle =
-                vehicle.copy(
-                        lastLocation = finalLocation,
-                        routeProgress = progress
-                        // TODO: Calculate bearing based on previous location
-                        )
+        // 3. Create state
+        val vehicleIdString = ping.vehicleId
+        val routeIdString = routeId.toString()
+        val state = VehicleRouteState(
+            vehicleId = vehicleIdString,
+            routeId = routeIdString,
+            progress = snapResult.second,
+            segmentId = "", // Extract from route geometry if available
+            speed = ping.speed ?: 0.0,
+            heading = ping.heading ?: 0.0,
+            status = status,
+            distanceFromRoute = distanceFromRoute,
+            latitude = ping.location.latitude,
+            longitude = ping.location.longitude,
+            timestamp = ping.timestamp
+        )
 
-        vehicleRepository.save(updatedVehicle)
+        // 4. Persist to database
+        historyRepository.saveTrackingRecord(state)
 
-        // TODO: Broadcast update to WebSockets for the live dashboard
+        // 5. Broadcast delta
+        broadcaster.broadcastIfChanged(UUID.fromString(vehicleIdString), state)
 
-        return finalLocation
+        // 6. Record metrics
+        val duration = System.currentTimeMillis() - startTime
+        metrics.recordSnapDuration(duration)
     }
 }
