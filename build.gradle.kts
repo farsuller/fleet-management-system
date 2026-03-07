@@ -91,9 +91,10 @@ dependencies {
     // --- Testing ---
     testImplementation(libs.ktor.server.test.host)         // In-memory Ktor server for integration tests
     testImplementation(libs.ktor.client.content.negotiation) // Ktor client for testing endpoints
-    testImplementation(libs.kotlin.test.junit)             // Kotlin-style JUnit testing
+    testImplementation(libs.kotlin.test.junit5)            // Kotlin-style JUnit 5 testing
     testImplementation(libs.h2)                            // In-memory DB for fast testing
     testImplementation(libs.testcontainers.postgresql)     // Real PostgreSQL/PostGIS for spatial tests
+    testImplementation(libs.mockk)                         // Kotlin mocking framework
 }
 
 // Test configuration

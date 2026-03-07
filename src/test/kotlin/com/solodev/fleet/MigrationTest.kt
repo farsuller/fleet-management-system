@@ -5,6 +5,7 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.server.config.*
 import io.ktor.server.testing.*
+import org.junit.jupiter.api.Test
 import kotlin.test.*
 
 class MigrationTest {
