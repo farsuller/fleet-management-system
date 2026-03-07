@@ -15,7 +15,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import redis.clients.jedis.Jedis
+import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPubSub
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -26,13 +26,16 @@ import java.util.concurrent.ConcurrentHashMap
  * Features:
  * - Delta encoding for bandwidth efficiency
  * - Session management across multiple instances
- * - Redis Pub/Sub for cross-node broadcasting
+ * - Redis Pub/Sub for cross-node broadcasting (uses JedisPool for thread safety)
  * - Automatic state synchronization via Redis cache
+ *
+ * Thread safety: Each publish borrows a short-lived connection from the pool.
+ * The subscriber gets a dedicated long-lived connection that stays in subscribe mode.
  */
 open class RedisDeltaBroadcaster(
     private val redisCache: RedisCacheManager,
     private val vehicleRepository: VehicleRepository,
-    private val jedis: Jedis? = null
+    private val jedisPool: JedisPool? = null
 ) {
     private val sessions = ConcurrentHashMap<String, DefaultWebSocketServerSession>()
     private val supervisorJob = SupervisorJob()
@@ -44,7 +47,7 @@ open class RedisDeltaBroadcaster(
 
     init {
         // Subscribe to Redis Pub/Sub for cross-node updates if Redis is available
-        if (jedis != null) {
+        if (jedisPool != null) {
             subscribeToRedisUpdates()
         }
     }
@@ -105,11 +108,14 @@ open class RedisDeltaBroadcaster(
 
     /**
      * Publish delta to Redis Pub/Sub for cross-node distribution.
-     * Used in distributed deployments where multiple backend instances need to share updates.
+     * Borrows a short-lived connection from the pool for each publish call,
+     * avoiding conflicts with the long-lived subscriber connection.
      */
     private fun publishToRedis(message: String) {
         try {
-            jedis?.publish(REDIS_CHANNEL, message)
+            jedisPool?.resource?.use { conn ->
+                conn.publish(REDIS_CHANNEL, message)
+            }
         } catch (e: Exception) {
             println("Failed to publish to Redis: ${e.message}")
         }
@@ -117,30 +123,36 @@ open class RedisDeltaBroadcaster(
 
     /**
      * Subscribe to Redis Pub/Sub channel for updates from other backend nodes.
-     * Broadcasts received messages to all local WebSocket clients.
+     * Gets a dedicated long-lived connection from the pool that stays in subscribe mode.
+     * This connection is separate from the ones used for publish/cache operations.
      */
     private fun subscribeToRedisUpdates() {
         scope.launch {
             try {
-                if (jedis != null) {
-                    jedis.subscribe(object : JedisPubSub() {
-                        override fun onMessage(channel: String, message: String) {
-                            // Broadcast message from another node to local sessions
-                            scope.launch {
-                                sessions.values.forEach { session ->
-                                    try {
-                                        session.send(Frame.Text(message))
-                                    } catch (e: Exception) {
-                                        // Session closed, ignore
+                val subscriberConn = jedisPool?.resource
+                if (subscriberConn != null) {
+                    try {
+                        subscriberConn.subscribe(object : JedisPubSub() {
+                            override fun onMessage(channel: String, message: String) {
+                                // Broadcast message from another node to local sessions
+                                scope.launch {
+                                    sessions.values.forEach { session ->
+                                        try {
+                                            session.send(Frame.Text(message))
+                                        } catch (e: Exception) {
+                                            // Session closed, ignore
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        override fun onSubscribe(channel: String, subscribedChannels: Int) {
-                            println("Redis Pub/Sub subscribed to channel: $channel")
-                        }
-                    }, REDIS_CHANNEL)
+                            override fun onSubscribe(channel: String, subscribedChannels: Int) {
+                                println("Redis Pub/Sub subscribed to channel: $channel")
+                            }
+                        }, REDIS_CHANNEL)
+                    } finally {
+                        subscriberConn.close()
+                    }
                 }
             } catch (e: Exception) {
                 println("Redis Pub/Sub subscription failed: ${e.message}")

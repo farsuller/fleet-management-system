@@ -19,7 +19,7 @@
 | `VehicleStatus` enum | `modules/tracking/application/dto/` | ✅ Done | `IN_TRANSIT`, `IDLE`, `OFF_ROUTE` |
 | `SensorPing` | `modules/tracking/application/dto/` | ✅ Done | Raw GPS input DTO |
 | `LocationUpdateDTO` | `modules/tracking/application/dto/` | ✅ Done | HTTP request body |
-| `RedisDeltaBroadcaster` | `modules/tracking/infrastructure/websocket/` | ✅ Done | Session map, Redis Pub/Sub, `broadcastIfChanged()`, `addSession()`, `sendInitialState()` |
+| `RedisDeltaBroadcaster` | `modules/tracking/infrastructure/websocket/` | ✅ Done | Thread-safe `JedisPool`: dedicated subscriber connection + per-publish borrowed connections |
 | `InMemoryVehicleLiveBroadcaster` | `modules/tracking/infrastructure/websocket/` | ✅ Done | MutableSharedFlow; kept for single-node fallback |
 | `WebSocketRoutes` (configureWebSocketRoutes) | `modules/tracking/infrastructure/websocket/` | ✅ Done | Dead code path (WS lives in TrackingRoutes) |
 | `TrackingRoutes` | `modules/tracking/infrastructure/http/` | ✅ Done | 5 HTTP + 1 WS endpoint |
@@ -29,12 +29,13 @@
 | `IdempotencyKeyManager` | `modules/tracking/infrastructure/idempotency/` | ✅ Done | 24h TTL idempotency cache |
 | `CircuitBreaker` | `modules/tracking/infrastructure/resilience/` | ✅ Done | 5-failure threshold protects PostGIS calls |
 | `MatchingEngine` / `PostGISAdapter` | `modules/tracking/infrastructure/spatial/` | ✅ Done | `ST_ClosestPoint` snap + progress |
+| `RedisCacheManager` | `shared/infrastructure/cache/` | ✅ Done | Thread-safe `JedisPool` — borrows per-operation via `pool.resource.use {}` |
+| `Application.kt` (Redis init) | root | ✅ Done | `JedisPool` with `JedisPoolConfig` (maxTotal=8, testOnBorrow=true) |
 
 ### Known Gaps / TODO
 - `GET /v1/tracking/vehicles/{vehicleId}/state` — returns hardcoded mock; should query Redis cache first, then DB
 - `GET /v1/tracking/fleet/status` — returns hardcoded mock list; should query live state from Redis/DB
 - WebSocket `/v1/fleet/live` — auth is optional currently (no `authenticate()` block around it); add JWT guard if auth is required
-- `InMemoryVehicleLiveBroadcaster` is no longer used by the WS route (uses `RedisDeltaBroadcaster` directly); can be removed or wired as a fallback
 
 ---
 
@@ -185,27 +186,62 @@ jedis = { module = "redis.clients:jedis", version.ref = "jedis" }
 
 ### 1. State Synchronization (Redis Pub/Sub Solution)
 **Risk**: Horizontal scaling on Render breaks WebSocket isolation.
-**Solution**: Use Redis to broadcast events across all nodes.
+**Solution**: Use Redis with `JedisPool` for thread-safe, connection-pooled Pub/Sub across all nodes.
 
 #### Redis Broadcaster Implementation
 ```kotlin
 // tracking/infrastructure/websocket/RedisDeltaBroadcaster.kt
-class RedisDeltaBroadcaster(private val jedis: Jedis) {
-    private val CHANNEL = "fleet_updates"
+class RedisDeltaBroadcaster(
+    private val redisCache: RedisCacheManager,
+    private val vehicleRepository: VehicleRepository,
+    private val jedisPool: JedisPool? = null
+) {
+    private val CHANNEL = "fleet_vehicle_updates"
 
-    fun publishUpdate(vehicleId: UUID, state: VehicleRouteState) {
-        val message = Json.encodeToString(state)
-        jedis.publish(CHANNEL, message)
+    // Publish borrows a short-lived connection from the pool (thread-safe)
+    private fun publishToRedis(message: String) {
+        jedisPool?.resource?.use { conn ->
+            conn.publish(CHANNEL, message)
+        }
     }
 
-    fun subscribe(onUpdate: (VehicleRouteState) -> Unit) {
-        thread {
-            jedis.subscribe(object : JedisPubSub() {
+    // Subscribe gets a dedicated long-lived connection (never shared)
+    private fun subscribeToRedisUpdates() {
+        scope.launch {
+            val subscriberConn = jedisPool?.resource
+            subscriberConn?.subscribe(object : JedisPubSub() {
                 override fun onMessage(channel: String, message: String) {
-                    val update = Json.decodeFromString<VehicleRouteState>(message)
-                    onUpdate(update)
+                    scope.launch {
+                        sessions.values.forEach { session ->
+                            session.send(Frame.Text(message))
+                        }
+                    }
                 }
             }, CHANNEL)
+        }
+    }
+}
+
+    // Subscribe gets a dedicated connection from the pool (blocking operation)
+    private fun subscribeToRedisUpdates() {
+        scope.launch {
+            val subscriberConn = jedisPool?.resource
+            if (subscriberConn != null) {
+                try {
+                    subscriberConn.subscribe(object : JedisPubSub() {
+                        override fun onMessage(channel: String, message: String) {
+                            val update = Json.decodeFromString<VehicleStateDelta>(message)
+                            scope.launch {
+                                sessions.values.forEach { session ->
+                                    session.send(Frame.Text(message))
+                                }
+                            }
+                        }
+                    }, CHANNEL)
+                } finally {
+                    subscriberConn.close()
+                }
+            }
         }
     }
 }
@@ -615,38 +651,48 @@ import com.solodev.fleet.modules.tracking.application.ports.VehicleLiveBroadcast
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.Json
-import redis.clients.jedis.Jedis
+import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPubSub
 import kotlin.coroutines.suspendCancellableCoroutine
 
 /**
  * Redis-backed broadcaster for distributed deployments across multiple backend nodes.
- * Publishes vehicle state deltas to a Redis channel; all nodes subscribe and forward to local WebSocket clients.
+ * Uses JedisPool for thread-safe connection management:
+ * - Publish: borrows a short-lived connection per call via pool.resource.use {}
+ * - Subscribe: gets a dedicated long-lived connection that stays in subscribe mode
+ *
+ * This separation prevents the Jedis deadlock where subscribe() blocks publish() on the same connection.
  *
  * **Data Flow (3-node cluster):**
  * 1. Node A receives GPS ping → creates delta
- * 2. Node A publishes delta to Redis channel "fleet_updates"
- * 3. Node B & C subscribe to "fleet_updates" (via Redis Pub/Sub)
+ * 2. Node A publishes delta to Redis channel "fleet_vehicle_updates"
+ * 3. Node B & C subscribe to "fleet_vehicle_updates" (via Redis Pub/Sub)
  * 4. All three nodes forward delta to their respective connected WebSocket clients
  * 5. Result: All admins see the same live fleet view regardless of which backend instance served them
  */
-class RedisDeltaBroadcaster(private val jedis: Jedis) : VehicleLiveBroadcaster {
-    private val CHANNEL = "fleet_updates"
+class RedisDeltaBroadcaster(
+    private val redisCache: RedisCacheManager,
+    private val vehicleRepository: VehicleRepository,
+    private val jedisPool: JedisPool? = null
+) {
+    private val CHANNEL = "fleet_vehicle_updates"
 
     /**
      * Publishes a vehicle state delta to Redis Pub/Sub channel.
-     * All subscribed backend nodes will receive this message.
+     * Borrows a short-lived connection from the pool, avoiding conflicts with the subscriber.
      */
-    override suspend fun publish(delta: VehicleStateDelta) {
-        val message = Json.encodeToString(delta)
-        jedis.publish(CHANNEL, message)
+    private fun publishToRedis(message: String) {
+        jedisPool?.resource?.use { conn ->
+            conn.publish(CHANNEL, message)
+        }
     }
 
     /**
-     * Returns a Flow that subscribes to Redis Pub/Sub and emits all deltas.
-     * Should be collected once per WebSocket session.
+     * Returns a Flow that subscribes to Redis Pub/Sub using a dedicated connection.
+     * This connection stays in subscribe mode and is never used for publish/cache.
      */
     override fun stream(): Flow<VehicleStateDelta> = flow {
+        val subscriberConn = jedisPool?.resource
         val subscriber = object : JedisPubSub() {
             override fun onMessage(channel: String, message: String) {
                 try {
@@ -658,10 +704,14 @@ class RedisDeltaBroadcaster(private val jedis: Jedis) : VehicleLiveBroadcaster {
             }
         }
 
-        // Subscribe in background thread (blocking operation)
-        Thread {
-            jedis.subscribe(subscriber, CHANNEL)
-        }.start()
+        // Subscribe using dedicated connection (blocking operation)
+        if (subscriberConn != null) {
+            try {
+                subscriberConn.subscribe(subscriber, CHANNEL)
+            } finally {
+                subscriberConn.close()
+            }
+        }
 
         // Keep flow alive until cancelled
         suspendCancellableCoroutine<Unit> { }
@@ -669,8 +719,10 @@ class RedisDeltaBroadcaster(private val jedis: Jedis) : VehicleLiveBroadcaster {
 }
 ```
 
-**Why Redis Pub/Sub?**
+**Why Redis Pub/Sub with JedisPool?**
 - **Cross-Node Communication**: Messages published on Node A reach subscribers on Node B & C instantly
+- **Thread Safety**: `JedisPool` provides connection pooling — each operation borrows its own connection, avoiding concurrency bugs from shared `Jedis` instances
+- **Separate Connections for Sub/Pub**: The subscriber gets a dedicated long-lived connection; publish calls borrow short-lived connections. This prevents the Jedis deadlock where `subscribe()` blocks all other commands on the same connection
 - **Stateless**: No need to track which backend node has which client
 - **Scalable**: Add/remove nodes without reconfiguring connections
 - **Built-in**: Redis handles subscription management
@@ -702,10 +754,11 @@ class MatchingEngine(private val postGISAdapter: PostGISAdapter) {
 
 ### 3. Delta Broadcaster (Backend)
 ```kotlin
-// tracking/infrastructure/websocket/DeltaBroadcaster.kt
-class DeltaBroadcaster(
+// tracking/infrastructure/websocket/RedisDeltaBroadcaster.kt
+class RedisDeltaBroadcaster(
     private val redisCache: RedisCacheManager,
-    private val vehicleRepository: VehicleRepository
+    private val vehicleRepository: VehicleRepository,
+    private val jedisPool: JedisPool? = null
 ) {
     private val sessions = ConcurrentHashMap<String, DefaultWebSocketServerSession>()
 
@@ -722,6 +775,12 @@ class DeltaBroadcaster(
         if (delta.hasChanges()) {
             val message = Json.encodeToString(delta)
             sessions.values.forEach { it.send(Frame.Text(message)) }
+
+            // Publish to Redis for cross-node delivery (borrows from pool)
+            jedisPool?.resource?.use { conn ->
+                conn.publish("fleet_vehicle_updates", message)
+            }
+
             redisCache.getOrSet(redisKey, 3600) { newState }
         }
     }
@@ -752,7 +811,7 @@ class DeltaBroadcaster(
 ### 4. WebSocket Route Configuration
 ```kotlin
 // tracking/infrastructure/websocket/WebSocketRoutes.kt
-fun Route.configureWebSocketRoutes(broadcaster: DeltaBroadcaster) {
+fun Route.configureWebSocketRoutes(broadcaster: RedisDeltaBroadcaster) {
     webSocket("/v1/fleet/live") {
         val sessionId = UUID.randomUUID().toString()
         broadcaster.addSession(sessionId, this)
@@ -782,7 +841,7 @@ fun Route.configureWebSocketRoutes(broadcaster: DeltaBroadcaster) {
 // tracking/application/UpdateVehicleLocationUseCase.kt
 class UpdateVehicleLocationUseCase(
     private val postGISAdapter: PostGISAdapter,
-    private val broadcaster: DeltaBroadcaster,
+    private val broadcaster: RedisDeltaBroadcaster,
     private val metrics: SpatialMetrics
 ) {
     suspend fun execute(ping: SensorPing) {
@@ -875,10 +934,9 @@ fun Application.configureRouting(jwtService: JwtService, vehicleRepo: VehicleRep
     
     // Phase 7: Tracking & Live Broadcasting
     val spatialAdapter = PostGISAdapter()
-    val redisCache = RedisCacheManager(jedis) // or null if Redis disabled
+    val redisCache = RedisCacheManager(jedisPool) // Uses JedisPool for thread-safe connections
     val spatialMetrics = SpatialMetrics(registry) // Micrometer registry from observability
-    val liveBroadcaster = InMemoryVehicleLiveBroadcaster() // Or RedisDeltaBroadcaster for scaling
-    val deltaBroadcaster = DeltaBroadcaster(redisCache, vehicleRepo)
+    val deltaBroadcaster = RedisDeltaBroadcaster(redisCache, vehicleRepo, jedisPool)
     val updateVehicleLocation = UpdateVehicleLocationUseCase(
         spatialAdapter = spatialAdapter,
         broadcaster = deltaBroadcaster,
@@ -1002,9 +1060,8 @@ src/main/kotlin/com/solodev/fleet/
     │   │   ├── RoutesTable.kt
     │   │   └── GeofencesTable.kt
     │   ├── websocket/
-    │   │   ├── DeltaBroadcaster.kt          ← Session management + delta logic
-    │   │   ├── InMemoryVehicleLiveBroadcaster.kt
-    │   │   └── RedisDeltaBroadcaster.kt     ← For horizontal scaling
+    │   │   ├── RedisDeltaBroadcaster.kt     ← Session management + delta logic + JedisPool Pub/Sub
+    │   │   └── InMemoryVehicleLiveBroadcaster.kt
     │   └── metrics/
     │       └── SpatialMetrics.kt            ← Micrometer observability
     └── infrastructure/spatial/
@@ -1015,7 +1072,7 @@ src/main/kotlin/com/solodev/fleet/
 
 - [ ] WebSocket plugin installed in `Application.kt`
 - [ ] Serializers registered for `UUID` and `Instant`
-- [ ] `DeltaBroadcaster` initialized with Redis cache and vehicle repository
+- [ ] `RedisDeltaBroadcaster` initialized with Redis cache, vehicle repository, and `JedisPool`
 - [ ] `UpdateVehicleLocationUseCase` wired with broadcaster and metrics
 - [ ] `trackingRoutes()` called in routing with all dependencies
 - [ ] `/v1/tracking/live` WebSocket endpoint available

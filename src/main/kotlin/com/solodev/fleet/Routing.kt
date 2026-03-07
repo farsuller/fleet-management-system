@@ -32,13 +32,13 @@ import io.ktor.server.plugins.swagger.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.micrometer.core.instrument.MeterRegistry
-import redis.clients.jedis.Jedis
+import redis.clients.jedis.JedisPool
 
 /** Configures the application's routing. */
 fun Application.configureRouting(
     jwtService: JwtService,
     vehicleRepo: VehicleRepositoryImpl,
-    jedis: Jedis?,
+    jedisPool: JedisPool?,
     registry: MeterRegistry
 ) {
 
@@ -64,9 +64,9 @@ fun Application.configureRouting(
 
     // Phase 7: Tracking & Live Broadcasting
     val spatialAdapter = PostGISAdapter()
-    val redisCache = RedisCacheManager(jedis) // or null if Redis disabled
+    val redisCache = RedisCacheManager(jedisPool)
     val spatialMetrics = SpatialMetrics(registry) // Micrometer registry from observability
-    val deltaBroadcaster = RedisDeltaBroadcaster(redisCache, vehicleRepo)
+    val deltaBroadcaster = RedisDeltaBroadcaster(redisCache, vehicleRepo, jedisPool)
     val locationHistoryRepository = LocationHistoryRepository()  // Persist tracking records
     val updateVehicleLocation = UpdateVehicleLocationUseCase(
         postGISAdapter = spatialAdapter,

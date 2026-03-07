@@ -11,7 +11,8 @@ import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import redis.clients.jedis.Jedis
+import redis.clients.jedis.JedisPool
+import redis.clients.jedis.JedisPoolConfig
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -47,14 +48,20 @@ fun Application.module() {
         masking = false
     }
 
-    var jedis: Jedis? = null
+    var jedisPool: JedisPool? = null
     val redisEnabled = environment.config.propertyOrNull("redis.enabled")?.getString()?.toBoolean() ?: true
     val cacheManager = if (redisEnabled) {
         try {
             val redisUrl = environment.config.propertyOrNull("redis.url")?.getString()
                 ?: "redis://localhost:6379"
-            jedis = Jedis(redisUrl)
-            RedisCacheManager(jedis)
+            val poolConfig = JedisPoolConfig().apply {
+                maxTotal = 8
+                maxIdle = 4
+                minIdle = 1
+                testOnBorrow = true
+            }
+            jedisPool = JedisPool(poolConfig, java.net.URI(redisUrl))
+            RedisCacheManager(jedisPool!!)
         } catch (e: Exception) {
             log.error("Failed to initialize Redis cache, falling back to no-cache mode", e)
             null
@@ -79,7 +86,7 @@ fun Application.module() {
     configureRouting(
         jwtService = jwtService,
         vehicleRepo = vehicleRepository,
-        jedis = jedis,
+        jedisPool = jedisPool,
         registry = registry
     )
 }
