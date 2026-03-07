@@ -53,7 +53,7 @@ class LoginUserUseCaseTest {
         email = "juan@fleet.ph",
         firstName = "Juan",
         lastName = "dela Cruz",
-        passwordHash = "hashed_test_password",
+        passwordHash = "hashed_test-password-raw",
         phone = "+63912345678",
         isVerified = isVerified,
         roles = emptyList()
