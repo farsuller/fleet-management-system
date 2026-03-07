@@ -76,7 +76,9 @@ dependencies {
     implementation(libs.postgis.jdbc)                      // PostgreSQL geometry parsing
     implementation(libs.jts.core)                         // Topology suite for geometry logic
 
-    implementation(libs.jedis)
+
+    // --- Redis (for horizontal scaling) ---
+    implementation(libs.jedis)                             // Redis client for Pub/Sub
 
 
     implementation(libs.resilience4j.circuitbreaker)       // Circuit breaker
@@ -92,4 +94,9 @@ dependencies {
     testImplementation(libs.kotlin.test.junit)             // Kotlin-style JUnit testing
     testImplementation(libs.h2)                            // In-memory DB for fast testing
     testImplementation(libs.testcontainers.postgresql)     // Real PostgreSQL/PostGIS for spatial tests
+}
+
+// Test configuration
+tasks.test {
+    useJUnitPlatform()
 }

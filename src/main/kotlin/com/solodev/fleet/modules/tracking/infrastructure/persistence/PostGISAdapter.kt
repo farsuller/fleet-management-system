@@ -2,6 +2,7 @@ package com.solodev.fleet.modules.tracking.infrastructure.persistence
 
 import com.solodev.fleet.shared.domain.model.Location
 import com.solodev.fleet.shared.infrastructure.persistence.SpatialFunctions
+import com.solodev.fleet.shared.infrastructure.persistence.PostGISColumnType
 import java.util.UUID
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -93,12 +94,12 @@ open class PostGISAdapter {
     private fun point_expr(point: PGgeometry): Expression<PGgeometry> =
             QueryParameter(
                     point,
-                    com.solodev.fleet.shared.infrastructure.persistence.PostGISColumnType()
+                    PostGISColumnType()
             )
     private fun polyline_expr(polyline: PGgeometry): Expression<PGgeometry> =
             QueryParameter(
                     polyline,
-                    com.solodev.fleet.shared.infrastructure.persistence.PostGISColumnType()
+                    PostGISColumnType()
             )
     private fun progress_expr(progress: Double): Expression<Double> =
             QueryParameter(progress, DoubleColumnType())
