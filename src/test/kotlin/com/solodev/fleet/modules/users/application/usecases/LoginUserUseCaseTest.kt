@@ -21,7 +21,7 @@ class LoginUserUseCaseTest {
         coEvery { userRepository.findByEmail("juan@fleet.ph") } returns user
         every { jwtService.generateToken(any(), any(), any()) } returns "jwt.token.here"
 
-        val request = LoginRequest(email = "juan@fleet.ph", passwordRaw = "SecurePass123!")
+        val request = LoginRequest(email = "juan@fleet.ph", passwordRaw = "test-password-raw")
         val result = useCase.execute(request)
 
         assertEquals("jwt.token.here", result.second)
@@ -31,7 +31,7 @@ class LoginUserUseCaseTest {
     fun `throws when user not found`(): Unit = runBlocking {
         coEvery { userRepository.findByEmail(any()) } returns null
 
-        val request = LoginRequest(email = "unknown@fleet.ph", passwordRaw = "AnyPass123!")
+        val request = LoginRequest(email = "unknown@fleet.ph", passwordRaw = "test-password-raw")
         assertFailsWith<IllegalArgumentException> {
             useCase.execute(request)
         }
@@ -42,7 +42,7 @@ class LoginUserUseCaseTest {
         val user = sampleUser(isVerified = false)
         coEvery { userRepository.findByEmail("juan@fleet.ph") } returns user
 
-        val request = LoginRequest(email = "juan@fleet.ph", passwordRaw = "SecurePass123!")
+        val request = LoginRequest(email = "juan@fleet.ph", passwordRaw = "test-password-raw")
         assertFailsWith<IllegalArgumentException> {
             useCase.execute(request)
         }
@@ -53,7 +53,7 @@ class LoginUserUseCaseTest {
         email = "juan@fleet.ph",
         firstName = "Juan",
         lastName = "dela Cruz",
-        passwordHash = "hashed_SecurePass123!",
+        passwordHash = "hashed_test_password",
         phone = "+63912345678",
         isVerified = isVerified,
         roles = emptyList()
