@@ -24,7 +24,7 @@ class AssignRoleUseCaseTest {
         val result = useCase.execute("user-001", "ADMIN")
 
         assertNotNull(result)
-        assertEquals("ADMIN", result!!.roles.first().name)
+        assertEquals("ADMIN", result.roles.first().name)
         coVerify { userRepository.save(any()) }
     }
 
