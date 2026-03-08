@@ -103,25 +103,20 @@ The system is developed in distinct phases, moving from architecture to complex 
 | **P3** | ✅ **Complete** | [API v1](./docs/implementations/phase-3-api-surface-v1.md) | **User Management**, **Customer Management**, **Vehicle Fleet**, **Rental Operations**, **Maintenance Tracking**, **Payment & Invoicing**, **Accounting Ledger** | 100% |
 | **P4** | ✅ **Complete** | [Hardening](./docs/implementations/phase-4-hardening-v2-implementation.md) | Role-Based Access, Rate Limiting, Performance Caching | 100% |
 | **P5** | ✅ **Complete** | [Accounting](./docs/implementations/phase-5-reporting-and-accounting-correctness.md) | **Chart of Accounts**, **Revenue Reports**, **Balance Sheet**, Reconciliation | 100% |
-
-### 🏗️ **Planned Phases** (Documentation Complete)
-
-| Phase | Status | Document | Features Planned | Notes |
-|-------|--------|----------|-----------------|-------|
-| **P6** | 🏗️ **Planning** | [Spatial](./docs/implementations/phase-6-postgis-spatial-extensions.md) | **GPS Tracking**, **Route Matching**, **Distance Calculation** | Docs ready |
-| **P7** | 🏗️ **Planning** | [Visuals](./docs/implementations/phase-7-schematic-visualization-engine.md) | **Live Fleet Dashboard**, **Real-Time Positions**, **Movement Visualization** | Docs ready |
-| **P8** | 🏗️ **Planning** | [Deployment](./docs/implementations/phase-8-deployment.md) | Production Hosting, Cloud Configuration | Render-ready |
+| **P6** | ✅ **Core Complete** | [Spatial](./docs/implementations/phase-6-postgis-spatial-extensions.md) | **PostGIS Integration**, **GPS Snapping**, **Route Matching**, **Distance Calculation** | ~85% — Geofencing deferred to P7 |
+| **P7** | ✅ **Core Implemented** | [Visuals](./docs/implementations/phase-7-schematic-visualization-engine.md) | **Delta-Encoded WebSockets**, **Live Fleet Dashboard**, **Real-Time Positions**, **Movement Visualization** | ~80% — State/fleet endpoints still mocked; WS JWT pending |
+| **P8** | ✅ **Complete** | [Deployment](./docs/implementations/phase-8-deployment.md) | **Production Hosting (Render)**, **Supabase DB**, **Dockerfile**, **render.yaml**, **CI/CD** | 100% |
 
 ### 📊 **Implementation Statistics**
 
 #### **Database**
-- ✅ **Migrations**: 14 applied (V001-V014)
-- ✅ **Tables**: 20+ across 7 modules
+- ✅ **Migrations**: 18 applied (V001–V019, V016 intentionally skipped)
+- ✅ **Tables**: 20+ across 8 modules (includes `location_history`, `routes`)
 - ✅ **Constraints**: Double-booking prevention, Double-entry validation
 - ✅ **Caching**: Redis (VehicleRepository, 5-min TTL)
 
 #### **API Endpoints**
-- ✅ **Modules**: 7 complete (Users, Customers, Vehicles, Rentals, Maintenance, Accounting, Integration)
+- ✅ **Modules**: 8 complete (Users, Customers, Vehicles, Rentals, Maintenance, Accounting, Integration, **Tracking**)
 - ✅ **Authentication**: JWT with role-based claims
 - ✅ **Authorization**: RBAC via `withRoles` plugin
 - ✅ **Documentation**: OpenAPI + Swagger UI at `/swagger`
@@ -140,10 +135,10 @@ The system is developed in distinct phases, moving from architecture to complex 
 - ✅ **Chart of Accounts**: Full CRUD operations
 
 ### 🚀 **Deployment Status**
-- ✅ **Core System**: Fully functional (Phases 1-5)
+- ✅ **Core System**: Fully functional (Phases 1-8)
 - ✅ **Business Logic**: All CRUD operations operational
-- ⚠️ **Deployment**: Needs Dockerfile, render.yaml (Phase 8)
-- 🏗️ **Real-Time Tracking**: Planning (Phases 6-7)
+- ✅ **Deployment**: Live on Render — `https://fleet-management-api-8tli.onrender.com`
+- ✅ **Real-Time Tracking**: Core implemented (Phases 6-7) — WebSocket broadcasting active
 
 ---
 

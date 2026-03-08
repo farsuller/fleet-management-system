@@ -1,7 +1,7 @@
 # Fleet Management API - Implementation Summary
 
-**Version**: 2.1  
-**Date**: 2026-02-15  
+**Version**: 3.0  
+**Date**: 2026-03-08  
 **Status**: Production-Ready
 
 ---
@@ -23,6 +23,7 @@ This document summarizes the complete API implementation for the Fleet Managemen
 | **Users** | [module-user-route-implementation.md](./module-user-route-implementation.md) | ✅ Complete | 100% |
 | **Maintenance** | [module-maintenance-route-implementation.md](./module-maintenance-route-implementation.md) | ✅ Complete | 100% |
 | **Accounting** | [module-accounting-route-implementation.md](./module-accounting-route-implementation.md) | ✅ Complete | 100% |
+| **Tracking** | [phase-7-schematic-visualization-engine.md](./phase-7-schematic-visualization-engine.md) | ✅ Core Complete | ~80% — State/fleet mocked; WS JWT pending |
 
 ---
 
@@ -71,6 +72,27 @@ This document summarizes the complete API implementation for the Fleet Managemen
 
 ---
 
+## Tracking API Highlights (Phase 6/7)
+
+### Endpoints Implemented
+- `POST /v1/tracking/vehicles/{id}/location` - Accept GPS ping; snap to nearest route segment via PostGIS
+- `GET /v1/tracking/vehicles/{id}/route` - Return current route assignment for a vehicle
+- `GET /v1/tracking/vehicles/{id}/state` - Return current vehicle state ⚠️ *(returns hardcoded mock — live DB query pending)*
+- `GET /v1/tracking/fleet/status` - Return all active vehicle positions ⚠️ *(returns hardcoded mock — live DB query pending)*
+- `WS /v1/fleet/live` - WebSocket channel for delta-encoded real-time position updates ⚠️ *(no JWT guard yet)*
+
+### Key Features
+- ✅ **PostGIS Snapping**: Raw GPS coords snapped to route geometry via `ST_ClosestPoint`
+- ✅ **Delta-Encoded Broadcasts**: Only changed fields sent per tick (`VehicleStateDelta`)
+- ✅ **Redis Pub/Sub**: `RedisDeltaBroadcaster` propagates updates across nodes
+- ✅ **In-Memory Fallback**: `InMemoryVehicleLiveBroadcaster` for single-node deployments
+- ✅ **Rate Limiting**: 60 pings/min per vehicle (`LocationUpdateRateLimiter`)
+- ✅ **Idempotency**: 24h TTL dedup cache (`IdempotencyKeyManager`)
+- ✅ **Circuit Breaker**: Resilience4j wraps PostGIS calls (5-failure threshold)
+- ✅ **Spatial Metrics**: Micrometer counters/timers for all tracking operations
+
+---
+
 ## Next Steps
 
 ### Immediate Priorities
@@ -78,11 +100,16 @@ This document summarizes the complete API implementation for the Fleet Managemen
 2. ✅ **OpenAPI**: Swagger UI active at `/swagger`, YAML spec served at `/openapi`.
 3. ✅ **Hardening**: Unit and Integration tests for all 5 core modules have been significantly expanded.
 
-### ⏳ Deferred / Future Phases
+### ⚠️ Open Items (Tracking Module)
+1. **WebSocket JWT Auth**: Add `authenticate()` block around `WS /v1/fleet/live`.
+2. **Live State Endpoint**: Replace hardcoded mock in `GET /v1/tracking/vehicles/{id}/state` with Redis/DB query.
+3. **Live Fleet Endpoint**: Replace hardcoded mock in `GET /v1/tracking/fleet/status` with Redis/DB query.
+4. **PostGISAdapterTest**: Re-enable `@Disabled` integration test with proper Testcontainers setup.
+
+### ⏳ Deferred / Future
 1. **Eventing & Kafka**: Publication of domain events is deferred until Phase 9 or later.
-2. **Spatial Extensions**: PostGIS integration and spatial search are planned for Phase 6.
-3. **Schematic Engine**: Real-time visualization via WebSockets is planned for Phase 7.
-4. **Deployment**: Production deployment is finalized in Phase 8.
+2. **Geofencing & Alerting**: Bearing detection and boundary alerts deferred from P6 to future phase.
+3. **Integration Tests**: HTTP-level integration tests for all modules (see `INTEGRATION-TEST-IMPLEMENTATION-PLAN.md`).
 
 ---
 

@@ -26,19 +26,19 @@ This plan is designed to be appended to `[skills/backend-development/SKILL.md](s
 
 | Phase | Status | Features Planned | Notes |
 |-------|--------|-----------------|-------|
-| **Phase 6: Spatial** | 🏗️ **In Progress** | **PostGIS Integration**, **GPS Tracking**, **Geofencing** | Active development |
-| **Phase 7: Visuals** | 🏗️ **Planning** | **Schematic Visualization**, **Delta-Encoded WebSockets** | Plan approved |
+| **Phase 6: Spatial** | ✅ **Core Complete** | **PostGIS Integration**, **GPS Tracking**, **Route Snapping** | Geofencing/alerting deferred to P7 |
+| **Phase 7: Visuals** | ✅ **Core Implemented** | **Schematic Visualization**, **Delta-Encoded WebSockets** | State/fleet endpoints mocked; WS JWT pending |
 
 ### 📦 **Current System Capabilities**
 
 #### **Database** (Supabase + Redis)
 - ✅ **Supabase**: Primary production database (Postgres 15 + PostGIS)
-- ✅ **20+ Tables**: Users, Customers, Vehicles, Rentals, Maintenance, Accounting, Integration
-- ✅ **15 Migrations**: V001-V015 (PostGIS enabled)
+- ✅ **20+ Tables**: Users, Customers, Vehicles, Rentals, Maintenance, Accounting, Integration, Location History, Routes
+- ✅ **18 Migrations**: V001–V019 (V016 intentionally skipped)
 - ✅ **Constraints**: Double-booking prevention, Double-entry validation, Optimistic locking
 - ✅ **Redis Caching**: VehicleRepository (5-min TTL)
 
-#### **API Modules** (7 Complete)
+#### **API Modules** (8 Complete)
 1. ✅ **Users & Auth**: Registration, Login, Email verification, JWT, RBAC
 2. ✅ **Customers**: CRUD, Driver license validation, Profile management
 3. ✅ **Vehicles**: CRUD, State management, Odometer tracking
@@ -46,6 +46,7 @@ This plan is designed to be appended to `[skills/backend-development/SKILL.md](s
 5. ✅ **Maintenance**: Jobs, Parts, Schedules, Cost tracking
 6. ✅ **Accounting**: Invoices, Payments, Ledger, Chart of Accounts, Reports
 7. ✅ **Integration**: Idempotency keys, Outbox/Inbox (ready for Kafka)
+8. ✅ **Tracking**: GPS location updates, Route snapping (PostGIS), Delta-Encoded WebSockets, Redis Pub/Sub broadcast
 
 #### **Security & Hardening**
 - ✅ **Authentication**: JWT with role-based claims

@@ -9,9 +9,18 @@
     - [LocationTest.kt]
     - [VehicleTest.kt]
     - [UpdateVehicleLocationUseCaseTest.kt]
-- **Integration Testing**: ✅ Implemented:
-    - [PostGISAdapterTest.kt]
+- **Integration Testing**: ✅ Active (Docker-gated):
+    - [PostGISAdapterTest.kt] — `@Disabled` removed; test runs when Docker is available and **skips gracefully** when not, via `DockerClientFactory` probe in `BaseSpatialTest`
+    - Setup: see [`docs/TESTCONTAINERS-SETUP-GUIDE.md`](../TESTCONTAINERS-SETUP-GUIDE.md)
 - **Transition**: Residual polish items (Bearing, Geofencing, Alerting) moved to [Phase 7](phase-7-schematic-visualization-engine.md).
+
+### ✅ All Phase 6 Open Issues Resolved (as of 2026-03-08)
+| Issue | Severity | Resolution |
+|-------|----------|------------|
+| `GET /v1/tracking/vehicles/{id}/state` returned hardcoded mock | MEDIUM | ✅ Queries `location_history` (V020 seed) |
+| `GET /v1/tracking/fleet/status` returned hardcoded mock | MEDIUM | ✅ `DISTINCT ON` query via `getAllLatestVehicleStates()` |
+| `WS /v1/fleet/live` had no JWT authentication | HIGH | ✅ Wrapped in `authenticate("auth-jwt")` |
+| `PostGISAdapterTest` was `@Disabled` | MEDIUM | ✅ Re-enabled with Docker skip guard; see [TESTCONTAINERS-SETUP-GUIDE.md](../TESTCONTAINERS-SETUP-GUIDE.md) |
 
 ---
 

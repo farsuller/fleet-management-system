@@ -100,4 +100,9 @@ dependencies {
 // Test configuration
 tasks.test {
     useJUnitPlatform()
+    // Testcontainers on Windows with Docker Desktop TCP socket.
+    // Requires: Docker Desktop → Settings → General → "Expose daemon on tcp://localhost:2375"
+    // ryuk.disabled prevents the reaper container which causes 400 errors on Windows Docker Desktop
+    environment("DOCKER_HOST", "tcp://localhost:2375")
+    environment("TESTCONTAINERS_RYUK_DISABLED", "true")
 }
