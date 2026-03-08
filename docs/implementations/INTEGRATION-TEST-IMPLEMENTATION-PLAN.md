@@ -1,8 +1,8 @@
 # Integration Test Implementation Plan
 
-**Version**: 1.1  
+**Version**: 1.2  
 **Date**: 2026-03-08  
-**Status**: Phase A Complete — Unit Test Compliance ✅ (2026-03-08); Phases B–E in planning  
+**Status**: Phase A ✅ Unit Test Compliance (2026-03-08); Phase B ✅ Missing Unit Tests (2026-03-08); Phases C–E in planning  
 **Practices Reference**: [PRACTICES_INTEGRATION_TEST.md](./PRACTICES_INTEGRATION_TEST.md)  
 **Unit Test Compliance Reference**: [PRACTICES_UNIT_TEST.md](./PRACTICES_UNIT_TEST.md)
 
@@ -27,21 +27,21 @@
 
 ## 1. Current Test Coverage Summary
 
-### Existing Tests (48 files)
+### Current Tests (59 files)
 
 | Module | Domain Tests | Use Case Tests | Integration Tests | Total |
 |--------|-------------|----------------|-------------------|-------|
-| **Users** | 2 | 4 | ❌ None | 6 |
-| **Vehicles** | 1 | 4 | ❌ None | 5 |
-| **Rentals** | 2 | 6 | ❌ None | 8 |
+| **Users** | 2 | 7 | ❌ None | 9 |
+| **Vehicles** | 1 | 7 | ❌ None | 8 |
+| **Rentals** | 2 | 7 | ❌ None | 9 |
 | **Customers** | 1 | 2 | ❌ None | 3 |
-| **Maintenance** | 2 | 4 | ❌ None | 6 |
-| **Accounts** | 2 | 2 | ❌ None | 4 |
+| **Maintenance** | 2 | 5 | ❌ None | 7 |
+| **Accounts** | 2 | 5 | ❌ None | 7 |
 | **Tracking** | 5 (DTOs) | 2 | ❌ None | 7 |
 | **Shared/App** | 1 (Location) | — | ✅ ApplicationTest (H2, health/root only) | 2 |
 | **Spatial** | — | — | ⚠️ PostGISAdapterTest (disabled) | 1 |
 | **Migration** | — | — | ⚠️ MigrationTest (H2 only) | 1 |
-| **TOTAL** | **16** | **22** | **2 partial** | **43+** |
+| **TOTAL** | **16** | **33** | **2 partial** | **54** |
 
 ### Critical Gap
 
@@ -77,72 +77,74 @@ This section audits existing unit tests against [PRACTICES_UNIT_TEST.md](./PRACT
 
 #### USERS MODULE
 
-| Test File | Compliant Issues |
-|-----------|-----------------|
-| `RegisterUserUseCaseTest` | ❌ Uses `kotlin.test.assertEquals` — should be AssertJ<br>❌ No AAA comments<br>❌ `coEvery { ... save(any()) }` — generic matcher used<br>⚠️ Name: `registers new user successfully` — should be `shouldRegisterUser_WhenEmailIsNew` |
-| `LoginUserUseCaseTest` | ❌ Same assertion framework issues<br>❌ No AAA comments<br>⚠️ Missing negative test for wrong password |
-| `AssignRoleUseCaseTest` | ❌ Same issues<br>⚠️ Missing test: assign role to non-existent user |
-| `VerifyEmailUseCaseTest` | ❌ Same issues<br>⚠️ Missing: expired token edge case |
-| `UserTest` / `VerificationTokenTest` | Domain tests: acceptable natural language — low severity |
+| Test File | Issues Found | Status |
+|-----------|--------------|--------|
+| `RegisterUserUseCaseTest` | Used `kotlin.test.assertEquals`; no AAA comments; generic `save(any())`; method name was natural language | ✅ Fixed (2026-03-08) |
+| `LoginUserUseCaseTest` | Same assertion framework issues; no AAA comments; missing negative test for wrong password | ✅ Fixed (2026-03-08) |
+| `AssignRoleUseCaseTest` | Same issues; missing test for non-existent user | ✅ Fixed (2026-03-08) |
+| `VerifyEmailUseCaseTest` | Same issues; missing expired token edge case | ✅ Fixed (2026-03-08) |
+| `UserTest` / `VerificationTokenTest` | Domain tests: acceptable natural language — low severity | ✅ Acceptable |
 
-**Accounts module is most lacking**: Only `IssueInvoiceUseCaseTest` and `PayInvoiceUseCaseTest` — missing `ManageAccountUseCase`, `GenerateFinancialReportsUseCase`, `ReconciliationService`.
+**Accounts module was most lacking**: `ManageAccountUseCaseTest`, `GenerateFinancialReportsUseCaseTest`, `ReconciliationServiceTest` were missing — all added in Phase B (2026-03-08).
 
 #### VEHICLES MODULE
 
-| Test File | Compliant Issues |
-|-----------|-----------------|
-| `CreateVehicleUseCaseTest` | ❌ No AAA comments<br>❌ `any()` in `coVerify{ repository.save(any()) }`<br>❌ AssertJ not used |
-| `GetVehicleUseCaseTest` | ❌ Same issues<br>⚠️ No test for vehicle-not-found path |
-| `DeleteVehicleUseCaseTest` | ❌ Same issues<br>⚠️ Missing: delete RENTED vehicle should fail |
-| `ListVehiclesUseCaseTest` | ❌ Same issues |
-| **Missing Use Cases** | `UpdateVehicleUseCase`, `UpdateVehicleStateUseCase`, `RecordOdometerUseCase` — **not tested** |
+| Test File | Issues Found | Status |
+|-----------|--------------|--------|
+| `CreateVehicleUseCaseTest` | No AAA comments; generic `any()` in `coVerify`; AssertJ not used | ✅ Fixed (2026-03-08) |
+| `GetVehicleUseCaseTest` | Same issues; missing vehicle-not-found test | ✅ Fixed (2026-03-08) |
+| `DeleteVehicleUseCaseTest` | Same issues; missing delete-RENTED-vehicle test | ✅ Fixed (2026-03-08) |
+| `ListVehiclesUseCaseTest` | Same issues | ✅ Fixed (2026-03-08) |
+| **Missing Use Cases** | `UpdateVehicleUseCase`, `UpdateVehicleStateUseCase`, `RecordOdometerUseCase` were untested | ✅ Added in Phase B (2026-03-08) |
 
 #### RENTALS MODULE
 
-| Test File | Compliant Issues |
-|-----------|-----------------|
-| `CreateRentalUseCaseTest` | ⚠️ `useCase.execute()` is NOT called — tests replicate domain logic directly<br>❌ Comment explains it but this means use case is not covered |
-| `ActivateRentalUseCaseTest` | ❌ Same assertion/AAA issues |
-| `CompleteRentalUseCaseTest` | ❌ Same issues |
-| `CancelRentalUseCaseTest` | ❌ Same issues |
-| **Missing** | `GetRentalUseCaseTest`, `ListRentalsUseCase` not fully covered |
+| Test File | Issues Found | Status |
+|-----------|--------------|--------|
+| `CreateRentalUseCaseTest` | `useCase.execute()` not called — tests domain logic directly (by design: wraps `dbQuery{}`) | ⚠️ By Design |
+| `ActivateRentalUseCaseTest` | Same assertion/AAA issues | ✅ Fixed (2026-03-08) |
+| `CompleteRentalUseCaseTest` | Same issues | ✅ Fixed (2026-03-08) |
+| `CancelRentalUseCaseTest` | Same issues | ✅ Fixed (2026-03-08) |
+| **Missing** | `GetRentalUseCaseTest` was missing | ✅ Added in Phase B (2026-03-08) |
 
 #### MAINTENANCE MODULE
 
-| Test File | Compliant Issues |
-|-----------|-----------------|
-| `CompleteMaintenanceUseCaseTest` | ❌ `any()` used<br>❌ No AAA comments<br>❌ AssertJ not used |
-| `ScheduleMaintenanceUseCaseTest` | ❌ Same issues |
-| `CancelMaintenanceUseCaseTest` | ❌ Same issues |
-| **Missing** | `ListVehicleMaintenanceUseCase` not covered |
+| Test File | Issues Found | Status |
+|-----------|--------------|--------|
+| `CompleteMaintenanceUseCaseTest` | Generic `any()` used; no AAA comments; AssertJ not used | ✅ Fixed (2026-03-08) |
+| `ScheduleMaintenanceUseCaseTest` | Same issues | ✅ Fixed (2026-03-08) |
+| `CancelMaintenanceUseCaseTest` | Same issues | ✅ Fixed (2026-03-08) |
+| **Missing** | `ListVehicleMaintenanceUseCase` was not covered | ✅ Added in Phase B (2026-03-08) |
 
 #### ACCOUNTS MODULE
 
-| Test File | Compliant Issues |
-|-----------|-----------------|
-| `IssueInvoiceUseCaseTest` | ❌ `any()` used in `coEvery { invoiceRepo.save(any()) }`<br>❌ No AAA comments<br>❌ AssertJ not used |
-| `PayInvoiceUseCaseTest` | ❌ Same issues |
-| **Missing — high priority** | `ManageAccountUseCaseTest`, `GenerateFinancialReportsUseCaseTest`, `ReconciliationServiceTest` |
+| Test File | Issues Found | Status |
+|-----------|--------------|--------|
+| `IssueInvoiceUseCaseTest` | Generic `any()` in `coEvery { invoiceRepo.save(any()) }`; no AAA comments; AssertJ not used | ✅ Fixed (2026-03-08) |
+| `PayInvoiceUseCaseTest` | Same issues | ✅ Fixed (2026-03-08) |
+| **Missing — high priority** | `ManageAccountUseCaseTest`, `GenerateFinancialReportsUseCaseTest`, `ReconciliationServiceTest` were absent | ✅ Added in Phase B (2026-03-08) |
 
 #### TRACKING MODULE
 
-| Test File | Compliant Issues |
-|-----------|-----------------|
-| `UpdateVehicleLocationUseCaseTest` | ❌ Hand-rolled `MockDeltaBroadcaster` — should use MockK<br>❌ AssertJ not used<br>❌ No AAA comments<br>⚠️ Tests mock class, not the actual `UpdateVehicleLocationUseCase` |
-| `CircuitBreakerTest` | ✅ Good coverage of resilience — acceptable |
-| `RetryPolicyTest` | ✅ Same |
+| Test File | Issues Found | Status |
+|-----------|--------------|--------|
+| `UpdateVehicleLocationUseCaseTest` | Hand-rolled `MockDeltaBroadcaster`; AssertJ not used; no AAA comments; tests mock class not actual use case | ✅ Fixed (2026-03-08) |
+| `CircuitBreakerTest` | Good coverage of resilience — acceptable | ✅ Acceptable |
+| `RetryPolicyTest` | Good coverage of resilience — acceptable | ✅ Acceptable |
 
 ---
 
-### 2.3 Non-Compliant Patterns to Fix
+### 2.3 Patterns Fixed ✅ (Reference)
 
-**Priority 1 — Replace assertion framework everywhere:**
+> All four patterns below were applied to all 22 use case tests on 2026-03-08.
+
+**1 — Assertion framework replaced (kotlin.test → AssertJ):**
 ```kotlin
-// CURRENT (non-compliant)
+// BEFORE
 assertEquals("juan@fleet.ph", result.email)
 assertFailsWith<IllegalStateException> { ... }
 
-// TARGET (compliant with PRACTICES_UNIT_TEST.md)
+// AFTER ✅
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 
@@ -151,10 +153,10 @@ assertThatThrownBy { runBlocking { useCase.execute(request) } }
     .isInstanceOf(IllegalStateException::class.java)
 ```
 
-**Priority 2 — Add AAA comments to all test methods:**
+**2 — AAA comments added to all test methods:**
 ```kotlin
 @Test
-fun `shouldRegisterUser_WhenEmailIsNew`() = runBlocking {
+fun shouldRegisterUser_WhenEmailIsNew() = runBlocking {
     // Arrange
     coEvery { userRepository.findByEmail("juan@fleet.ph") } returns null
     coEvery { userRepository.findRoleByName("CUSTOMER") } returns customerRole
@@ -170,47 +172,47 @@ fun `shouldRegisterUser_WhenEmailIsNew`() = runBlocking {
 }
 ```
 
-**Priority 3 — Replace generic `any()` with exact values or ArgumentCaptor:**
+**3 — Generic `any()` replaced with exact values or `slot<T>()` captures:**
 ```kotlin
-// CURRENT (non-compliant)
+// BEFORE
 coEvery { repository.save(any()) } returnsArgument 0
 coVerify { repository.save(any()) }
 
-// TARGET (compliant)
+// AFTER ✅
 val vehicleSlot = slot<Vehicle>()
 coEvery { repository.save(capture(vehicleSlot)) } returnsArgument 0
 // ...
 assertThat(vehicleSlot.captured.licensePlate).isEqualTo("ABC-1234")
 ```
 
-**Priority 4 — Rename test methods:**
+**4 — Test methods renamed to `shouldX_WhenY` pattern:**
 ```kotlin
-// CURRENT (non-compliant)
+// BEFORE
 fun `creates vehicle with valid data`()
 fun `throws when email is already registered`()
 
-// TARGET (compliant)
+// AFTER ✅
 fun shouldCreateVehicle_WhenDataIsValid()
 fun shouldThrowIllegalState_WhenEmailAlreadyRegistered()
 ```
 
 ---
 
-### 2.4 Missing Unit Tests (High Priority)
+### 2.4 Missing Unit Tests ✅ All Done (2026-03-08)
 
-| Module | Missing Test | Priority |
-|--------|-------------|----------|
-| Vehicles | `UpdateVehicleUseCaseTest` | HIGH |
-| Vehicles | `UpdateVehicleStateUseCaseTest` | HIGH |
-| Vehicles | `RecordOdometerUseCaseTest` | HIGH |
-| Accounts | `ManageAccountUseCaseTest` | HIGH |
-| Accounts | `GenerateFinancialReportsUseCaseTest` | HIGH |
-| Accounts | `ReconciliationServiceTest` | MEDIUM |
-| Users | `GetUserProfileUseCaseTest` | MEDIUM |
-| Users | `UpdateUserUseCaseTest` | MEDIUM |
-| Users | `ListUsersUseCaseTest` | LOW |
-| Rentals | `GetRentalUseCaseTest` (actual use case) | MEDIUM |
-| Maintenance | `ListVehicleMaintenanceUseCaseTest` | LOW |
+| Module | Test Created | Priority | Status |
+|--------|-------------|----------|--------|
+| Vehicles | `UpdateVehicleUseCaseTest` | HIGH | ✅ Done |
+| Vehicles | `UpdateVehicleStateUseCaseTest` | HIGH | ✅ Done |
+| Vehicles | `RecordOdometerUseCaseTest` | HIGH | ✅ Done |
+| Accounts | `ManageAccountUseCaseTest` | HIGH | ✅ Done |
+| Accounts | `GenerateFinancialReportsUseCaseTest` | HIGH | ✅ Done |
+| Accounts | `ReconciliationServiceTest` | MEDIUM | ✅ Done |
+| Users | `GetUserProfileUseCaseTest` | MEDIUM | ✅ Done |
+| Users | `UpdateUserUseCaseTest` | MEDIUM | ✅ Done |
+| Users | `ListUsersUseCaseTest` | LOW | ✅ Done |
+| Rentals | `GetRentalUseCaseTest` | MEDIUM | ✅ Done |
+| Maintenance | `ListVehicleMaintenanceUseCaseTest` | LOW | ✅ Done |
 
 ---
 
@@ -433,14 +435,19 @@ fun assertOk(response: HttpResponse) =
 4. ✅ Replace generic `any()` with exact typed values or `slot<T>()` captures
 5. ✅ Replace hand-rolled `MockDeltaBroadcaster` with MockK in tracking tests
 
-### Phase B — Add Missing Unit Tests (2–3 days)
+### Phase B — Add Missing Unit Tests ✅ Complete (2026-03-08)
 
-1. `UpdateVehicleUseCaseTest`
-2. `UpdateVehicleStateUseCaseTest`
-3. `RecordOdometerUseCaseTest`
-4. `ManageAccountUseCaseTest`
-5. `GenerateFinancialReportsUseCaseTest`
-6. `ReconciliationServiceTest`
+1. ✅ `UpdateVehicleUseCaseTest`
+2. ✅ `UpdateVehicleStateUseCaseTest`
+3. ✅ `RecordOdometerUseCaseTest`
+4. ✅ `ManageAccountUseCaseTest`
+5. ✅ `GenerateFinancialReportsUseCaseTest`
+6. ✅ `ReconciliationServiceTest`
+7. ✅ `GetUserProfileUseCaseTest`
+8. ✅ `UpdateUserUseCaseTest`
+9. ✅ `ListUsersUseCaseTest`
+10. ✅ `GetRentalUseCaseTest`
+11. ✅ `ListVehicleMaintenanceUseCaseTest`
 
 ### Phase C — Integration Test Infrastructure (1 day)
 
@@ -482,4 +489,4 @@ testImplementation("org.testcontainers:testcontainers:1.19.x")
 
 ---
 
-*Last Updated: 2026-03-08 (v1.1 — Phase A unit test compliance complete; all 22 use case tests fully compliant)*
+*Last Updated: 2026-03-08 (v1.2 — Phase B complete; 11 missing use case tests added; total use case tests 22 → 33)*

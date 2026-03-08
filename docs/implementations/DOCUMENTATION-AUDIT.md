@@ -1,10 +1,10 @@
 # Documentation Audit & Status Consolidation
 
-**Version**: 1.3  
+**Version**: 1.4  
 **Date**: 2026-03-08  
 **Auditor**: Codebase review against actual implementation  
 **Scope**: All docs in `docs/` and root-level markdown files  
-**Update Status**: ✅ All Priority 1 & 2 items applied; PostGIS test infrastructure complete; unit test compliance complete (2026-03-08)
+**Update Status**: ✅ All Priority 1 & 2 items applied; PostGIS test infrastructure complete; unit test compliance complete (2026-03-08); missing unit tests added (2026-03-08)
 
 ---
 
@@ -33,7 +33,7 @@
 | [phase-4-hardening-v2-implementation.md](./phase-4-hardening-v2-implementation.md) | ✅ Accurate | Correct |
 | [phase-3-api-surface-v1.md](./phase-3-api-surface-v1.md) | ✅ Accurate | Correct |
 | [IMPLEMENTATION-STANDARDS.md](./IMPLEMENTATION-STANDARDS.md) | ✅ Accurate | Correct |
-| [PRACTICES_UNIT_TEST.md](./PRACTICES_UNIT_TEST.md) | ✅ Accurate | Rules correct; all 22 use case tests now fully compliant — AssertJ, `shouldX_WhenY` naming, AAA comments (2026-03-08) |
+| [PRACTICES_UNIT_TEST.md](./PRACTICES_UNIT_TEST.md) | ✅ Accurate | Rules correct; all 33 use case tests now fully compliant — AssertJ, `shouldX_WhenY` naming, AAA comments (2026-03-08) |
 | [PRACTICES_INTEGRATION_TEST.md](./PRACTICES_INTEGRATION_TEST.md) | ✅ Accurate | Rules correct; no integration tests implemented yet |
 | [future-recommendation-to-work-on.md](./future-recommendation-to-work-on.md) | ✅ **Updated** | File was empty — now populated with post-Phase-7 recommendations |
 | [API-TEST-SCENARIOS.md](./API-TEST-SCENARIOS.md) | ✅ Acceptable | Manual test scenarios, still useful |
@@ -357,6 +357,18 @@ This section reflects verified, current state as of **2026-03-08**.
 | All 22 use case tests | Replaced generic `any()` matchers with exact typed values or `slot<T>()` captures |
 | `build.gradle.kts` + `libs.versions.toml` | Added AssertJ 3.27.3 as test dependency |
 
+### Priority 5 — Missing Unit Tests ✅ Done (2026-03-08)
+
+| Module | Test Created |
+|--------|--------------|
+| Vehicles | `UpdateVehicleUseCaseTest`, `UpdateVehicleStateUseCaseTest`, `RecordOdometerUseCaseTest` |
+| Accounts | `ManageAccountUseCaseTest`, `GenerateFinancialReportsUseCaseTest`, `ReconciliationServiceTest` |
+| Users | `GetUserProfileUseCaseTest`, `UpdateUserUseCaseTest`, `ListUsersUseCaseTest` |
+| Rentals | `GetRentalUseCaseTest` |
+| Maintenance | `ListVehicleMaintenanceUseCaseTest` |
+
+Total use case tests: 22 → 33 (`BUILD SUCCESSFUL` verified).
+
 ### New Documents Added This Session
 
 | Document | Description |
@@ -364,4 +376,4 @@ This section reflects verified, current state as of **2026-03-08**.
 | [TESTCONTAINERS-SETUP-GUIDE.md](../TESTCONTAINERS-SETUP-GUIDE.md) | Full cross-platform setup guide (Windows + macOS) — Docker Desktop install, WSL 2 configuration, Testcontainers properties, error reference with 7 documented error patterns and fixes, graceful-skip behaviour explanation, CI notes |
 ---
 
-*Last Updated: 2026-03-08 (v1.3 — unit test compliance complete; all 22 use case tests migrated to AssertJ 3.27.3, `shouldX_WhenY` naming, AAA comments)*
+*Last Updated: 2026-03-08 (v1.4 — Phase B complete; 11 missing use case tests added; total use case tests 22 → 33)*
