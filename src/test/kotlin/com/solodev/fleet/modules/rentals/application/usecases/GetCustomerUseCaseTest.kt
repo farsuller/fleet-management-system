@@ -3,8 +3,9 @@ package com.solodev.fleet.modules.rentals.application.usecases
 import com.solodev.fleet.modules.rentals.domain.repository.CustomerRepository
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
+import com.solodev.fleet.modules.rentals.domain.model.CustomerId
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import kotlin.test.*
 
 class GetCustomerUseCaseTest {
 
@@ -12,22 +13,28 @@ class GetCustomerUseCaseTest {
     private val useCase = GetCustomerUseCase(repository)
 
     @Test
-    fun `returns customer when found`() = runBlocking {
+    fun shouldReturnCustomer_WhenIdExists() = runBlocking {
+        // Arrange
         val customer = mockk<com.solodev.fleet.modules.rentals.domain.model.Customer>()
-        coEvery { repository.findById(any()) } returns customer
+        coEvery { repository.findById(CustomerId("cust-001")) } returns customer
 
+        // Act
         val result = useCase.execute("cust-001")
 
-        assertNotNull(result)
-        assertEquals(customer, result)
+        // Assert
+        assertThat(result).isNotNull()
+        assertThat(result).isEqualTo(customer)
     }
 
     @Test
-    fun `returns null when customer does not exist`() = runBlocking {
-        coEvery { repository.findById(any()) } returns null
+    fun shouldReturnNull_WhenCustomerNotFound() = runBlocking {
+        // Arrange
+        coEvery { repository.findById(CustomerId("unknown")) } returns null
 
+        // Act
         val result = useCase.execute("unknown")
 
-        assertNull(result)
+        // Assert
+        assertThat(result).isNull()
     }
 }

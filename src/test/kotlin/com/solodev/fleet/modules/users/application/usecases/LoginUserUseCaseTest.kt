@@ -6,8 +6,8 @@ import com.solodev.fleet.modules.users.domain.repository.UserRepository
 import com.solodev.fleet.shared.utils.JwtService
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import kotlin.test.*
 
 class LoginUserUseCaseTest {
 
@@ -16,24 +16,26 @@ class LoginUserUseCaseTest {
     private val useCase = LoginUserUseCase(userRepository, jwtService)
 
     @Test
-    fun `throws when user not found`(): Unit = runBlocking {
-        coEvery { userRepository.findByEmail(any()) } returns null
-
+    fun shouldThrowIllegalArgument_WhenUserEmailNotFound() {
+        // Arrange
+        coEvery { userRepository.findByEmail("unknown@fleet.ph") } returns null
         val request = LoginRequest(email = "unknown@fleet.ph", passwordRaw = "irrelevant")
-        assertFailsWith<IllegalArgumentException> {
-            useCase.execute(request)
-        }
+
+        // Act & Assert
+        assertThatThrownBy { runBlocking { useCase.execute(request) } }
+            .isInstanceOf(IllegalArgumentException::class.java)
     }
 
     @Test
-    fun `throws when user is not verified`(): Unit = runBlocking {
+    fun shouldThrowIllegalArgument_WhenUserIsNotVerified() {
+        // Arrange
         val user = sampleUser(isVerified = false)
         coEvery { userRepository.findByEmail("juan@fleet.ph") } returns user
-
         val request = LoginRequest(email = "juan@fleet.ph", passwordRaw = "irrelevant")
-        assertFailsWith<IllegalArgumentException> {
-            useCase.execute(request)
-        }
+
+        // Act & Assert
+        assertThatThrownBy { runBlocking { useCase.execute(request) } }
+            .isInstanceOf(IllegalArgumentException::class.java)
     }
 
     private fun sampleUser(isVerified: Boolean) = User(

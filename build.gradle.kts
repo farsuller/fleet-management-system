@@ -95,6 +95,7 @@ dependencies {
     testImplementation(libs.h2)                            // In-memory DB for fast testing
     testImplementation(libs.testcontainers.postgresql)     // Real PostgreSQL/PostGIS for spatial tests
     testImplementation(libs.mockk)                         // Kotlin mocking framework
+    testImplementation(libs.assertj.core)                  // Fluent assertion library
 }
 
 // Test configuration

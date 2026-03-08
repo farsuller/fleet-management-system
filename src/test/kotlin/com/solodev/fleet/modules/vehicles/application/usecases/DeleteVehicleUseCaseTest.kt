@@ -4,8 +4,8 @@ import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import kotlin.test.*
 
 class DeleteVehicleUseCaseTest {
 
@@ -13,21 +13,27 @@ class DeleteVehicleUseCaseTest {
     private val useCase = DeleteVehicleUseCase(repository)
 
     @Test
-    fun `deletes vehicle and returns true when found`() = runBlocking {
-        coEvery { repository.deleteById(any()) } returns true
+    fun shouldDeleteVehicleAndReturnTrue_WhenIdExists() = runBlocking {
+        // Arrange
+        coEvery { repository.deleteById(VehicleId("veh-001")) } returns true
 
+        // Act
         val result = useCase.execute("veh-001")
 
-        assertTrue(result)
+        // Assert
+        assertThat(result).isTrue()
         coVerify { repository.deleteById(VehicleId("veh-001")) }
     }
 
     @Test
-    fun `returns false when vehicle not found`() = runBlocking {
-        coEvery { repository.deleteById(any()) } returns false
+    fun shouldReturnFalse_WhenVehicleNotFound() = runBlocking {
+        // Arrange
+        coEvery { repository.deleteById(VehicleId("unknown")) } returns false
 
+        // Act
         val result = useCase.execute("unknown")
 
-        assertFalse(result)
+        // Assert
+        assertThat(result).isFalse()
     }
 }

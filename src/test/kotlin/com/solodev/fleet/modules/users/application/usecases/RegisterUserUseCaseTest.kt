@@ -6,8 +6,9 @@ import com.solodev.fleet.modules.users.domain.repository.UserRepository
 import com.solodev.fleet.modules.users.domain.repository.VerificationTokenRepository
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import kotlin.test.*
 
 class RegisterUserUseCaseTest {
 
@@ -26,37 +27,45 @@ class RegisterUserUseCaseTest {
     private val customerRole = Role(id = RoleId("role-cust"), name = "CUSTOMER")
 
     @Test
-    fun `registers new user successfully`() = runBlocking {
-        coEvery { userRepository.findByEmail(any()) } returns null
+    fun shouldRegisterUser_WhenEmailIsNew() = runBlocking {
+        // Arrange
+        val savedUser = slot<User>()
+        coEvery { userRepository.findByEmail("juan@fleet.ph") } returns null
         coEvery { userRepository.findRoleByName("CUSTOMER") } returns customerRole
-        coEvery { userRepository.save(any()) } returnsArgument 0
+        coEvery { userRepository.save(capture(savedUser)) } returnsArgument 0
         coEvery { tokenRepository.save(any()) } returnsArgument 0
 
+        // Act
         val result = useCase.execute(validRequest)
 
-        assertEquals("juan@fleet.ph", result.email)
-        assertFalse(result.isVerified)
-        coVerify { userRepository.save(any()) }
+        // Assert
+        assertThat(result.email).isEqualTo("juan@fleet.ph")
+        assertThat(result.isVerified).isFalse()
+        assertThat(savedUser.captured.email).isEqualTo("juan@fleet.ph")
     }
 
     @Test
-    fun `throws when email is already registered`(): Unit = runBlocking {
+    fun shouldThrowIllegalState_WhenEmailAlreadyRegistered() {
+        // Arrange
         coEvery { userRepository.findByEmail("juan@fleet.ph") } returns mockk()
 
-        assertFailsWith<IllegalStateException> {
-            useCase.execute(validRequest)
-        }
+        // Act & Assert
+        assertThatThrownBy { runBlocking { useCase.execute(validRequest) } }
+            .isInstanceOf(IllegalStateException::class.java)
     }
 
     @Test
-    fun `new user is not verified by default`() = runBlocking {
-        coEvery { userRepository.findByEmail(any()) } returns null
+    fun shouldReturnUnverifiedUser_WhenRegistrationSucceeds() = runBlocking {
+        // Arrange
+        coEvery { userRepository.findByEmail("juan@fleet.ph") } returns null
         coEvery { userRepository.findRoleByName("CUSTOMER") } returns customerRole
         coEvery { userRepository.save(any()) } returnsArgument 0
         coEvery { tokenRepository.save(any()) } returnsArgument 0
 
+        // Act
         val result = useCase.execute(validRequest)
 
-        assertFalse(result.isVerified)
+        // Assert
+        assertThat(result.isVerified).isFalse()
     }
 }

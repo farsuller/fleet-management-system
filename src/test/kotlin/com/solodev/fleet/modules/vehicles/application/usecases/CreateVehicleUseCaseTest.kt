@@ -5,48 +5,47 @@ import com.solodev.fleet.modules.vehicles.domain.model.*
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import kotlin.test.*
 
 class CreateVehicleUseCaseTest {
 
     private val repository = mockk<VehicleRepository>()
     private val useCase = CreateVehicleUseCase(repository)
 
+    private val validRequest = VehicleRequest(
+        vin = "1HGBH41JXMN109186",
+        licensePlate = "ABC-1234",
+        make = "Toyota",
+        model = "Corolla",
+        year = 2023
+    )
+
     @Test
-    fun `creates vehicle with valid data`() = runBlocking {
-        coEvery { repository.save(any()) } returnsArgument 0
+    fun shouldCreateVehicle_WhenDataIsValid() = runBlocking {
+        // Arrange
+        val savedVehicle = slot<Vehicle>()
+        coEvery { repository.save(capture(savedVehicle)) } returnsArgument 0
 
-        val request = VehicleRequest(
-            vin = "1HGBH41JXMN109186",
-            licensePlate = "ABC-1234",
-            make = "Toyota",
-            model = "Corolla",
-            year = 2023
-        )
+        // Act
+        val result = useCase.execute(validRequest)
 
-        val result = useCase.execute(request)
-
-        assertEquals("1HGBH41JXMN109186", result.vin)
-        assertEquals("ABC-1234", result.licensePlate)
-        assertEquals(VehicleState.AVAILABLE, result.state)
-        coVerify { repository.save(any()) }
+        // Assert
+        assertThat(result.vin).isEqualTo("1HGBH41JXMN109186")
+        assertThat(result.licensePlate).isEqualTo("ABC-1234")
+        assertThat(result.state).isEqualTo(VehicleState.AVAILABLE)
+        assertThat(savedVehicle.captured.vin).isEqualTo("1HGBH41JXMN109186")
     }
 
     @Test
-    fun `new vehicle state defaults to AVAILABLE`() = runBlocking {
+    fun shouldDefaultToAvailable_WhenVehicleIsCreated() = runBlocking {
+        // Arrange
         coEvery { repository.save(any()) } returnsArgument 0
 
-        val request = VehicleRequest(
-            vin = "1HGBH41JXMN109186",
-            licensePlate = "ABC-1234",
-            make = "Toyota",
-            model = "Corolla",
-            year = 2023
-        )
+        // Act
+        val result = useCase.execute(validRequest)
 
-        val result = useCase.execute(request)
-
-        assertEquals(VehicleState.AVAILABLE, result.state)
+        // Assert
+        assertThat(result.state).isEqualTo(VehicleState.AVAILABLE)
     }
 }

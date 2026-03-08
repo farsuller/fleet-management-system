@@ -5,7 +5,8 @@ import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import kotlin.test.*
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 
 /**
  * ActivateRentalUseCase wraps execution in `newSuspendedTransaction(Dispatchers.IO)`, so
@@ -21,41 +22,50 @@ class ActivateRentalUseCaseTest {
     // --- Business rule: rental.activate() requires RESERVED status ---
 
     @Test
-    fun `activates RESERVED rental`() {
+    fun shouldActivateRental_WhenStatusIsReserved() {
+        // Arrange
         val rental = sampleRental(status = RentalStatus.RESERVED)
 
+        // Act
         val activated = rental.activate(actualStart = now, startOdo = 5000)
 
-        assertEquals(RentalStatus.ACTIVE, activated.status)
-        assertEquals(5000, activated.startOdometerKm)
-        assertNotNull(activated.actualStartDate)
+        // Assert
+        assertThat(activated.status).isEqualTo(RentalStatus.ACTIVE)
+        assertThat(activated.startOdometerKm).isEqualTo(5000)
+        assertThat(activated.actualStartDate).isNotNull()
     }
 
     @Test
-    fun `throws when rental is not RESERVED`(): Unit {
+    fun shouldThrowIllegalArgument_WhenRentalIsNotReserved() {
+        // Arrange
         val rental = sampleRental(status = RentalStatus.ACTIVE)
 
-        assertFailsWith<IllegalArgumentException> {
+        // Act / Assert
+        assertThatThrownBy {
             rental.activate(actualStart = now, startOdo = 5000)
-        }
+        }.isInstanceOf(IllegalArgumentException::class.java)
     }
 
     @Test
-    fun `throws when activating a COMPLETED rental`(): Unit {
+    fun shouldThrowIllegalArgument_WhenRentalIsCompleted() {
+        // Arrange
         val rental = sampleRental(status = RentalStatus.COMPLETED)
 
-        assertFailsWith<IllegalArgumentException> {
+        // Act / Assert
+        assertThatThrownBy {
             rental.activate(actualStart = now, startOdo = 5000)
-        }
+        }.isInstanceOf(IllegalArgumentException::class.java)
     }
 
     @Test
-    fun `throws when activating a CANCELLED rental`(): Unit {
+    fun shouldThrowIllegalArgument_WhenRentalIsCancelled() {
+        // Arrange
         val rental = sampleRental(status = RentalStatus.CANCELLED)
 
-        assertFailsWith<IllegalArgumentException> {
+        // Act / Assert
+        assertThatThrownBy {
             rental.activate(actualStart = now, startOdo = 5000)
-        }
+        }.isInstanceOf(IllegalArgumentException::class.java)
     }
 
     private fun sampleRental(status: RentalStatus) = Rental(

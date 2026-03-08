@@ -1,63 +1,75 @@
 package com.solodev.fleet.modules.tracking.infrastructure.metrics
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 
 class SpatialMetricsTest {
+
     @Test
-    fun `should record snap duration metric`() {
+    fun shouldRecordSnapDurationMetric_WhenRecordSnapDurationCalled() {
+        // Arrange
         val registry = SimpleMeterRegistry()
         val metrics = SpatialMetrics(registry)
 
+        // Act
         metrics.recordSnapDuration(50)
         metrics.recordSnapDuration(75)
         metrics.recordSnapDuration(100)
 
+        // Assert
         val timer = registry.find("postgis.snap.duration").timer()
-        assertNotNull(timer)
-        assertEquals(3, timer.count())
-        assertEquals(225.0, timer.totalTime(java.util.concurrent.TimeUnit.MILLISECONDS))
+        assertThat(timer).isNotNull()
+        assertThat(timer!!.count()).isEqualTo(3L)
+        assertThat(timer.totalTime(java.util.concurrent.TimeUnit.MILLISECONDS)).isEqualTo(225.0)
     }
 
     @Test
-    fun `should increment snap error counter`() {
+    fun shouldIncrementSnapErrorCounter_WhenRecordSnapErrorCalled() {
+        // Arrange
         val registry = SimpleMeterRegistry()
         val metrics = SpatialMetrics(registry)
 
+        // Act
         metrics.recordSnapError()
         metrics.recordSnapError()
 
+        // Assert
         val counter = registry.find("postgis.snap.errors").counter()
-        assertNotNull(counter)
-        assertEquals(2.0, counter.count())
+        assertThat(counter).isNotNull()
+        assertThat(counter!!.count()).isEqualTo(2.0)
     }
 
     @Test
-    fun `should track off-route events`() {
+    fun shouldTrackOffRouteEvents_WhenRecordOffRouteCalled() {
+        // Arrange
         val registry = SimpleMeterRegistry()
         val metrics = SpatialMetrics(registry)
 
+        // Act
         metrics.recordOffRoute()
         metrics.recordOffRoute()
         metrics.recordOffRoute()
 
+        // Assert
         val counter = registry.find("postgis.vehicle.off_route").counter()
-        assertNotNull(counter)
-        assertEquals(3.0, counter.count())
+        assertThat(counter).isNotNull()
+        assertThat(counter!!.count()).isEqualTo(3.0)
     }
 
     @Test
-    fun `should count broadcast events`() {
+    fun shouldCountBroadcastEvents_WhenRecordBroadcastCalled() {
+        // Arrange
         val registry = SimpleMeterRegistry()
         val metrics = SpatialMetrics(registry)
 
+        // Act
         metrics.recordBroadcast()
 
+        // Assert
         val counter = registry.find("tracking.delta.broadcasts").counter()
-        assertNotNull(counter)
-        assertEquals(1.0, counter.count())
+        assertThat(counter).isNotNull()
+        assertThat(counter!!.count()).isEqualTo(1.0)
     }
 }
 

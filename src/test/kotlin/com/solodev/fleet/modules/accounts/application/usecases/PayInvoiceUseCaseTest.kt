@@ -7,9 +7,9 @@ import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import java.time.Instant
 import java.util.UUID
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 
 class PayInvoiceUseCaseTest {
 
@@ -21,7 +21,8 @@ class PayInvoiceUseCaseTest {
     private val useCase = PayInvoiceUseCase(invoiceRepo, paymentRepo, accountRepo, ledgerRepo, paymentMethodRepo)
 
     @Test
-    fun `partial payment keeps ISSUED status`() = runBlocking {
+    fun shouldKeepIssuedStatus_WhenPaymentIsPartial() = runBlocking {
+        // Arrange
         val invoice = sampleInvoice(subtotal = 10000, tax = 1200, status = InvoiceStatus.ISSUED)
         coEvery { invoiceRepo.findById(invoice.id) } returns invoice
         coEvery { paymentMethodRepo.findByCode("CASH") } returns null
@@ -31,14 +32,17 @@ class PayInvoiceUseCaseTest {
         coEvery { invoiceRepo.save(any()) } returnsArgument 0
         coEvery { ledgerRepo.save(any()) } returnsArgument 0
 
+        // Act
         val result = useCase.execute(invoice.id.toString(), 5000, "CASH")
 
-        assertEquals(InvoiceStatus.ISSUED, result.updatedInvoice.status)
-        assertEquals(6200, result.updatedInvoice.balance)
+        // Assert
+        assertThat(result.updatedInvoice.status).isEqualTo(InvoiceStatus.ISSUED)
+        assertThat(result.updatedInvoice.balance).isEqualTo(6200)
     }
 
     @Test
-    fun `full payment transitions to PAID`() = runBlocking {
+    fun shouldTransitionToPaid_WhenPaymentIsFull() = runBlocking {
+        // Arrange
         val invoice = sampleInvoice(subtotal = 10000, tax = 1200, status = InvoiceStatus.ISSUED)
         coEvery { invoiceRepo.findById(invoice.id) } returns invoice
         coEvery { paymentMethodRepo.findByCode("CASH") } returns null
@@ -48,30 +52,34 @@ class PayInvoiceUseCaseTest {
         coEvery { invoiceRepo.save(any()) } returnsArgument 0
         coEvery { ledgerRepo.save(any()) } returnsArgument 0
 
+        // Act
         val result = useCase.execute(invoice.id.toString(), 11200, "CASH")
 
-        assertEquals(InvoiceStatus.PAID, result.updatedInvoice.status)
-        assertEquals(0, result.updatedInvoice.balance)
+        // Assert
+        assertThat(result.updatedInvoice.status).isEqualTo(InvoiceStatus.PAID)
+        assertThat(result.updatedInvoice.balance).isEqualTo(0)
     }
 
     @Test
-    fun `overpayment throws exception`(): Unit = runBlocking {
+    fun shouldThrowIllegalArgument_WhenPaymentExceedsBalance() {
+        // Arrange
         val invoice = sampleInvoice(subtotal = 10000, tax = 1200, status = InvoiceStatus.ISSUED)
         coEvery { invoiceRepo.findById(invoice.id) } returns invoice
 
-        assertFailsWith<IllegalArgumentException> {
-            useCase.execute(invoice.id.toString(), 15000, "CASH")
-        }
+        // Act / Assert
+        assertThatThrownBy { runBlocking { useCase.execute(invoice.id.toString(), 15000, "CASH") } }
+            .isInstanceOf(IllegalArgumentException::class.java)
     }
 
     @Test
-    fun `missing invoice throws exception`(): Unit = runBlocking {
+    fun shouldThrowIllegalArgument_WhenInvoiceNotFound() {
+        // Arrange
         val missingId = UUID.randomUUID()
         coEvery { invoiceRepo.findById(missingId) } returns null
 
-        assertFailsWith<IllegalArgumentException> {
-            useCase.execute(missingId.toString(), 5000, "CASH")
-        }
+        // Act / Assert
+        assertThatThrownBy { runBlocking { useCase.execute(missingId.toString(), 5000, "CASH") } }
+            .isInstanceOf(IllegalArgumentException::class.java)
     }
 
     private fun sampleInvoice(

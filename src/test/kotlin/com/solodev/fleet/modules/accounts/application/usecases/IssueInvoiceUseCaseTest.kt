@@ -5,9 +5,9 @@ import com.solodev.fleet.modules.accounts.domain.model.*
 import com.solodev.fleet.modules.accounts.domain.repository.*
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 
 class IssueInvoiceUseCaseTest {
 
@@ -16,43 +16,42 @@ class IssueInvoiceUseCaseTest {
     private val ledgerRepo = mockk<LedgerRepository>()
     private val useCase = IssueInvoiceUseCase(invoiceRepo, accountRepo, ledgerRepo)
 
+    private val validRequest = InvoiceRequest(
+        customerId = "cust-001",
+        subtotal = 10000,
+        tax = 1200,
+        dueDate = "2027-12-31T00:00:00Z"
+    )
+
     @Test
-    fun `issues invoice and posts double-entry DR AR 1100 CR Revenue 4000`() = runBlocking {
+    fun shouldIssueInvoiceAndPostDoubleEntry_WhenAccountsExist() = runBlocking {
+        // Arrange
         val arAccount = sampleAccount("1100", AccountType.ASSET)
         val revenueAccount = sampleAccount("4000", AccountType.REVENUE)
-
+        val savedLedger = slot<LedgerEntry>()
         coEvery { accountRepo.findByCode("1100") } returns arAccount
         coEvery { accountRepo.findByCode("4000") } returns revenueAccount
         coEvery { invoiceRepo.save(any()) } returnsArgument 0
-        coEvery { ledgerRepo.save(any()) } returnsArgument 0
+        coEvery { ledgerRepo.save(capture(savedLedger)) } returnsArgument 0
 
-        val request = InvoiceRequest(
-            customerId = "cust-001",
-            subtotal = 10000,
-            tax = 1200,
-            dueDate = "2027-12-31T00:00:00Z"
-        )
-        val result = useCase.execute(request)
+        // Act
+        val result = useCase.execute(validRequest)
 
-        assertEquals("cust-001", result.customerId.value)
-        assertEquals(11200, result.totalAmount)
-        coVerify { ledgerRepo.save(any()) }
+        // Assert
+        assertThat(result.customerId.value).isEqualTo("cust-001")
+        assertThat(result.totalAmount).isEqualTo(11200)
+        assertThat(savedLedger.captured).isNotNull()
     }
 
     @Test
-    fun `throws when AR account 1100 is missing`(): Unit = runBlocking {
+    fun shouldThrowIllegalState_WhenArAccountIsMissing() {
+        // Arrange
         coEvery { invoiceRepo.save(any()) } returnsArgument 0
         coEvery { accountRepo.findByCode("1100") } returns null
 
-        val request = InvoiceRequest(
-            customerId = "cust-001",
-            subtotal = 10000,
-            tax = 1200,
-            dueDate = "2027-12-31T00:00:00Z"
-        )
-        assertFailsWith<IllegalStateException> {
-            useCase.execute(request)
-        }
+        // Act / Assert
+        assertThatThrownBy { runBlocking { useCase.execute(validRequest) } }
+            .isInstanceOf(IllegalStateException::class.java)
     }
 
     private fun sampleAccount(code: String, type: AccountType) = Account(

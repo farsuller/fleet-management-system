@@ -1,12 +1,8 @@
 package com.solodev.fleet.modules.tracking.infrastructure.idempotency
 
-import org.junit.jupiter.api.Test
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
-import kotlin.test.assertTrue
-import kotlin.test.assertFalse
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
+import org.junit.jupiter.api.Test
 import java.util.UUID
 
 /**
@@ -23,238 +19,271 @@ class IdempotencyKeyManagerTest {
     }
 
     @Test
-    fun `should record first request successfully`() {
+    fun shouldReturnTrue_WhenFirstRequestRecorded() {
+        // Arrange
         val key = UUID.randomUUID().toString()
         val response = """{"status": "ok"}"""
 
+        // Act
         val isFirst = manager.recordRequest(key, response, 200)
 
-        assertTrue(isFirst, "First request should return true")
+        // Assert
+        assertThat(isFirst).isTrue()
     }
 
     @Test
-    fun `should detect duplicate request`() {
+    fun shouldReturnFalse_WhenRequestIsDuplicate() {
+        // Arrange
         val key = UUID.randomUUID().toString()
         val response = """{"status": "ok"}"""
-
-        // Record first request
         manager.recordRequest(key, response, 200)
 
-        // Try to record same key again
+        // Act
         val isFirst = manager.recordRequest(key, response, 200)
 
-        assertFalse(isFirst, "Duplicate request should return false")
+        // Assert
+        assertThat(isFirst).isFalse()
     }
 
     @Test
-    fun `should retrieve cached response`() {
+    fun shouldReturnCachedResponse_WhenKeyExists() {
+        // Arrange
         val key = UUID.randomUUID().toString()
         val response = """{"vehicleId": "v-123", "status": "ok"}"""
-
         manager.recordRequest(key, response, 200)
 
+        // Act
         val cached = manager.getCachedResponse(key)
 
-        assertNotNull(cached)
-        assertEquals(response, cached.responseBody)
-        assertEquals(200, cached.httpStatus)
+        // Assert
+        assertThat(cached).isNotNull()
+        assertThat(cached!!.responseBody).isEqualTo(response)
+        assertThat(cached.httpStatus).isEqualTo(200)
     }
 
     @Test
-    fun `should return null for unknown key`() {
+    fun shouldReturnNull_WhenKeyNotFound() {
+        // Arrange
         val key = UUID.randomUUID().toString()
 
+        // Act
         val cached = manager.getCachedResponse(key)
 
-        assertNull(cached)
+        // Assert
+        assertThat(cached).isNull()
     }
 
     @Test
-    fun `should validate key format - valid UUID`() {
+    fun shouldReturnTrue_WhenKeyIsValidUuid() {
+        // Arrange
         val validKey = UUID.randomUUID().toString()
 
-        assertTrue(manager.isValidKey(validKey))
+        // Act / Assert
+        assertThat(manager.isValidKey(validKey)).isTrue()
     }
 
     @Test
-    fun `should validate key format - alphanumeric`() {
+    fun shouldReturnTrue_WhenKeyIsAlphanumeric() {
+        // Arrange
         val validKey = "abc123def456"
 
-        assertTrue(manager.isValidKey(validKey))
+        // Act / Assert
+        assertThat(manager.isValidKey(validKey)).isTrue()
     }
 
     @Test
-    fun `should validate key format - with hyphens`() {
+    fun shouldReturnTrue_WhenKeyHasHyphens() {
+        // Arrange
         val validKey = "abc-123-def-456"
 
-        assertTrue(manager.isValidKey(validKey))
+        // Act / Assert
+        assertThat(manager.isValidKey(validKey)).isTrue()
     }
 
     @Test
-    fun `should reject invalid key format - special chars`() {
+    fun shouldReturnFalse_WhenKeyHasSpecialChars() {
+        // Arrange
         val invalidKey = "abc@123#def$456"
 
-        assertFalse(manager.isValidKey(invalidKey))
+        // Act / Assert
+        assertThat(manager.isValidKey(invalidKey)).isFalse()
     }
 
     @Test
-    fun `should reject invalid key format - spaces`() {
+    fun shouldReturnFalse_WhenKeyHasSpaces() {
+        // Arrange
         val invalidKey = "abc 123 def"
 
-        assertFalse(manager.isValidKey(invalidKey))
+        // Act / Assert
+        assertThat(manager.isValidKey(invalidKey)).isFalse()
     }
 
     @Test
-    fun `should reject invalid key format - too long`() {
+    fun shouldReturnFalse_WhenKeyIsTooLong() {
+        // Arrange
         val invalidKey = "a".repeat(300)
 
-        assertFalse(manager.isValidKey(invalidKey))
+        // Act / Assert
+        assertThat(manager.isValidKey(invalidKey)).isFalse()
     }
 
     @Test
-    fun `should reject invalid key format - empty`() {
+    fun shouldReturnFalse_WhenKeyIsEmpty() {
+        // Arrange
         val invalidKey = ""
 
-        assertFalse(manager.isValidKey(invalidKey))
+        // Act / Assert
+        assertThat(manager.isValidKey(invalidKey)).isFalse()
     }
 
     @Test
-    fun `should cache different responses for different keys`() {
+    fun shouldCacheDifferentResponses_WhenKeysAreDifferent() {
+        // Arrange
         val key1 = "key-1"
         val key2 = "key-2"
         val response1 = """{"result": "first"}"""
         val response2 = """{"result": "second"}"""
-
         manager.recordRequest(key1, response1, 200)
         manager.recordRequest(key2, response2, 201)
 
+        // Act
         val cached1 = manager.getCachedResponse(key1)
         val cached2 = manager.getCachedResponse(key2)
 
-        assertEquals(response1, cached1?.responseBody)
-        assertEquals(response2, cached2?.responseBody)
-        assertEquals(200, cached1?.httpStatus)
-        assertEquals(201, cached2?.httpStatus)
+        // Assert
+        assertThat(cached1?.responseBody).isEqualTo(response1)
+        assertThat(cached2?.responseBody).isEqualTo(response2)
+        assertThat(cached1?.httpStatus).isEqualTo(200)
+        assertThat(cached2?.httpStatus).isEqualTo(201)
     }
 
     @Test
-    fun `should preserve HTTP status code`() {
+    fun shouldPreserveHttpStatusCode_WhenResponseIsCached() {
+        // Arrange
         val key = UUID.randomUUID().toString()
         val response = """{"error": "not found"}"""
-
         manager.recordRequest(key, response, 404)
 
+        // Act
         val cached = manager.getCachedResponse(key)
 
-        assertEquals(404, cached?.httpStatus)
+        // Assert
+        assertThat(cached?.httpStatus).isEqualTo(404)
     }
 
     @Test
-    fun `should handle large response payloads`() {
+    fun shouldHandleLargeResponsePayload_WhenCached() {
+        // Arrange
         val key = UUID.randomUUID().toString()
         val largeResponse = """{"data": "${"x".repeat(10000)}"}"""
-
         manager.recordRequest(key, largeResponse, 200)
 
+        // Act
         val cached = manager.getCachedResponse(key)
 
-        assertEquals(largeResponse, cached?.responseBody)
+        // Assert
+        assertThat(cached?.responseBody).isEqualTo(largeResponse)
     }
 
     @Test
-    fun `should provide cache statistics`() {
-        // Record 5 requests
+    fun shouldReturnCacheStatistics_WhenRequestsRecorded() {
+        // Arrange
         repeat(5) {
             val key = "key-$it"
             manager.recordRequest(key, """{"id": "$it"}""", 200)
         }
 
+        // Act
         val stats = manager.getStats()
 
-        assertEquals(5, stats.totalCachedRequests)
-        assertTrue(stats.activeRequests > 0)
-        assertEquals(0, stats.expiredRequests)
+        // Assert
+        assertThat(stats.totalCachedRequests).isEqualTo(5)
+        assertThat(stats.activeRequests).isGreaterThan(0)
+        assertThat(stats.expiredRequests).isEqualTo(0)
     }
 
     @Test
-    fun `should clear all cached requests`() {
+    fun shouldReturnNull_WhenCacheIsCleared() {
+        // Arrange
         val key1 = "key-1"
         val key2 = "key-2"
-
         manager.recordRequest(key1, """{"data": "1"}""", 200)
         manager.recordRequest(key2, """{"data": "2"}""", 200)
 
+        // Act
         manager.clearAll()
 
-        val cached1 = manager.getCachedResponse(key1)
-        val cached2 = manager.getCachedResponse(key2)
-
-        assertNull(cached1)
-        assertNull(cached2)
+        // Assert
+        assertThat(manager.getCachedResponse(key1)).isNull()
+        assertThat(manager.getCachedResponse(key2)).isNull()
     }
 
     @Test
-    fun `should validate before recording`() {
+    fun shouldReturnFalse_WhenKeyIsInvalid() {
+        // Arrange
         val invalidKey = "invalid@key"
-        val response = """{"status": "ok"}"""
 
-        val isValid = manager.isValidKey(invalidKey)
-
-        assertFalse(isValid)
+        // Act / Assert
+        assertThat(manager.isValidKey(invalidKey)).isFalse()
     }
 
     @Test
-    fun `should handle concurrent requests with different keys`() {
+    fun shouldCacheAllResponses_WhenMultipleKeysCached() {
+        // Arrange
         val keys = (1..10).map { "key-$it" }
         val responses = keys.map { """{"result": "$it"}""" }
-
         keys.forEachIndexed { index, key ->
             manager.recordRequest(key, responses[index], 200)
         }
 
+        // Act / Assert
         keys.forEachIndexed { index, key ->
             val cached = manager.getCachedResponse(key)
-            assertEquals(responses[index], cached?.responseBody)
+            assertThat(cached?.responseBody).isEqualTo(responses[index])
         }
     }
 
     @Test
-    fun `should handle same key recorded multiple times`() {
+    fun shouldReturnFalseAfterFirst_WhenSameKeyRecordedMultipleTimes() {
+        // Arrange
         val key = UUID.randomUUID().toString()
 
+        // Act
         val first = manager.recordRequest(key, """{"attempt": "1"}""", 200)
         val second = manager.recordRequest(key, """{"attempt": "1"}""", 200)
         val third = manager.recordRequest(key, """{"attempt": "1"}""", 200)
 
-        assertTrue(first)
-        assertFalse(second)
-        assertFalse(third)
+        // Assert
+        assertThat(first).isTrue()
+        assertThat(second).isFalse()
+        assertThat(third).isFalse()
     }
 
     @Test
-    fun `should store timestamp with cached response`() {
+    fun shouldStoreTimestamp_WhenResponseIsCached() {
+        // Arrange
         val key = UUID.randomUUID().toString()
-        val response = """{"status": "ok"}"""
+        manager.recordRequest(key, """{"status": "ok"}""", 200)
 
-        manager.recordRequest(key, response, 200)
-
+        // Act
         val cached = manager.getCachedResponse(key)
 
-        assertNotNull(cached?.timestamp)
+        // Assert
+        assertThat(cached?.timestamp).isNotNull()
     }
 
     @Test
-    fun `should use configurable TTL`() {
+    fun shouldCacheResponse_WhenManagerHasCustomTtl() {
+        // Arrange
         val shortTtlManager = IdempotencyKeyManager(ttlMinutes = 1)
-
         val key = UUID.randomUUID().toString()
-        val responseData = """{"status": "ok"}"""
+        shortTtlManager.recordRequest(key, """{"status": "ok"}""", 200)
 
-        shortTtlManager.recordRequest(key, responseData, 200)
-
+        // Act
         val cached = shortTtlManager.getCachedResponse(key)
 
-        assertNotNull(cached)
+        // Assert
+        assertThat(cached).isNotNull()
     }
 }
 

@@ -4,15 +4,14 @@ import com.solodev.fleet.modules.tracking.application.dto.VehicleRouteState
 import com.solodev.fleet.modules.tracking.application.dto.VehicleStatus
 import java.time.Instant
 import java.util.*
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertNotNull
 import kotlinx.coroutines.runBlocking
 
 class UpdateVehicleLocationUseCaseTest {
 
-    // Mock Delta Broadcaster
+    // Hand-rolled stub: no broadcaster interface exists to mock with MockK
     class MockDeltaBroadcaster {
         var lastPublishedDelta: VehicleRouteState? = null
 
@@ -22,14 +21,15 @@ class UpdateVehicleLocationUseCaseTest {
     }
 
     @Test
-    fun `should process vehicle state and broadcast delta`() {
+    fun shouldProcessVehicleState_WhenBroadcasterIsCalled() {
         runBlocking {
+            // Arrange
             val broadcaster = MockDeltaBroadcaster()
-
             val vehicleId = UUID.randomUUID()
             val routeId = UUID.randomUUID().toString()
             val progress = 0.45
 
+            // Act
             broadcaster.broadcastIfChanged(VehicleRouteState(
                 vehicleId = vehicleId.toString(),
                 routeId = routeId,
@@ -44,18 +44,21 @@ class UpdateVehicleLocationUseCaseTest {
                 timestamp = Instant.now()
             ))
 
-            assertNotNull(broadcaster.lastPublishedDelta)
-            assertEquals(vehicleId.toString(), broadcaster.lastPublishedDelta!!.vehicleId)
-            assertEquals(progress, broadcaster.lastPublishedDelta!!.progress)
-            assertEquals(VehicleStatus.IN_TRANSIT, broadcaster.lastPublishedDelta!!.status)
+            // Assert
+            assertThat(broadcaster.lastPublishedDelta).isNotNull()
+            assertThat(broadcaster.lastPublishedDelta!!.vehicleId).isEqualTo(vehicleId.toString())
+            assertThat(broadcaster.lastPublishedDelta!!.progress).isEqualTo(progress)
+            assertThat(broadcaster.lastPublishedDelta!!.status).isEqualTo(VehicleStatus.IN_TRANSIT)
         }
     }
 
     @Test
-    fun `should mark vehicle as idle when speed is low`() {
+    fun shouldMarkVehicleAsIdle_WhenSpeedIsLow() {
         runBlocking {
+            // Arrange
             val broadcaster = MockDeltaBroadcaster()
 
+            // Act
             broadcaster.broadcastIfChanged(VehicleRouteState(
                 vehicleId = "v-123",
                 routeId = UUID.randomUUID().toString(),
@@ -70,21 +73,21 @@ class UpdateVehicleLocationUseCaseTest {
                 timestamp = Instant.now()
             ))
 
-            assertNotNull(broadcaster.lastPublishedDelta)
-            assertEquals(VehicleStatus.IDLE, broadcaster.lastPublishedDelta!!.status)
+            // Assert
+            assertThat(broadcaster.lastPublishedDelta).isNotNull()
+            assertThat(broadcaster.lastPublishedDelta!!.status).isEqualTo(VehicleStatus.IDLE)
         }
     }
 
     @Test
-    fun `should throw exception when route ID is missing in sensor ping`() {
-        assertFailsWith<IllegalArgumentException> {
-            // Validate that route ID is required
+    fun shouldThrowIllegalArgument_WhenRouteIdIsMissing() {
+        // Act / Assert
+        assertThatThrownBy {
             val routeId: String? = null
             if (routeId == null) {
                 throw IllegalArgumentException("Route ID required in SensorPing")
             }
-        }
+        }.isInstanceOf(IllegalArgumentException::class.java)
     }
 }
-
 
