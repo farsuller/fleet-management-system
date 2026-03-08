@@ -1,8 +1,8 @@
 # Integration Test Implementation Plan
 
-**Version**: 1.2  
+**Version**: 1.3  
 **Date**: 2026-03-08  
-**Status**: Phase A ✅ Unit Test Compliance (2026-03-08); Phase B ✅ Missing Unit Tests (2026-03-08); Phases C–E in planning  
+**Status**: Phase A ✅ Unit Test Compliance (2026-03-08); Phase B ✅ Missing Unit Tests (2026-03-08); Phase C ✅ Integration Test Infrastructure (2026-03-08); Phases D–E in planning  
 **Practices Reference**: [PRACTICES_INTEGRATION_TEST.md](./PRACTICES_INTEGRATION_TEST.md)  
 **Unit Test Compliance Reference**: [PRACTICES_UNIT_TEST.md](./PRACTICES_UNIT_TEST.md)
 
@@ -220,66 +220,106 @@ fun shouldThrowIllegalState_WhenEmailAlreadyRegistered()
 
 All integration tests must follow [PRACTICES_INTEGRATION_TEST.md](./PRACTICES_INTEGRATION_TEST.md).
 
-### 3.1 Shared Test Infrastructure
+### 3.1 Shared Test Infrastructure ✅ Complete (2026-03-08)
 
-**File**: `src/test/kotlin/com/solodev/fleet/IntegrationTestBase.kt`
+**File**: [src/test/kotlin/com/solodev/fleet/IntegrationTestBase.kt](../../src/test/kotlin/com/solodev/fleet/IntegrationTestBase.kt)
 
 ```kotlin
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class IntegrationTestBase {
+
     companion object {
-        @JvmStatic
-        val postgres = PostgreSQLContainer<Nothing>("postgis/postgis:15-3.3-alpine").apply {
-            withDatabaseName("fleet_test")
-            withUsername("fleet_user")
-            withPassword("test_password")
-            start()
+        const val JWT_SECRET = "test-secret-at-least-64-bytes-long-for-hmac-sha256-security-1234567890"
+        const val JWT_ISSUER = "test-issuer"
+        const val JWT_AUDIENCE = "test-audience"
+
+        val postgres: PostgreSQLContainer<Nothing> by lazy {
+            PostgreSQLContainer<Nothing>(
+                DockerImageName.parse("postgis/postgis:15-3.3-alpine")
+                    .asCompatibleSubstituteFor("postgres")
+            ).apply {
+                withDatabaseName("fleet_test")
+                withUsername("fleet_user")
+                withPassword("test_password")
+                start()
+            }
         }
 
-        @JvmStatic
         fun buildTestConfig(): MapApplicationConfig = MapApplicationConfig(
-            "storage.jdbcUrl"          to postgres.jdbcUrl,
-            "storage.username"         to postgres.username,
-            "storage.password"         to postgres.password,
-            "storage.driverClassName"  to "org.postgresql.Driver",
-            "storage.maximumPoolSize"  to "2",
-            "jwt.secret"               to "test-secret-at-least-64-bytes-long-for-hmac-sha256-testing",
-            "jwt.issuer"               to "test-issuer",
-            "jwt.audience"             to "test-audience",
-            "jwt.realm"                to "test-realm",
-            "jwt.expiresIn"            to "3600000",
-            "redis.enabled"            to "false"
+            "storage.jdbcUrl"         to postgres.jdbcUrl,
+            "storage.username"        to postgres.username,
+            "storage.password"        to postgres.password,
+            "storage.driverClassName" to "org.postgresql.Driver",
+            "storage.maximumPoolSize" to "2",
+            "jwt.secret"              to JWT_SECRET,
+            "jwt.issuer"              to JWT_ISSUER,
+            "jwt.audience"            to JWT_AUDIENCE,
+            "jwt.realm"               to "test-realm",
+            "jwt.expiresIn"           to "3600000",
+            "redis.enabled"           to "false"
         )
+
+        /** Generates a signed JWT directly — no DB user registration required. */
+        fun tokenFor(id: String, email: String, vararg roles: String): String =
+            JwtService(JWT_SECRET, JWT_ISSUER, JWT_AUDIENCE, 3_600_000L)
+                .generateToken(id, email, roles.toList())
     }
 
-    // Utility: truncate tables before each test
+    @BeforeAll
+    fun assumeDockerIsAvailable() {
+        assumeTrue(isDockerAvailable(), "Skipping — Docker not reachable.")
+    }
+
+    /** Truncates all transactional tables; preserves seed data (roles, accounts, payment_methods, routes, geofences). */
     fun cleanDatabase() {
-        transaction {
-            exec("TRUNCATE TABLE rentals, customers, vehicles, users, ...")
+        postgres.createConnection("").use { conn ->
+            conn.createStatement().execute(
+                "TRUNCATE TABLE location_history, idempotency_keys, dlq_messages, " +
+                "inbox_processed_messages, outbox_events, payments, invoice_line_items, " +
+                "invoices, ledger_entry_lines, ledger_entries, maintenance_schedules, " +
+                "maintenance_parts, maintenance_jobs, rental_payments, rental_charges, " +
+                "rental_periods, rentals, customers, odometer_readings, vehicles, " +
+                "verification_tokens, staff_profiles, user_roles, users CASCADE"
+            )
         }
     }
+}
+
+/** Top-level extension — use inside testApplication { } blocks. */
+fun ApplicationTestBuilder.configurePostgres() {
+    environment { config = IntegrationTestBase.buildTestConfig() }
 }
 ```
 
 **Key design decisions:**
-- Single `PostgreSQLContainer` instance (Singleton pattern) — starts once per JVM, shared by all suites
-- Flyway migrations run automatically on application startup
-- Redis disabled in test configs (use `redis.enabled = false`)
-- All auth-required tests obtain a JWT from `POST /v1/users/login` first
-- `@BeforeEach` truncates relevant tables for isolation
+- `by lazy` singleton — container starts once per JVM, reused by all suites
+- Flyway migrations run on first `module()` startup; subsequent starts skip (idempotent)
+- Redis disabled (`redis.enabled = false`) — no Redis required in test environment
+- JWT generated directly via `JwtService` — no registered DB user needed for auth-required tests
+- `cleanDatabase()` preserves seed/reference tables: `roles`, `accounts` (chart of accounts), `payment_methods`, `routes`, `geofences`
+- Docker guard via `assumeTrue(isDockerAvailable())` — test class skipped if Docker not reachable
+- `TESTCONTAINERS_RYUK_DISABLED=true` and `DOCKER_HOST=tcp://localhost:2375` already set in `build.gradle.kts tasks.test`
 
 ---
 
-### 3.2 Test Client Utilities
+### 3.2 Test Client Utilities ✅ Complete (2026-03-08)
+
+All utilities are in `IntegrationTestBase.kt`:
 
 ```kotlin
-// Helper to obtain JWT token for test requests
-suspend fun ApplicationTestBuilder.getAdminToken(): String {
-    // Register + login an admin user, return the JWT
-}
+// Generate token for any role — no HTTP roundtrip
+val adminToken = tokenFor("uuid-here", "admin@fleet.ph", "ADMIN")
+val managerToken = tokenFor("uuid-here", "mgr@fleet.ph", "FLEET_MANAGER")
+val customerToken = tokenFor("uuid-here", "cust@fleet.ph", "CUSTOMER")
 
-// AssertJ-based HTTP response assertion helpers
-fun assertOk(response: HttpResponse) =
-    assertThat(response.status.value).isEqualTo(200)
+// Wire app to container inside testApplication { }
+testApplication {
+    configurePostgres()
+    application { module() }
+    client.get("/v1/vehicles") {
+        bearerAuth(adminToken)
+    }
+}
 ```
 
 ---
@@ -449,11 +489,11 @@ fun assertOk(response: HttpResponse) =
 10. ✅ `GetRentalUseCaseTest`
 11. ✅ `ListVehicleMaintenanceUseCaseTest`
 
-### Phase C — Integration Test Infrastructure (1 day)
+### Phase C — Integration Test Infrastructure ✅ Complete (2026-03-08)
 
-1. Add `testcontainers-postgresql` dependency (already in `build.gradle.kts`)
-2. Create `IntegrationTestBase.kt` with shared container
-3. Add test utilities (JWT helper, table cleanup, HTTP client config)
+1. ✅ `testcontainers-postgresql` dependency — already present (v1.20.4)
+2. ✅ Created `IntegrationTestBase.kt` with singleton PostGIS container
+3. ✅ `tokenFor()` JWT helper, `cleanDatabase()` TRUNCATE utility, `configurePostgres()` extension
 
 ### Phase D — Core Integration Tests (3–5 days)
 
@@ -489,4 +529,4 @@ testImplementation("org.testcontainers:testcontainers:1.19.x")
 
 ---
 
-*Last Updated: 2026-03-08 (v1.2 — Phase B complete; 11 missing use case tests added; total use case tests 22 → 33)*
+*Last Updated: 2026-03-08 (v1.3 — Phase C complete; IntegrationTestBase.kt created with PostGIS container, JWT helper, cleanDatabase())*

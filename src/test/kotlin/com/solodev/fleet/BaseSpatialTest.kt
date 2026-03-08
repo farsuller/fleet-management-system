@@ -42,8 +42,8 @@ open class BaseSpatialTest {
         }
 
         /**
-         * Uses Testcontainers' own client factory to probe Docker — the same validation
-         * that would run when the container starts.
+         * Uses Testcontainers' own client factory to probe Docker — accurately reflects
+         * whether containers can actually start (not just whether a port accepts TCP).
          */
         fun isDockerAvailable(): Boolean =
             try { DockerClientFactory.instance().isDockerAvailable } catch (_: Exception) { false }
