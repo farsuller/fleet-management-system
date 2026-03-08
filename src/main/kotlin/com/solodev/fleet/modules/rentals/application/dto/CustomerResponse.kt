@@ -6,21 +6,29 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class CustomerResponse(
         val id: String,
+        val userId: String?,
+        val firstName: String,
+        val lastName: String,
         val email: String,
-        val fullName: String,
         val phone: String,
-        val driversLicense: String,
-        val isActive: Boolean
+        val driverLicenseNumber: String,
+        val licenseExpiryMs: Long,
+        val isActive: Boolean,
+        val createdAt: Long,
 ) {
         companion object {
                 fun fromDomain(c: Customer) =
                         CustomerResponse(
                                 id = c.id.value,
+                                userId = c.userId?.toString(),
+                                firstName = c.firstName,
+                                lastName = c.lastName,
                                 email = c.email,
-                                fullName = c.fullName,
                                 phone = c.phone,
-                                driversLicense = c.driverLicenseNumber,
-                                isActive = c.isActive
+                                driverLicenseNumber = c.driverLicenseNumber,
+                                licenseExpiryMs = c.driverLicenseExpiry.toEpochMilli(),
+                                isActive = c.isActive,
+                                createdAt = c.createdAt.toEpochMilli(),
                         )
         }
 }

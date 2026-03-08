@@ -3,7 +3,13 @@ package com.solodev.fleet.modules.maintenance.infrastructure.http
 import com.solodev.fleet.modules.maintenance.application.dto.MaintenanceRequest
 import com.solodev.fleet.modules.maintenance.application.dto.MaintenanceResponse
 import com.solodev.fleet.modules.maintenance.application.dto.MaintenanceStatusUpdateRequest
-import com.solodev.fleet.modules.maintenance.application.usecases.*
+import com.solodev.fleet.modules.maintenance.application.usecases.CancelMaintenanceUseCase
+import com.solodev.fleet.modules.maintenance.application.usecases.CompleteMaintenanceUseCase
+import com.solodev.fleet.modules.maintenance.application.usecases.ListAllMaintenanceUseCase
+import com.solodev.fleet.modules.maintenance.application.usecases.ListVehicleMaintenanceUseCase
+import com.solodev.fleet.modules.maintenance.application.usecases.ScheduleMaintenanceUseCase
+import com.solodev.fleet.modules.maintenance.application.usecases.StartMaintenanceUseCase
+import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceStatus
 import com.solodev.fleet.modules.maintenance.domain.repository.MaintenanceRepository
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.requestId
@@ -15,6 +21,7 @@ import io.ktor.server.routing.*
 
 fun Route.maintenanceRoutes(maintenanceRepository: MaintenanceRepository) {
     val scheduleMaintenanceUseCase = ScheduleMaintenanceUseCase(maintenanceRepository)
+    val listAllMaintenanceUseCase = ListAllMaintenanceUseCase(maintenanceRepository)
     val listVehicleMaintenanceUseCase = ListVehicleMaintenanceUseCase(maintenanceRepository)
     val startMaintenanceUseCase = StartMaintenanceUseCase(maintenanceRepository)
     val completeMaintenanceUseCase = CompleteMaintenanceUseCase(maintenanceRepository)
@@ -22,6 +29,25 @@ fun Route.maintenanceRoutes(maintenanceRepository: MaintenanceRepository) {
 
     authenticate("auth-jwt") {
         route("/v1/maintenance") {
+            // List all maintenance jobs (optional ?status= filter)
+            get {
+                val statusParam = call.request.queryParameters["status"]
+                val jobs = if (statusParam != null) {
+                    val status = try {
+                        MaintenanceStatus.valueOf(statusParam)
+                    } catch (e: IllegalArgumentException) {
+                        return@get call.respond(
+                            HttpStatusCode.BadRequest,
+                            ApiResponse.error("INVALID_STATUS", "Unknown status: $statusParam", call.requestId)
+                        )
+                    }
+                    listAllMaintenanceUseCase.execute(status)
+                } else {
+                    listAllMaintenanceUseCase.execute()
+                }
+                call.respond(ApiResponse.success(jobs.map { MaintenanceResponse.fromDomain(it) }, call.requestId))
+            }
+
             post {
                 try {
                     val request = call.receive<MaintenanceRequest>()

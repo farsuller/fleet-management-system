@@ -4,7 +4,59 @@ This document details the Maintenance module's API endpoints, providing context 
 
 ---
 
-## 1. Schedule Maintenance Job
+## 1. List All Maintenance Jobs
+**Endpoint**: `GET /v1/maintenance`
+**Context**: Returns all maintenance jobs across the fleet. Supports optional `?status=` filter.
+**Permissions**: Fleet Manager (Staff)
+**Authorization**: `Authorization: Bearer <token>`
+
+**Request (all jobs)**:
+```bash
+curl -H "Authorization: Bearer <token>" http://localhost:8080/v1/maintenance
+```
+
+**Request (filtered by status)**:
+```bash
+curl -H "Authorization: Bearer <token>" "http://localhost:8080/v1/maintenance?status=SCHEDULED"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "e2f012cc-1234-4567-890a-bcdef0123456",
+      "jobNumber": "MAINT-1741603200000",
+      "vehicleId": "a1b2c3d4-5678-90ab-cdef-000000000001",
+      "status": "SCHEDULED",
+      "jobType": "ROUTINE",
+      "description": "Annual oil change and safety inspection",
+      "scheduledDate": "2026-04-01T10:00:00Z",
+      "startedAt": null,
+      "completedAt": null,
+      "totalCost": 0.0
+    },
+    {
+      "id": "f3a0edbb-2345-6789-abcd-ef0123456789",
+      "jobNumber": "MAINT-1741700000000",
+      "vehicleId": "a1b2c3d4-5678-90ab-cdef-000000000002",
+      "status": "COMPLETED",
+      "jobType": "REPAIR",
+      "description": "Brake pad replacement",
+      "scheduledDate": "2026-03-15T08:00:00Z",
+      "startedAt": "2026-03-15T08:10:00Z",
+      "completedAt": "2026-03-15T11:30:00Z",
+      "totalCost": 1700.0
+    }
+  ],
+  "requestId": "req_list_001"
+}
+```
+
+---
+
+## 2. Schedule Maintenance Job
 **Endpoint**: `POST /v1/maintenance`
 **Context**: Schedules a new maintenance job (e.g., Routine Service, Repairs) for a vehicle. This marks the vehicle as unavailable for rentals during the scheduled period.
 **Permissions**: Fleet Manager (Staff)
@@ -22,7 +74,7 @@ This document details the Maintenance module's API endpoints, providing context 
 
 ---
 
-## 2. Start Maintenance Job
+## 3. Start Maintenance Job
 **Endpoint**: `POST /v1/maintenance/{id}/start`
 **Context**: Marks a scheduled maintenance job as "IN_PROGRESS". This confirms that work has begun on the vehicle.
 **Permissions**: Fleet Manager (Staff)
@@ -51,7 +103,7 @@ This document details the Maintenance module's API endpoints, providing context 
 
 ---
 
-## 3. Complete Maintenance Job
+## 4. Complete Maintenance Job
 **Endpoint**: `POST /v1/maintenance/{id}/complete`
 **Context**: Mechanic or Fleet Manager finalizes a job. This action records the actual labor/parts costs and transitions the vehicle state back to `AVAILABLE`.
 **Permissions**: Fleet Manager (Staff)
@@ -66,7 +118,7 @@ This document details the Maintenance module's API endpoints, providing context 
 
 ---
 
-## 4. Cancel Maintenance Job
+## 5. Cancel Maintenance Job
 **Endpoint**: `POST /v1/maintenance/{id}/cancel`
 **Context**: Cancels a scheduled maintenance job. Can only be performed on jobs that are in `SCHEDULED` status.
 **Permissions**: Fleet Manager (Staff)
@@ -94,7 +146,7 @@ This document details the Maintenance module's API endpoints, providing context 
 
 ---
 
-## 5. Maintenance Job Response
+## 6. Maintenance Job Response
 **Context**: Standard response structure for a single maintenance job. Returned by creation, update, and retrieval endpoints. `totalCost` is calculated dynamically (labor + parts).
 
 ```json
@@ -112,7 +164,7 @@ This document details the Maintenance module's API endpoints, providing context 
 
 ---
 
-## 6. List Maintenance History
+## 7. List Maintenance History
 **Endpoint**: `GET /v1/maintenance/vehicle/{id}`
 **Context**: Shows the full service history for a specific vehicle. Critical for tracking asset depreciation, warranty compliance, and resale value.
 **Permissions**: Fleet Manager (Staff)

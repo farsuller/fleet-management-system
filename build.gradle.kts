@@ -54,6 +54,7 @@ dependencies {
     implementation(libs.ktor.server.content.negotiation)  // Content negotiation (JSON, XML, etc.)
     implementation(libs.ktor.serialization.kotlinx.json)  // Kotlinx.serialization for JSON support
     implementation(libs.ktor.server.rate.limit)           // API protection against brute force/DOS
+    implementation(libs.ktor.server.cors)                 // Cross-Origin Resource Sharing
     implementation(libs.ktor.server.openapi)              // OpenAPI spec generation
     implementation(libs.ktor.server.swagger)              // Swagger UI for API testing
     implementation(libs.ktor.server.websockets)           // WebSocket support for real-time tracking

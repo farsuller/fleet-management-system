@@ -176,11 +176,15 @@ components:
       type: object
       properties:
         id: { type: string, format: uuid }
+        userId: { type: string, format: uuid, nullable: true }
+        firstName: { type: string }
+        lastName: { type: string }
         email: { type: string }
-        fullName: { type: string }
         phone: { type: string }
-        driversLicense: { type: string }
+        driverLicenseNumber: { type: string }
+        licenseExpiryMs: { type: integer, format: int64, description: "License expiry epoch milliseconds" }
         isActive: { type: boolean }
+        createdAt: { type: integer, format: int64, description: "Account creation epoch milliseconds" }
 
     # --- Maintenance Module ---
     MaintenanceRequest:
@@ -194,14 +198,15 @@ components:
       type: object
       properties:
         id: { type: string, format: uuid }
+        jobNumber: { type: string, example: 'MAINT-1741603200000' }
         vehicleId: { type: string, format: uuid }
-        description: { type: string }
         status: { type: string, enum: [SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED] }
+        jobType: { type: string, enum: [ROUTINE, REPAIR, INSPECTION, EMERGENCY] }
+        description: { type: string }
         scheduledDate: { type: string, format: date-time }
-        startDate: { type: string, format: date-time, nullable: true }
-        completionDate: { type: string, format: date-time, nullable: true }
-        laborCost: { type: integer }
-        partsCost: { type: integer }
+        startedAt: { type: string, format: date-time, nullable: true }
+        completedAt: { type: string, format: date-time, nullable: true }
+        totalCost: { type: number, format: double }
     MaintenanceStatusUpdateRequest:
       type: object
       properties:
@@ -228,11 +233,20 @@ components:
       type: object
       properties:
         id: { type: string, format: uuid }
-        invoiceNumber: { type: string }
+        invoiceNumber: { type: string, example: 'INV-1739632400000' }
         customerId: { type: string, format: uuid }
-        status: { type: string, enum: [DRAFT, ISSUED, PAID, OVERDUE, CANCELLED] }
-        totalAmount: { type: integer }
+        rentalId: { type: string, format: uuid, nullable: true }
+        status: { type: string, enum: [ISSUED, PARTIALLY_PAID, PAID, OVERDUE, CANCELLED] }
+        total: { type: integer, description: 'Total in whole PHP units' }
+        balance: { type: integer, description: 'Remaining balance in whole PHP units' }
+        subtotal: { type: integer }
+        tax: { type: integer }
+        paidAmount: { type: integer }
+        currencyCode: { type: string, example: 'PHP' }
+        issueDate: { type: string, format: date-time }
         dueDate: { type: string, format: date-time }
+        paidDate: { type: string, format: date-time, nullable: true }
+        notes: { type: string, nullable: true }
     PaymentRequest:
       type: object
       required: [amount, paymentMethod]
@@ -747,9 +761,60 @@ paths:
       responses:
         '200':
           description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/CustomerResponse' }
+        '404':
+          description: Customer not found
+
+  /v1/customers/{id}/deactivate:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    patch:
+      summary: Toggle customer active status
+      description: Flips the `isActive` flag on the customer record (deactivate if active, reactivate if inactive).
+      tags: [Customers]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Updated customer record
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/CustomerResponse' }
+        '404':
+          description: Customer not found
 
   # --- Maintenance ---
   /v1/maintenance:
+    get:
+      summary: List all maintenance jobs
+      tags: [Maintenance]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { type: string, enum: [SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED] }
+          description: Filter by job status
+      responses:
+        '200':
+          description: List of maintenance jobs
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/MaintenanceResponse' }
     post:
       summary: Schedule maintenance
       tags: [Maintenance]
@@ -761,6 +826,13 @@ paths:
       responses:
         '201':
           description: Created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/MaintenanceResponse' }
 
   /v1/maintenance/vehicle/{id}:
     parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
@@ -808,6 +880,22 @@ paths:
 
   # --- Accounting ---
   /v1/accounting/invoices:
+    get:
+      summary: List all invoices
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/InvoiceResponse' }
     post:
       summary: Issue invoice
       tags: [Accounting]
@@ -819,6 +907,13 @@ paths:
       responses:
         '201':
           description: Created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/InvoiceResponse' }
 
   /v1/accounting/invoices/{id}/pay:
     parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]

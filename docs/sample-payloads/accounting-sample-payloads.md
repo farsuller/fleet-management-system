@@ -6,7 +6,47 @@ This document details the request and response structures for the Accounting, Ac
 
 ## 1. Invoices
 
-### 1.1 Issue New Invoice
+### 1.1 List All Invoices
+**Endpoint**: `GET /v1/accounting/invoices`
+**Context**: Returns all invoices in the system.
+**Permissions**: Finance Owner, Admin
+**Authorization**: `Authorization: Bearer <token>`
+
+**Request**:
+```bash
+curl -H "Authorization: Bearer <token>" http://localhost:8080/v1/accounting/invoices
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "5fb69e16-c3bd-4413-8765-7ed881f6e6f3",
+      "invoiceNumber": "INV-1739632400000",
+      "customerId": "550e8400-e29b-41d4-a716-446655440000",
+      "rentalId": "660e8400-e29b-41d4-a716-446655441111",
+      "status": "ISSUED",
+      "total": 2800,
+      "balance": 2800,
+      "subtotal": 2500,
+      "tax": 300,
+      "paidAmount": 0,
+      "currencyCode": "PHP",
+      "issueDate": "2026-02-15T00:00:00Z",
+      "dueDate": "2026-03-01T00:00:00Z",
+      "paidDate": null,
+      "notes": null
+    }
+  ],
+  "requestId": "req-list-invoices"
+}
+```
+
+---
+
+### 1.2 Issue New Invoice
 **Endpoint**: `POST /v1/accounting/invoices`
 **Context**: Creates a new financial invoice for a customer, typically following a rental completion or service activation.
 **Permissions**: Finance Owner, Admin

@@ -32,7 +32,8 @@ class CustomerRepositoryImpl : CustomerRepository {
                     state = this[CustomersTable.state],
                     postalCode = this[CustomersTable.postalCode],
                     country = this[CustomersTable.country],
-                    isActive = this[CustomersTable.isActive]
+                    isActive = this[CustomersTable.isActive],
+                    createdAt = this[CustomersTable.createdAt],
             )
 
     override suspend fun findById(id: CustomerId): Customer? = dbQuery {

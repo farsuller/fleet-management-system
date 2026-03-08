@@ -3,6 +3,7 @@ package com.solodev.fleet.modules.rentals.infrastructure.http
 import com.solodev.fleet.modules.rentals.application.dto.CustomerRequest
 import com.solodev.fleet.modules.rentals.application.dto.CustomerResponse
 import com.solodev.fleet.modules.rentals.application.usecases.CreateCustomerUseCase
+import com.solodev.fleet.modules.rentals.application.usecases.DeactivateCustomerUseCase
 import com.solodev.fleet.modules.rentals.application.usecases.GetCustomerUseCase
 import com.solodev.fleet.modules.rentals.application.usecases.ListCustomersUseCase
 import com.solodev.fleet.modules.rentals.domain.repository.CustomerRepository
@@ -24,6 +25,7 @@ import io.ktor.server.routing.*
  */
 fun Route.customerRoutes(customerRepository: CustomerRepository) {
     val createCustomerUseCase = CreateCustomerUseCase(customerRepository)
+    val deactivateCustomerUseCase = DeactivateCustomerUseCase(customerRepository)
     val getCustomerUseCase = GetCustomerUseCase(customerRepository)
     val listCustomersUseCase = ListCustomersUseCase(customerRepository)
 
@@ -85,6 +87,26 @@ fun Route.customerRoutes(customerRepository: CustomerRepository) {
                             ApiResponse.error("NOT_FOUND", "Customer not found", call.requestId)
                         )
                     }
+                }
+
+                // Toggle active status (deactivate / reactivate)
+                patch("deactivate") {
+                    val id =
+                        call.parameters["id"]
+                            ?: return@patch call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse.error("MISSING_ID", "Customer ID required", call.requestId)
+                            )
+
+                    val updated = deactivateCustomerUseCase.execute(id)
+                    if (updated == null) {
+                        call.respond(
+                            HttpStatusCode.NotFound,
+                            ApiResponse.error("NOT_FOUND", "Customer not found", call.requestId)
+                        )
+                        return@patch
+                    }
+                    call.respond(ApiResponse.success(CustomerResponse.fromDomain(updated), call.requestId))
                 }
             }
         }

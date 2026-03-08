@@ -18,7 +18,8 @@ data class Customer(
     val state: String? = null,
     val postalCode: String? = null,
     val country: String? = null,
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    val createdAt: Instant = Instant.EPOCH,
 ) {
     init {
         require(firstName.isNotBlank()) { "First name cannot be blank" }

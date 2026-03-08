@@ -19,6 +19,9 @@ interface MaintenanceRepository {
     /** Save a new maintenance job or update an existing one. */
     suspend fun saveJob(job: MaintenanceJob): MaintenanceJob
 
+    /** Find all maintenance jobs. */
+    suspend fun findAll(): List<MaintenanceJob>
+
     /** Find all maintenance jobs for a specific vehicle. */
     suspend fun findByVehicleId(vehicleId: VehicleId): List<MaintenanceJob>
 

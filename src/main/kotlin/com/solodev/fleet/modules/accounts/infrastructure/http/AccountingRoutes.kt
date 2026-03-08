@@ -50,6 +50,12 @@ fun Route.accountingRoutes(
     )
 
     route("/v1/accounting") {
+        // List all invoices
+        get("/invoices") {
+            val invoices = invoiceRepository.findAll()
+            call.respond(ApiResponse.success(invoices.map { InvoiceResponse.fromDomain(it) }, call.requestId))
+        }
+
         // Issue New Invoice
         post("/invoices") {
             try {
