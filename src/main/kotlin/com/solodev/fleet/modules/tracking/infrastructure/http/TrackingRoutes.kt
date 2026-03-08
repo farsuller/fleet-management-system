@@ -2,6 +2,7 @@ package com.solodev.fleet.modules.tracking.infrastructure.http
 
 import com.solodev.fleet.modules.tracking.application.dto.LocationUpdateDTO
 import com.solodev.fleet.modules.tracking.application.dto.SensorPing
+import com.solodev.fleet.modules.tracking.application.dto.VehicleStatus
 import com.solodev.fleet.modules.tracking.application.usecases.UpdateVehicleLocationUseCase
 import com.solodev.fleet.modules.tracking.infrastructure.persistence.PostGISAdapter
 import com.solodev.fleet.modules.tracking.infrastructure.persistence.LocationHistoryRepository
@@ -225,52 +226,55 @@ fun Route.trackingRoutes(
                 val vehicleId = call.parameters["vehicleId"]
                     ?: return@get call.respond(HttpStatusCode.BadRequest)
 
-                // Return mock vehicle state (would query from cache/db in production)
-                val state = VehicleStateResponse(
-                    vehicleId = vehicleId,
-                    routeId = "68a1a7f1-76dd-4ec9-ad63-fefc22acf428",
-                    progress = 0.42,
-                    segmentId = "seg-101",
-                    speed = 45.5,
-                    heading = 180.0,
-                    status = "IN_TRANSIT",
-                    distanceFromRoute = 8.5,
-                    location = LocationData(14.6001, 121.0250),
-                    timestamp = Instant.now().toString()
+                val latestState = historyRepository.getLatestVehicleState(vehicleId)
+                if (latestState == null) {
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        ApiResponse.error("VEHICLE_STATE_NOT_FOUND", "No tracking data found for vehicle $vehicleId", call.requestId)
+                    )
+                    return@get
+                }
+
+                val response = VehicleStateResponse(
+                    vehicleId = latestState.vehicleId,
+                    routeId = latestState.routeId,
+                    progress = latestState.progress,
+                    segmentId = latestState.segmentId,
+                    speed = latestState.speed,
+                    heading = latestState.heading,
+                    status = latestState.status.name,
+                    distanceFromRoute = latestState.distanceFromRoute,
+                    location = LocationData(latestState.latitude, latestState.longitude),
+                    timestamp = latestState.timestamp.toString()
                 )
 
                 call.respond(
                     HttpStatusCode.OK,
-                    ApiResponse.success(state, call.requestId)
+                    ApiResponse.success(response, call.requestId)
                 )
             }
 
             // Phase 7: Get fleet real-time status
             get("/fleet/status") {
-                // Return mock fleet status (would query from db in production)
+                val allStates = historyRepository.getAllLatestVehicleStates()
+                val activeCount = allStates.count {
+                    it.status == VehicleStatus.IN_TRANSIT || it.status == VehicleStatus.IDLE
+                }
+
                 val fleetStatus = FleetStatusResponse(
-                    totalVehicles = 8,
-                    activeVehicles = 6,
-                    vehicles = listOf(
+                    totalVehicles = allStates.size,
+                    activeVehicles = activeCount,
+                    vehicles = allStates.map { state ->
                         VehicleStatusSummary(
-                            vehicleId = "0a8e652a-604d-4cfb-81c6-e14eccc80ac8",
-                            routeId = "68a1a7f1-76dd-4ec9-ad63-fefc22acf428",
-                            status = "IN_TRANSIT",
-                            speed = 45.5,
-                            progress = 0.42,
-                            distanceFromRoute = 8.5,
-                            timestamp = Instant.now().toString()
-                        ),
-                        VehicleStatusSummary(
-                            vehicleId = "c9352986-639a-4841-bed9-9ff99f2e3349",
-                            routeId = "68a1a7f1-76dd-4ec9-ad63-fefc22acf428",
-                            status = "IDLE",
-                            speed = 0.0,
-                            progress = 0.65,
-                            distanceFromRoute = 2.1,
-                            timestamp = Instant.now().toString()
+                            vehicleId = state.vehicleId,
+                            routeId = state.routeId,
+                            status = state.status.name,
+                            speed = state.speed,
+                            progress = state.progress,
+                            distanceFromRoute = state.distanceFromRoute,
+                            timestamp = state.timestamp.toString()
                         )
-                    )
+                    }
                 )
 
                 call.respond(
@@ -327,21 +331,23 @@ fun Route.trackingRoutes(
         }
     }
 
-    // Phase 7: WebSocket Live Fleet Tracking
-    webSocket("/v1/fleet/live") {
-        val sessionId = java.util.UUID.randomUUID().toString()
-        deltaBroadcaster.addSession(sessionId, this)
-        try {
-            for (frame in incoming) {
-                when (frame) {
-                    is Frame.Ping -> send(Frame.Pong(frame.data))
-                    else -> {}
+    // Phase 7: WebSocket Live Fleet Tracking — requires valid JWT (DRIVER or FLEET_MANAGER)
+    authenticate("auth-jwt") {
+        webSocket("/v1/fleet/live") {
+            val sessionId = java.util.UUID.randomUUID().toString()
+            deltaBroadcaster.addSession(sessionId, this)
+            try {
+                for (frame in incoming) {
+                    when (frame) {
+                        is Frame.Ping -> send(Frame.Pong(frame.data))
+                        else -> {}
+                    }
                 }
+            } catch (e: Exception) {
+                println("WebSocket error: ${e.message}")
+            } finally {
+                deltaBroadcaster.removeSession(sessionId)
             }
-        } catch (e: Exception) {
-            println("WebSocket error: ${e.message}")
-        } finally {
-            deltaBroadcaster.removeSession(sessionId)
         }
     }
 }

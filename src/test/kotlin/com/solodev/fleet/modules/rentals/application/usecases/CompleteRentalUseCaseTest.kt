@@ -8,8 +8,9 @@ import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import kotlin.test.*
 
 class CompleteRentalUseCaseTest {
 
@@ -18,42 +19,47 @@ class CompleteRentalUseCaseTest {
     private val useCase = CompleteRentalUseCase(rentalRepository, vehicleRepository)
 
     @Test
-    fun `completes ACTIVE rental and returns vehicle to AVAILABLE`() = runBlocking {
+    fun shouldCompleteRentalAndReturnVehicleToAvailable_WhenRentalIsActive() = runBlocking {
+        // Arrange
         val rental = sampleRental(status = RentalStatus.ACTIVE, startOdometerKm = 5000)
         val vehicle = sampleVehicle(mileageKm = 5000)
-
-        coEvery { rentalRepository.findById(any()) } returns rental
-        coEvery { vehicleRepository.findById(any()) } returns vehicle
-        coEvery { vehicleRepository.save(any()) } returnsArgument 0
+        val savedVehicle = slot<Vehicle>()
+        coEvery { rentalRepository.findById(RentalId("rental-001")) } returns rental
+        coEvery { vehicleRepository.findById(VehicleId("veh-001")) } returns vehicle
+        coEvery { vehicleRepository.save(capture(savedVehicle)) } returnsArgument 0
         coEvery { rentalRepository.save(any()) } returnsArgument 0
 
+        // Act
         val result = useCase.execute("rental-001", finalMileage = 5150)
 
-        assertEquals(RentalStatus.COMPLETED, result.status)
-        assertEquals(5150, result.endOdometerKm)
-        coVerify { vehicleRepository.save(any()) }
+        // Assert
+        assertThat(result.status).isEqualTo(RentalStatus.COMPLETED)
+        assertThat(result.endOdometerKm).isEqualTo(5150)
+        assertThat(savedVehicle.captured.state).isEqualTo(VehicleState.AVAILABLE)
     }
 
     @Test
-    fun `throws when rental is not ACTIVE`(): Unit = runBlocking {
+    fun shouldThrowIllegalArgument_WhenRentalIsNotActive() {
+        // Arrange
         val rental = sampleRental(status = RentalStatus.RESERVED)
-        coEvery { rentalRepository.findById(any()) } returns rental
+        coEvery { rentalRepository.findById(RentalId("rental-001")) } returns rental
 
-        assertFailsWith<IllegalArgumentException> {
-            useCase.execute("rental-001", finalMileage = 5150)
-        }
+        // Act / Assert
+        assertThatThrownBy { runBlocking { useCase.execute("rental-001", finalMileage = 5150) } }
+            .isInstanceOf(IllegalArgumentException::class.java)
     }
 
     @Test
-    fun `throws when final mileage is less than start mileage`(): Unit = runBlocking {
+    fun shouldThrowIllegalArgument_WhenFinalMileageLessThanStart() {
+        // Arrange
         val rental = sampleRental(status = RentalStatus.ACTIVE, startOdometerKm = 5000)
         val vehicle = sampleVehicle(mileageKm = 5000)
-        coEvery { rentalRepository.findById(any()) } returns rental
-        coEvery { vehicleRepository.findById(any()) } returns vehicle
+        coEvery { rentalRepository.findById(RentalId("rental-001")) } returns rental
+        coEvery { vehicleRepository.findById(VehicleId("veh-001")) } returns vehicle
 
-        assertFailsWith<IllegalArgumentException> {
-            useCase.execute("rental-001", finalMileage = 4999)
-        }
+        // Act / Assert
+        assertThatThrownBy { runBlocking { useCase.execute("rental-001", finalMileage = 4999) } }
+            .isInstanceOf(IllegalArgumentException::class.java)
     }
 
     private fun sampleRental(status: RentalStatus, startOdometerKm: Int? = null) = Rental(

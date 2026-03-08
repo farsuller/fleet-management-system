@@ -95,9 +95,27 @@ dependencies {
     testImplementation(libs.h2)                            // In-memory DB for fast testing
     testImplementation(libs.testcontainers.postgresql)     // Real PostgreSQL/PostGIS for spatial tests
     testImplementation(libs.mockk)                         // Kotlin mocking framework
+    testImplementation(libs.assertj.core)                  // Fluent assertion library
 }
 
 // Test configuration
 tasks.test {
     useJUnitPlatform()
+    outputs.upToDateWhen { false } // always rerun — never skip as UP-TO-DATE
+    // Testcontainers on Windows with Docker Desktop.
+    // docker.host is configured in src/test/resources/testcontainers.properties.
+    // Ryuk disabled to prevent reaper container errors on Windows Docker Desktop.
+    environment("TESTCONTAINERS_RYUK_DISABLED", "true")
+
+    afterSuite(KotlinClosure2({ desc: TestDescriptor, result: TestResult ->
+        if (desc.parent == null) {
+            val pass    = result.successfulTestCount
+            val fail    = result.failedTestCount
+            val skip    = result.skippedTestCount
+            val total   = result.testCount
+            val outcome = if (result.resultType == TestResult.ResultType.SUCCESS) "PASSED" else "FAILED"
+            println("Test Results: $outcome")
+            println("Total: $total  |  Passed: $pass  |  Failed: $fail  |  Skipped: $skip")
+        }
+    }))
 }

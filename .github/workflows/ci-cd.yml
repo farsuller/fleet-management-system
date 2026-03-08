@@ -74,7 +74,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: build/test-results/
+          path: |
+            build/test-results/
+            build/reports/tests/test/
       
       - name: Upload build artifact
         uses: actions/upload-artifact@v4

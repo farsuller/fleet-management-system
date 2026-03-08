@@ -6,8 +6,9 @@ import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import java.time.Instant
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import kotlin.test.*
 
 class CancelMaintenanceUseCaseTest {
 
@@ -15,34 +16,40 @@ class CancelMaintenanceUseCaseTest {
     private val useCase = CancelMaintenanceUseCase(repository)
 
     @Test
-    fun `cancels SCHEDULED maintenance job`() = runBlocking {
+    fun shouldCancelMaintenanceJob_WhenStatusIsScheduled() = runBlocking {
+        // Arrange
         val job = sampleJob(status = MaintenanceStatus.SCHEDULED)
-        coEvery { repository.findById(any()) } returns job
-        coEvery { repository.saveJob(any()) } returnsArgument 0
+        val savedJob = slot<MaintenanceJob>()
+        coEvery { repository.findById(MaintenanceJobId("maint-001")) } returns job
+        coEvery { repository.saveJob(capture(savedJob)) } returnsArgument 0
 
+        // Act
         val result = useCase.execute("maint-001")
 
-        assertEquals(MaintenanceStatus.CANCELLED, result.status)
-        coVerify { repository.saveJob(any()) }
+        // Assert
+        assertThat(result.status).isEqualTo(MaintenanceStatus.CANCELLED)
+        assertThat(savedJob.captured.status).isEqualTo(MaintenanceStatus.CANCELLED)
     }
 
     @Test
-    fun `throws when job is already IN_PROGRESS`(): Unit = runBlocking {
+    fun shouldThrowIllegalArgument_WhenJobIsInProgress() {
+        // Arrange
         val job = sampleJob(status = MaintenanceStatus.IN_PROGRESS)
-        coEvery { repository.findById(any()) } returns job
+        coEvery { repository.findById(MaintenanceJobId("maint-001")) } returns job
 
-        assertFailsWith<IllegalArgumentException> {
-            useCase.execute("maint-001")
-        }
+        // Act / Assert
+        assertThatThrownBy { runBlocking { useCase.execute("maint-001") } }
+            .isInstanceOf(IllegalArgumentException::class.java)
     }
 
     @Test
-    fun `throws when job not found`(): Unit = runBlocking {
-        coEvery { repository.findById(any()) } returns null
+    fun shouldThrowIllegalArgument_WhenJobNotFound() {
+        // Arrange
+        coEvery { repository.findById(MaintenanceJobId("unknown-id")) } returns null
 
-        assertFailsWith<IllegalArgumentException> {
-            useCase.execute("unknown-id")
-        }
+        // Act / Assert
+        assertThatThrownBy { runBlocking { useCase.execute("unknown-id") } }
+            .isInstanceOf(IllegalArgumentException::class.java)
     }
 
     private fun sampleJob(status: MaintenanceStatus) = MaintenanceJob(

@@ -4,8 +4,8 @@ import com.solodev.fleet.modules.vehicles.domain.model.*
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import kotlin.test.*
 
 class GetVehicleUseCaseTest {
 
@@ -13,23 +13,29 @@ class GetVehicleUseCaseTest {
     private val useCase = GetVehicleUseCase(repository)
 
     @Test
-    fun `returns vehicle when found`() = runBlocking {
+    fun shouldReturnVehicle_WhenIdExists() = runBlocking {
+        // Arrange
         val vehicle = sampleVehicle()
-        coEvery { repository.findById(any()) } returns vehicle
+        coEvery { repository.findById(VehicleId("veh-001")) } returns vehicle
 
+        // Act
         val result = useCase.execute("veh-001")
 
-        assertNotNull(result)
-        assertEquals("1HGBH41JXMN109186", result!!.vin)
+        // Assert
+        assertThat(result).isNotNull()
+        assertThat(result!!.vin).isEqualTo("1HGBH41JXMN109186")
     }
 
     @Test
-    fun `returns null when vehicle not found`() = runBlocking {
-        coEvery { repository.findById(any()) } returns null
+    fun shouldReturnNull_WhenVehicleNotFound() = runBlocking {
+        // Arrange
+        coEvery { repository.findById(VehicleId("unknown")) } returns null
 
+        // Act
         val result = useCase.execute("unknown")
 
-        assertNull(result)
+        // Assert
+        assertThat(result).isNull()
     }
 
     private fun sampleVehicle() = Vehicle(

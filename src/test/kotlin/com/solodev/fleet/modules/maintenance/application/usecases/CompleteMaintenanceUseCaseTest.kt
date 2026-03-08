@@ -6,8 +6,9 @@ import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import java.time.Instant
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import kotlin.test.*
 
 class CompleteMaintenanceUseCaseTest {
 
@@ -15,37 +16,43 @@ class CompleteMaintenanceUseCaseTest {
     private val useCase = CompleteMaintenanceUseCase(repository)
 
     @Test
-    fun `completes IN_PROGRESS maintenance job with costs`() = runBlocking {
+    fun shouldCompleteMaintenanceJob_WhenStatusIsInProgress() = runBlocking {
+        // Arrange
         val job = sampleJob(status = MaintenanceStatus.IN_PROGRESS)
-        coEvery { repository.findById(any()) } returns job
-        coEvery { repository.saveJob(any()) } returnsArgument 0
+        val savedJob = slot<MaintenanceJob>()
+        coEvery { repository.findById(MaintenanceJobId("maint-001")) } returns job
+        coEvery { repository.saveJob(capture(savedJob)) } returnsArgument 0
 
+        // Act
         val result = useCase.execute("maint-001", laborCost = 50.0, partsCost = 20.0)
 
-        assertEquals(MaintenanceStatus.COMPLETED, result.status)
-        assertEquals(5000, result.laborCost)
-        assertEquals(2000, result.partsCost)
-        assertNotNull(result.completedAt)
-        coVerify { repository.saveJob(any()) }
+        // Assert
+        assertThat(result.status).isEqualTo(MaintenanceStatus.COMPLETED)
+        assertThat(result.laborCost).isEqualTo(5000)
+        assertThat(result.partsCost).isEqualTo(2000)
+        assertThat(result.completedAt).isNotNull()
+        assertThat(savedJob.captured.status).isEqualTo(MaintenanceStatus.COMPLETED)
     }
 
     @Test
-    fun `throws when job is SCHEDULED (not started)`(): Unit = runBlocking {
+    fun shouldThrowIllegalArgument_WhenJobIsScheduled() {
+        // Arrange
         val job = sampleJob(status = MaintenanceStatus.SCHEDULED)
-        coEvery { repository.findById(any()) } returns job
+        coEvery { repository.findById(MaintenanceJobId("maint-001")) } returns job
 
-        assertFailsWith<IllegalArgumentException> {
-            useCase.execute("maint-001", laborCost = 10.0, partsCost = 5.0)
-        }
+        // Act / Assert
+        assertThatThrownBy { runBlocking { useCase.execute("maint-001", laborCost = 10.0, partsCost = 5.0) } }
+            .isInstanceOf(IllegalArgumentException::class.java)
     }
 
     @Test
-    fun `throws when job not found`(): Unit = runBlocking {
-        coEvery { repository.findById(any()) } returns null
+    fun shouldThrowIllegalArgument_WhenJobNotFound() {
+        // Arrange
+        coEvery { repository.findById(MaintenanceJobId("unknown-id")) } returns null
 
-        assertFailsWith<IllegalArgumentException> {
-            useCase.execute("unknown-id", laborCost = 10.0, partsCost = 5.0)
-        }
+        // Act / Assert
+        assertThatThrownBy { runBlocking { useCase.execute("unknown-id", laborCost = 10.0, partsCost = 5.0) } }
+            .isInstanceOf(IllegalArgumentException::class.java)
     }
 
     private fun sampleJob(status: MaintenanceStatus) = MaintenanceJob(

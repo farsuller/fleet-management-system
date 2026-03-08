@@ -4,8 +4,9 @@ import com.solodev.fleet.modules.users.domain.model.*
 import com.solodev.fleet.modules.users.domain.repository.UserRepository
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import kotlin.test.*
 
 class AssignRoleUseCaseTest {
 
@@ -13,39 +14,46 @@ class AssignRoleUseCaseTest {
     private val useCase = AssignRoleUseCase(userRepository)
 
     @Test
-    fun `assigns role to user`() = runBlocking {
+    fun shouldAssignRole_WhenUserAndRoleExist() = runBlocking {
+        // Arrange
         val user = sampleUser(roles = emptyList())
         val adminRole = Role(id = RoleId("role-admin"), name = "ADMIN")
-
-        coEvery { userRepository.findById(any()) } returns user
+        val savedUser = slot<User>()
+        coEvery { userRepository.findById(UserId("user-001")) } returns user
         coEvery { userRepository.findRoleByName("ADMIN") } returns adminRole
-        coEvery { userRepository.save(any()) } returnsArgument 0
+        coEvery { userRepository.save(capture(savedUser)) } returnsArgument 0
 
+        // Act
         val result = useCase.execute("user-001", "ADMIN")
 
-        assertNotNull(result)
-        assertEquals("ADMIN", result.roles.first().name)
-        coVerify { userRepository.save(any()) }
+        // Assert
+        assertThat(result).isNotNull()
+        assertThat(result!!.roles.first().name).isEqualTo("ADMIN")
+        assertThat(savedUser.captured.roles).anyMatch { it.name == "ADMIN" }
     }
 
     @Test
-    fun `returns null when user not found`() = runBlocking {
-        coEvery { userRepository.findById(any()) } returns null
+    fun shouldReturnNull_WhenUserNotFound() = runBlocking {
+        // Arrange
+        coEvery { userRepository.findById(UserId("unknown")) } returns null
 
+        // Act
         val result = useCase.execute("unknown", "ADMIN")
 
-        assertNull(result)
+        // Assert
+        assertThat(result).isNull()
     }
 
     @Test
-    fun `throws when role not found`(): Unit = runBlocking {
+    fun shouldThrowIllegalArgument_WhenRoleNotFound() {
+        // Arrange
         val user = sampleUser(roles = emptyList())
-        coEvery { userRepository.findById(any()) } returns user
-        coEvery { userRepository.findRoleByName(any()) } returns null
+        coEvery { userRepository.findById(UserId("user-001")) } returns user
+        coEvery { userRepository.findRoleByName("UNKNOWN_ROLE") } returns null
 
-        assertFailsWith<IllegalArgumentException> {
-            useCase.execute("user-001", "UNKNOWN_ROLE")
-        }
+        // Act & Assert
+        assertThatThrownBy { runBlocking { useCase.execute("user-001", "UNKNOWN_ROLE") } }
+            .isInstanceOf(IllegalArgumentException::class.java)
     }
 
     private fun sampleUser(roles: List<Role>) = User(

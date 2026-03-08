@@ -7,7 +7,8 @@ import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.UUID
-import kotlin.test.*
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 
 /**
  * CreateRentalUseCase wraps execution in `dbQuery {}` (DB transaction), so calling
@@ -24,12 +25,12 @@ class CreateRentalUseCaseTest {
     // --- Business rule: vehicle must be AVAILABLE ---
 
     @Test
-    fun `creates rental for AVAILABLE vehicle`() {
+    fun shouldCreateRental_WhenVehicleIsAvailable() {
+        // Arrange
         val vehicle = sampleVehicle(state = VehicleState.AVAILABLE)
-
-        // Mirrors CreateRentalUseCase: require AVAILABLE, then build Rental
         require(vehicle.state == VehicleState.AVAILABLE) { "Vehicle is not available for rental" }
 
+        // Act
         val rental = Rental(
             id = RentalId(UUID.randomUUID().toString()),
             rentalNumber = "RNT-001",
@@ -42,33 +43,39 @@ class CreateRentalUseCaseTest {
             totalAmount = 250000 * 7
         )
 
-        assertEquals(RentalStatus.RESERVED, rental.status)
-        assertEquals(vehicle.id, rental.vehicleId)
-        assertEquals(CustomerId("cust-001"), rental.customerId)
+        // Assert
+        assertThat(rental.status).isEqualTo(RentalStatus.RESERVED)
+        assertThat(rental.vehicleId).isEqualTo(vehicle.id)
+        assertThat(rental.customerId).isEqualTo(CustomerId("cust-001"))
     }
 
     @Test
-    fun `throws when vehicle is not AVAILABLE`(): Unit {
+    fun shouldThrowIllegalArgument_WhenVehicleIsNotAvailable() {
+        // Arrange
         val vehicle = sampleVehicle(state = VehicleState.RENTED)
 
-        assertFailsWith<IllegalArgumentException> {
+        // Act / Assert
+        assertThatThrownBy {
             require(vehicle.state == VehicleState.AVAILABLE) { "Vehicle is not available for rental" }
-        }
+        }.isInstanceOf(IllegalArgumentException::class.java)
     }
 
     @Test
-    fun `throws when vehicle not found`(): Unit {
+    fun shouldThrowIllegalArgument_WhenVehicleNotFound() {
+        // Arrange
         val vehicle: Vehicle? = null
 
-        assertFailsWith<IllegalArgumentException> {
+        // Act / Assert
+        assertThatThrownBy {
             vehicle ?: throw IllegalArgumentException("Vehicle not found")
-        }
+        }.isInstanceOf(IllegalArgumentException::class.java)
     }
 
     // --- Business rule: no conflicting rentals ---
 
     @Test
-    fun `throws when rental dates conflict`(): Unit {
+    fun shouldThrowIllegalArgument_WhenRentalDatesConflict() {
+        // Arrange
         val existingRental = Rental(
             id = RentalId(UUID.randomUUID().toString()),
             rentalNumber = "RNT-EXISTING",
@@ -82,35 +89,38 @@ class CreateRentalUseCaseTest {
         )
         val conflicts = listOf(existingRental)
 
-        assertFailsWith<IllegalArgumentException> {
+        // Act / Assert
+        assertThatThrownBy {
             require(conflicts.isEmpty()) { "Vehicle is already rented during this period" }
-        }
+        }.isInstanceOf(IllegalArgumentException::class.java)
     }
 
     // --- RentalRequest DTO validation ---
 
     @Test
-    fun `RentalRequest rejects blank vehicleId`(): Unit {
-        assertFailsWith<IllegalArgumentException> {
+    fun shouldThrowIllegalArgument_WhenVehicleIdIsBlank() {
+        // Act / Assert
+        assertThatThrownBy {
             RentalRequest(
                 vehicleId = "",
                 customerId = "cust-001",
                 startDate = "2026-03-10T00:00:00Z",
                 endDate = "2026-03-17T00:00:00Z"
             )
-        }
+        }.isInstanceOf(IllegalArgumentException::class.java)
     }
 
     @Test
-    fun `RentalRequest rejects end date before start date`(): Unit {
-        assertFailsWith<IllegalArgumentException> {
+    fun shouldThrowIllegalArgument_WhenEndDateBeforeStartDate() {
+        // Act / Assert
+        assertThatThrownBy {
             RentalRequest(
                 vehicleId = "veh-001",
                 customerId = "cust-001",
                 startDate = "2026-03-17T00:00:00Z",
                 endDate = "2026-03-10T00:00:00Z"
             )
-        }
+        }.isInstanceOf(IllegalArgumentException::class.java)
     }
 
     private fun sampleVehicle(state: VehicleState) = Vehicle(

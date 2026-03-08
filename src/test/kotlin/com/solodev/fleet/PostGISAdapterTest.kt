@@ -9,16 +9,14 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Disabled
 import org.postgis.PGgeometry
 
 /**
  * PostGIS Adapter Integration Tests
  *
- * DISABLED: Requires Docker/Testcontainers to be running
- * To enable: Install Docker and uncomment @Disabled annotation
+ * Requires Docker Desktop to be running — Testcontainers spins up postgis/postgis:15-3.3
+ * automatically on each test run.
  */
-@Disabled("Requires Docker/Testcontainers - enable when Docker is available")
 class PostGISAdapterTest : BaseSpatialTest() {
 
     private val adapter = PostGISAdapter()

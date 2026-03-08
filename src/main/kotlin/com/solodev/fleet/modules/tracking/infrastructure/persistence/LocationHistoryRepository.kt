@@ -13,6 +13,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.transactions.TransactionManager
 
 /**
  * LocationHistoryTable - Persists vehicle tracking records for historical analysis
@@ -104,6 +105,70 @@ class LocationHistoryRepository {
             .selectAll()
             .where { LocationHistoryTable.vehicleId eq vehicleId }
             .count()
+    }
+
+    /**
+     * Get the most recent tracking state for a single vehicle.
+     * Returns null if no tracking data exists yet.
+     */
+    suspend fun getLatestVehicleState(vehicleId: String): VehicleRouteState? = dbQuery {
+        LocationHistoryTable
+            .selectAll()
+            .where { LocationHistoryTable.vehicleId eq vehicleId }
+            .orderBy(LocationHistoryTable.timestamp, SortOrder.DESC)
+            .limit(1)
+            .map { row: ResultRow ->
+                VehicleRouteState(
+                    vehicleId = row[LocationHistoryTable.vehicleId],
+                    routeId = row[LocationHistoryTable.routeId] ?: "",
+                    progress = row[LocationHistoryTable.progress],
+                    segmentId = row[LocationHistoryTable.segmentId] ?: "",
+                    speed = row[LocationHistoryTable.speed],
+                    heading = row[LocationHistoryTable.heading],
+                    status = VehicleStatus.valueOf(row[LocationHistoryTable.status]),
+                    distanceFromRoute = row[LocationHistoryTable.distanceFromRoute],
+                    latitude = row[LocationHistoryTable.latitude],
+                    longitude = row[LocationHistoryTable.longitude],
+                    timestamp = row[LocationHistoryTable.timestamp]
+                )
+            }
+            .firstOrNull()
+    }
+
+    /**
+     * Get the most recent tracking state for every vehicle that has recorded at least one ping.
+     * Uses DISTINCT ON (vehicle_id) ordered by timestamp DESC — PostgreSQL-specific.
+     */
+    suspend fun getAllLatestVehicleStates(): List<VehicleRouteState> = dbQuery {
+        val sql = """
+            SELECT DISTINCT ON (vehicle_id)
+                vehicle_id, route_id, progress, segment_id, speed, heading,
+                status, distance_from_route, latitude, longitude, timestamp
+            FROM location_history
+            ORDER BY vehicle_id, timestamp DESC
+        """.trimIndent()
+
+        val results = mutableListOf<VehicleRouteState>()
+        TransactionManager.current().exec(sql) { rs ->
+            while (rs.next()) {
+                results.add(
+                    VehicleRouteState(
+                        vehicleId = rs.getString("vehicle_id"),
+                        routeId = rs.getString("route_id") ?: "",
+                        progress = rs.getDouble("progress"),
+                        segmentId = rs.getString("segment_id") ?: "",
+                        speed = rs.getDouble("speed"),
+                        heading = rs.getDouble("heading"),
+                        status = VehicleStatus.valueOf(rs.getString("status")),
+                        distanceFromRoute = rs.getDouble("distance_from_route"),
+                        latitude = rs.getDouble("latitude"),
+                        longitude = rs.getDouble("longitude"),
+                        timestamp = rs.getTimestamp("timestamp").toInstant()
+                    )
+                )
+            }
+        }
+        results
     }
 
     /**

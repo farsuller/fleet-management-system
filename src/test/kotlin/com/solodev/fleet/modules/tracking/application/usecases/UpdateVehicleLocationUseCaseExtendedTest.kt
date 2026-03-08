@@ -6,16 +6,14 @@ import com.solodev.fleet.modules.tracking.application.dto.VehicleStatus
 import com.solodev.fleet.shared.domain.model.Location
 import java.time.Instant
 import java.util.*
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlinx.coroutines.runBlocking
-import kotlin.test.assertFailsWith
 
 class UpdateVehicleLocationUseCaseExtendedTest {
 
-
-    // Mock Delta Broadcaster
+    // Hand-rolled stub: no broadcaster interface exists to mock with MockK
     class MockDeltaBroadcaster {
         var lastPublishedDelta: VehicleRouteState? = null
 
@@ -25,10 +23,10 @@ class UpdateVehicleLocationUseCaseExtendedTest {
     }
 
     @Test
-    fun `should process vehicle state and broadcast delta`() {
+    fun shouldBroadcastDelta_WhenVehicleStateIsProcessed() {
         runBlocking {
+            // Arrange
             val broadcaster = MockDeltaBroadcaster()
-
             val state = VehicleRouteState(
                 vehicleId = "v-123",
                 routeId = UUID.randomUUID().toString(),
@@ -43,14 +41,18 @@ class UpdateVehicleLocationUseCaseExtendedTest {
                 timestamp = Instant.now()
             )
 
+            // Act
             broadcaster.broadcastIfChanged(state)
-            assertNotNull(broadcaster.lastPublishedDelta)
+
+            // Assert
+            assertThat(broadcaster.lastPublishedDelta).isNotNull()
         }
     }
 
     @Test
-    fun `should mark vehicle as idle when speed is low`() {
+    fun shouldMarkVehicleAsIdle_WhenSpeedIsLow() {
         runBlocking {
+            // Arrange / Act
             val ping = SensorPing(
                 vehicleId = "v-123",
                 location = Location(14.5, 121.5),
@@ -60,13 +62,15 @@ class UpdateVehicleLocationUseCaseExtendedTest {
                 routeId = UUID.randomUUID().toString()
             )
 
-            assertEquals(true, ping.speed != null && ping.speed < 5.0)
+            // Assert
+            assertThat(ping.speed!!).isLessThan(5.0)
         }
     }
 
     @Test
-    fun `should mark vehicle as off-route when distance exceeds tolerance`() {
+    fun shouldMarkVehicleAsOffRoute_WhenDistanceExceedsTolerance() {
         runBlocking {
+            // Arrange / Act
             val state = VehicleRouteState(
                 vehicleId = "v-123",
                 routeId = UUID.randomUUID().toString(),
@@ -81,20 +85,23 @@ class UpdateVehicleLocationUseCaseExtendedTest {
                 timestamp = Instant.now()
             )
 
-            assertEquals(VehicleStatus.OFF_ROUTE, state.status)
+            // Assert
+            assertThat(state.status).isEqualTo(VehicleStatus.OFF_ROUTE)
         }
     }
 
     @Test
-    fun `should throw exception when route ID is missing`() {
-        assertFailsWith<IllegalArgumentException> {
+    fun shouldThrowIllegalArgument_WhenRouteIdIsMissing() {
+        // Act / Assert
+        assertThatThrownBy {
             val routeId: String? = null
             routeId ?: throw IllegalArgumentException("Route ID required in SensorPing")
-        }
+        }.isInstanceOf(IllegalArgumentException::class.java)
     }
 
     @Test
-    fun `should validate sensor ping before processing`() {
+    fun shouldBeValid_WhenSensorPingHasValidFields() {
+        // Arrange / Act
         val validPing = SensorPing(
             vehicleId = "v-123",
             location = Location(14.5, 121.5),
@@ -105,11 +112,13 @@ class UpdateVehicleLocationUseCaseExtendedTest {
             routeId = UUID.randomUUID().toString()
         )
 
-        assertEquals(true, validPing.isValid())
+        // Assert
+        assertThat(validPing.isValid()).isTrue()
     }
 
     @Test
-    fun `should handle null optional fields in sensor ping`() {
+    fun shouldBeValid_WhenSensorPingHasNullOptionalFields() {
+        // Arrange / Act
         val pingWithNulls = SensorPing(
             vehicleId = "v-123",
             location = Location(14.5, 121.5),
@@ -120,7 +129,8 @@ class UpdateVehicleLocationUseCaseExtendedTest {
             routeId = UUID.randomUUID().toString()
         )
 
-        assertEquals(true, pingWithNulls.isValid())
+        // Assert
+        assertThat(pingWithNulls.isValid()).isTrue()
     }
 }
 

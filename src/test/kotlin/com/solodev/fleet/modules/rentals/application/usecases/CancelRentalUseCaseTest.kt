@@ -5,10 +5,11 @@ import com.solodev.fleet.modules.rentals.domain.repository.RentalRepository
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import kotlin.test.*
 
 class CancelRentalUseCaseTest {
 
@@ -16,45 +17,54 @@ class CancelRentalUseCaseTest {
     private val useCase = CancelRentalUseCase(repository)
 
     @Test
-    fun `cancels RESERVED rental`() = runBlocking {
+    fun shouldCancelRental_WhenStatusIsReserved() = runBlocking {
+        // Arrange
         val rental = sampleRental(status = RentalStatus.RESERVED)
-        coEvery { repository.findById(any()) } returns rental
-        coEvery { repository.save(any()) } returnsArgument 0
+        val savedRental = slot<Rental>()
+        coEvery { repository.findById(RentalId("rental-001")) } returns rental
+        coEvery { repository.save(capture(savedRental)) } returnsArgument 0
 
+        // Act
         val result = useCase.execute("rental-001")
 
-        assertEquals(RentalStatus.CANCELLED, result.status)
-        coVerify { repository.save(any()) }
+        // Assert
+        assertThat(result.status).isEqualTo(RentalStatus.CANCELLED)
+        assertThat(savedRental.captured.status).isEqualTo(RentalStatus.CANCELLED)
     }
 
     @Test
-    fun `cancels ACTIVE rental`() = runBlocking {
+    fun shouldCancelRental_WhenStatusIsActive() = runBlocking {
+        // Arrange
         val rental = sampleRental(status = RentalStatus.ACTIVE)
-        coEvery { repository.findById(any()) } returns rental
+        coEvery { repository.findById(RentalId("rental-001")) } returns rental
         coEvery { repository.save(any()) } returnsArgument 0
 
+        // Act
         val result = useCase.execute("rental-001")
 
-        assertEquals(RentalStatus.CANCELLED, result.status)
+        // Assert
+        assertThat(result.status).isEqualTo(RentalStatus.CANCELLED)
     }
 
     @Test
-    fun `throws when trying to cancel COMPLETED rental`(): Unit = runBlocking {
+    fun shouldThrowIllegalArgument_WhenCancellingCompletedRental() {
+        // Arrange
         val rental = sampleRental(status = RentalStatus.COMPLETED)
-        coEvery { repository.findById(any()) } returns rental
+        coEvery { repository.findById(RentalId("rental-001")) } returns rental
 
-        assertFailsWith<IllegalArgumentException> {
-            useCase.execute("rental-001")
-        }
+        // Act / Assert
+        assertThatThrownBy { runBlocking { useCase.execute("rental-001") } }
+            .isInstanceOf(IllegalArgumentException::class.java)
     }
 
     @Test
-    fun `throws when rental not found`(): Unit = runBlocking {
-        coEvery { repository.findById(any()) } returns null
+    fun shouldThrowIllegalArgument_WhenRentalNotFound() {
+        // Arrange
+        coEvery { repository.findById(RentalId("unknown-id")) } returns null
 
-        assertFailsWith<IllegalArgumentException> {
-            useCase.execute("unknown-id")
-        }
+        // Act / Assert
+        assertThatThrownBy { runBlocking { useCase.execute("unknown-id") } }
+            .isInstanceOf(IllegalArgumentException::class.java)
     }
 
     private fun sampleRental(status: RentalStatus) = Rental(
