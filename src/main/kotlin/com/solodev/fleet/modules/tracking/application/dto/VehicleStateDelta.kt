@@ -12,14 +12,17 @@ import java.util.UUID
 data class VehicleStateDelta(
     @Serializable(with = UUIDSerializer::class)
     val vehicleId: UUID,
-    val progress: Double? = null,
-    val bearing: Double? = null,
+    val routeProgress: Double? = null,
+    val headingDeg: Double? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
     val status: VehicleStatus? = null,
     val distanceFromRoute: Double? = null,
     @Serializable(with = InstantSerializer::class)
     val timestamp: Instant
 ) {
     fun hasChanges(): Boolean {
-        return progress != null || bearing != null || status != null || distanceFromRoute != null
+        return routeProgress != null || headingDeg != null || latitude != null ||
+               longitude != null || status != null || distanceFromRoute != null
     }
 }

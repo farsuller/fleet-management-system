@@ -149,6 +149,7 @@ fun Application.configureDatabases() {
             "V020__seed_fleet_vehicles_and_tracking.sql",
             "V021__update_roles_for_backoffice.sql",
             "V022__create_drivers_and_assignments.sql",
+            "V023__relocate_vehicles_to_new_route.sql",
         )
 
     log.info("Extracting ${migrationFiles.size} migrations to: ${migrationDir.absolutePath}...")

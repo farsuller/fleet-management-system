@@ -91,6 +91,9 @@ data class VehicleStatusSummary(
     val speed: Double,
     val progress: Double,
     val distanceFromRoute: Double,
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val heading: Double = 0.0,
     val timestamp: String
 )
 
@@ -310,6 +313,9 @@ fun Route.trackingRoutes(
                         speed             = state?.speed ?: 0.0,
                         progress          = state?.progress ?: 0.0,
                         distanceFromRoute = state?.distanceFromRoute ?: 0.0,
+                        latitude          = state?.latitude ?: 0.0,
+                        longitude         = state?.longitude ?: 0.0,
+                        heading           = state?.heading ?: 0.0,
                         timestamp         = state?.timestamp?.toString() ?: "",
                     )
                 }
