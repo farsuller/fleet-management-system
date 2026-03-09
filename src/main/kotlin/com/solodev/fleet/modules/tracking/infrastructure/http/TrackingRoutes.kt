@@ -26,6 +26,7 @@ import java.time.Instant
 import org.slf4j.LoggerFactory
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 import com.solodev.fleet.shared.models.PaginationParams
+import kotlinx.serialization.json.*
 
 private val logger = LoggerFactory.getLogger("TrackingRoutes")
 
@@ -117,6 +118,37 @@ data class TrackingRecord(
     val location: LocationData,
     val timestamp: String
 )
+
+/** Request body for creating a route from a GeoJSON string. */
+@Serializable
+data class CreateRouteRequest(
+    val name: String,
+    val description: String? = null,
+    /** Raw GeoJSON — Feature, FeatureCollection, or bare LineString geometry. */
+    val geojson: String,
+)
+
+/**
+ * Converts a GeoJSON string to a WKT LINESTRING.
+ * Accepts Feature, FeatureCollection (uses first feature), or bare LineString geometry.
+ * Returns null if no valid LineString can be extracted.
+ */
+private fun geoJsonLineStringToWkt(geojson: String): String? = runCatching {
+    val root = Json.parseToJsonElement(geojson).jsonObject
+    val geometry: JsonObject? = when (root["type"]?.jsonPrimitive?.content) {
+        "FeatureCollection" -> root["features"]?.jsonArray?.firstOrNull()?.jsonObject?.get("geometry")?.jsonObject
+        "Feature"           -> root["geometry"]?.jsonObject
+        "LineString"        -> root
+        else                -> null
+    }
+    if (geometry?.get("type")?.jsonPrimitive?.content != "LineString") return@runCatching null
+    val coords = geometry["coordinates"]?.jsonArray ?: return@runCatching null
+    val wktCoords = coords.joinToString(", ") { pt ->
+        val arr = pt.jsonArray
+        "${arr[0].jsonPrimitive.double} ${arr[1].jsonPrimitive.double}"
+    }
+    "LINESTRING($wktCoords)"
+}.getOrNull()
 
 /** API routes for vehicle tracking and spatial features. */
 fun Route.trackingRoutes(
@@ -341,6 +373,46 @@ fun Route.trackingRoutes(
                     call.respond(
                         HttpStatusCode.InternalServerError,
                         ApiResponse.error("HISTORY_FETCH_ERROR", "Failed to fetch tracking history", call.requestId)
+                    )
+                }
+            }
+        }
+    }
+
+    // ── Route Management ──────────────────────────────────────────────────────
+
+    /**
+     * POST /v1/tracking/routes
+     * Accepts a GeoJSON LineString (Feature, FeatureCollection, or bare geometry)
+     * and saves it as a route in the PostGIS `routes` table.
+     */
+    authenticate("auth-jwt") {
+        route("/v1/tracking/routes") {
+            post {
+                try {
+                    val body = call.receive<CreateRouteRequest>()
+
+                    val wkt = geoJsonLineStringToWkt(body.geojson)
+                        ?: return@post call.respond(
+                            HttpStatusCode.UnprocessableEntity,
+                            ApiResponse.error(
+                                "INVALID_GEOJSON",
+                                "GeoJSON must contain a LineString geometry",
+                                call.requestId,
+                            )
+                        )
+
+                    val route = spatialAdapter.createRoute(
+                        name        = body.name,
+                        description = body.description,
+                        wktLineString = wkt,
+                    )
+                    call.respond(HttpStatusCode.Created, ApiResponse.success(route, call.requestId))
+                } catch (e: Exception) {
+                    logger.error("Error creating route", e)
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        ApiResponse.error("ROUTE_CREATE_ERROR", e.message ?: "Failed to create route", call.requestId)
                     )
                 }
             }

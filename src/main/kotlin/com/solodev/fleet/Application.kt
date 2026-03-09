@@ -38,7 +38,9 @@ fun Application.module() {
     install(CORS) {
         allowHost("localhost:8081")
         allowHost("localhost:8080")
+        allowHost("localhost:8082")
         allowHost("127.0.0.1:8081")
+        allowHost("127.0.0.1:8082")
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Authorization)
         allowMethod(HttpMethod.Post)

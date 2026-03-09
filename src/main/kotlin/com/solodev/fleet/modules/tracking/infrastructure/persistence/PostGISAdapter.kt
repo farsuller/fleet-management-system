@@ -81,6 +81,29 @@ open class PostGISAdapter {
                 }
             }
 
+    /**
+     * Creates a new route from a WKT LINESTRING and persists it to the database.
+     * Returns the persisted RouteDTO including the auto-generated id.
+     */
+    fun createRoute(
+        name: String,
+        description: String?,
+        wktLineString: String,
+    ): com.solodev.fleet.modules.tracking.application.dto.RouteDTO = transaction {
+        val geom = PGgeometry("SRID=4326;$wktLineString")
+        val id = RoutesTable.insertAndGetId {
+            it[RoutesTable.name] = name
+            it[RoutesTable.description] = description
+            it[RoutesTable.polyline] = geom
+        }
+        com.solodev.fleet.modules.tracking.application.dto.RouteDTO(
+            id = id.value.toString(),
+            name = name,
+            description = description,
+            lineString = wktLineString,
+        )
+    }
+
     /** Checks if a location is inside any geofence of a specific type. */
     open fun isInsideGeofence(location: Location, type: String): Boolean = transaction {
         val pointWkt = "SRID=4326;POINT(${location.longitude} ${location.latitude})"
