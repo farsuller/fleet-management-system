@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class VehicleRequest(
-        val vin: String,
+        val vin: String? = null,
         val licensePlate: String,
         val make: String,
         val model: String,
@@ -15,8 +15,10 @@ data class VehicleRequest(
         val passengerCapacity: Int? = null
 ) {
         init {
-                require(vin.isNotBlank()) { "VIN cannot be blank" }
-                require(vin.length == 17) { "VIN must be exactly 17 characters" }
+                vin?.let {
+                        require(it.isNotBlank()) { "VIN cannot be blank" }
+                        require(it.length == 17) { "VIN must be exactly 17 characters" }
+                }
                 require(licensePlate.isNotBlank()) { "License plate cannot be blank" }
                 require(make.isNotBlank()) { "Make cannot be blank" }
                 require(model.isNotBlank()) { "Model cannot be blank" }

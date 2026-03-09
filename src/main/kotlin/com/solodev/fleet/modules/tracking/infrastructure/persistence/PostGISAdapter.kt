@@ -62,14 +62,21 @@ open class PostGISAdapter {
         Pair(Location(snappedPoint.y, snappedPoint.x), progress)
     }
 
-    /** Retrieves all routes from the database. */
+    /** Retrieves all routes from the database, including the WKT polyline for frontend rendering. */
     fun findAllRoutes(): List<com.solodev.fleet.modules.tracking.application.dto.RouteDTO> =
             transaction {
-                RoutesTable.selectAll().map {
+                val wktExpr = SpatialFunctions.asText(RoutesTable.polyline)
+                RoutesTable.select(
+                    RoutesTable.id,
+                    RoutesTable.name,
+                    RoutesTable.description,
+                    wktExpr,
+                ).map {
                     com.solodev.fleet.modules.tracking.application.dto.RouteDTO(
                             id = it[RoutesTable.id].value.toString(),
                             name = it[RoutesTable.name],
-                            description = it[RoutesTable.description]
+                            description = it[RoutesTable.description],
+                            lineString = it[wktExpr],
                     )
                 }
             }

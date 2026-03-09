@@ -1,0 +1,60 @@
+package com.solodev.fleet.modules.drivers.application.usecases
+
+import com.solodev.fleet.modules.drivers.application.dto.DriverRequest
+import com.solodev.fleet.modules.drivers.domain.model.Driver
+import com.solodev.fleet.modules.drivers.domain.model.DriverId
+import com.solodev.fleet.modules.drivers.domain.repository.DriverRepository
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
+import java.util.UUID
+
+class CreateDriverUseCase(private val driverRepository: DriverRepository) {
+    suspend fun execute(request: DriverRequest): Driver {
+        require(driverRepository.findByEmail(request.email) == null) {
+            "Driver with email ${request.email} already exists"
+        }
+        require(driverRepository.findByLicenseNumber(request.licenseNumber) == null) {
+            "Driver with license ${request.licenseNumber} already exists"
+        }
+        val licenseExpiry = try {
+            LocalDate.parse(request.licenseExpiry).atStartOfDay().toInstant(ZoneOffset.UTC)
+        } catch (e: Exception) {
+            throw IllegalArgumentException("Invalid license expiry date format. Expected YYYY-MM-DD")
+        }
+        require(licenseExpiry.isAfter(Instant.now())) { "Driver license is expired" }
+
+        return driverRepository.save(
+            Driver(
+                id            = DriverId(UUID.randomUUID().toString()),
+                firstName     = request.firstName,
+                lastName      = request.lastName,
+                email         = request.email,
+                phone         = request.phone,
+                licenseNumber = request.licenseNumber,
+                licenseExpiry = licenseExpiry,
+                licenseClass  = request.licenseClass,
+                address       = request.address,
+                city          = request.city,
+                state         = request.state,
+                postalCode    = request.postalCode,
+                country       = request.country,
+            )
+        )
+    }
+}
+
+class GetDriverUseCase(private val driverRepository: DriverRepository) {
+    suspend fun execute(id: String) = driverRepository.findById(DriverId(id))
+}
+
+class ListDriversUseCase(private val driverRepository: DriverRepository) {
+    suspend fun execute() = driverRepository.findAll()
+}
+
+class DeactivateDriverUseCase(private val driverRepository: DriverRepository) {
+    suspend fun execute(id: String): Driver? {
+        val driver = driverRepository.findById(DriverId(id)) ?: return null
+        return driverRepository.save(driver.copy(isActive = !driver.isActive))
+    }
+}

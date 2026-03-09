@@ -24,14 +24,14 @@ class RegisterUserUseCaseTest {
         phone = "+63912345678"
     )
 
-    private val customerRole = Role(id = RoleId("role-cust"), name = "CUSTOMER")
+    private val customerSupportRole = Role(id = RoleId("role-cs"), name = "CUSTOMER_SUPPORT")
 
     @Test
     fun shouldRegisterUser_WhenEmailIsNew() = runBlocking {
         // Arrange
         val savedUser = slot<User>()
         coEvery { userRepository.findByEmail("juan@fleet.ph") } returns null
-        coEvery { userRepository.findRoleByName("CUSTOMER") } returns customerRole
+        coEvery { userRepository.findRoleByName("CUSTOMER_SUPPORT") } returns customerSupportRole
         coEvery { userRepository.save(capture(savedUser)) } returnsArgument 0
         coEvery { tokenRepository.save(any()) } returnsArgument 0
 
@@ -58,7 +58,7 @@ class RegisterUserUseCaseTest {
     fun shouldReturnUnverifiedUser_WhenRegistrationSucceeds() = runBlocking {
         // Arrange
         coEvery { userRepository.findByEmail("juan@fleet.ph") } returns null
-        coEvery { userRepository.findRoleByName("CUSTOMER") } returns customerRole
+        coEvery { userRepository.findRoleByName("CUSTOMER_SUPPORT") } returns customerSupportRole
         coEvery { userRepository.save(any()) } returnsArgument 0
         coEvery { tokenRepository.save(any()) } returnsArgument 0
 

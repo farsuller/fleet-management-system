@@ -28,4 +28,8 @@ object SpatialFunctions {
     /** ST_Contains: Returns true if geometry A contains geometry B. */
     fun contains(geomA: Expression<*>, geomB: Expression<*>): Function<Boolean> =
             CustomFunction("ST_Contains", BooleanColumnType(), geomA, geomB)
+
+    /** ST_AsText: Returns WKT representation of a geometry (e.g. LINESTRING(lng lat, ...)) */
+    fun asText(geom: Expression<*>): Function<String> =
+            CustomFunction("ST_AsText", VarCharColumnType(), geom)
 }

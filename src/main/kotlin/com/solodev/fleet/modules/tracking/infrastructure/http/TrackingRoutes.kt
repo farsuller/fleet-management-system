@@ -24,6 +24,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import java.time.Instant
 import org.slf4j.LoggerFactory
+import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
+import com.solodev.fleet.shared.models.PaginationParams
 
 private val logger = LoggerFactory.getLogger("TrackingRoutes")
 
@@ -80,6 +82,9 @@ data class FleetStatusResponse(
 @Serializable
 data class VehicleStatusSummary(
     val vehicleId: String,
+    val licensePlate: String = "",
+    val make: String = "",
+    val model: String = "",
     val routeId: String? = null,
     val status: String,
     val speed: Double,
@@ -118,13 +123,14 @@ fun Route.trackingRoutes(
     updateVehicleLocation: UpdateVehicleLocationUseCase,
     spatialAdapter: PostGISAdapter,
     deltaBroadcaster: RedisDeltaBroadcaster,
+    vehicleRepository: VehicleRepository,
     historyRepository: LocationHistoryRepository = LocationHistoryRepository(),
     rateLimiter: LocationUpdateRateLimiter = LocationUpdateRateLimiter(maxUpdatesPerMinute = 60),
     idempotencyManager: IdempotencyKeyManager = IdempotencyKeyManager(ttlMinutes = 24 * 60),
     circuitBreaker: CircuitBreaker = CircuitBreaker("LocationUpdate", failureThreshold = 5)
 ) {
     route("/v1/tracking") {
-        get("/routes") {
+        get("/routes/active") {
             val routes = spatialAdapter.findAllRoutes()
             call.respond(ApiResponse.success(routes, call.requestId))
         }
@@ -254,32 +260,42 @@ fun Route.trackingRoutes(
                 )
             }
 
-            // Phase 7: Get fleet real-time status
+            // Phase 7: Get fleet real-time status — joins all vehicles with latest tracking state
             get("/fleet/status") {
-                val allStates = historyRepository.getAllLatestVehicleStates()
-                val activeCount = allStates.count {
-                    it.status == VehicleStatus.IN_TRANSIT || it.status == VehicleStatus.IDLE
+                val allLatestStates = historyRepository.getAllLatestVehicleStates()
+                val stateByVehicleId = allLatestStates.associateBy { it.vehicleId }
+                val (allVehicles, _) = vehicleRepository.findAll(PaginationParams(limit = 500, cursor = null))
+
+                val vehicleSummaries = allVehicles.map { vehicle ->
+                    val state = stateByVehicleId[vehicle.id.value]
+                    VehicleStatusSummary(
+                        vehicleId         = vehicle.id.value,
+                        licensePlate      = vehicle.licensePlate,
+                        make              = vehicle.make,
+                        model             = vehicle.model,
+                        routeId           = state?.routeId,
+                        status            = state?.status?.name ?: "OFFLINE",
+                        speed             = state?.speed ?: 0.0,
+                        progress          = state?.progress ?: 0.0,
+                        distanceFromRoute = state?.distanceFromRoute ?: 0.0,
+                        timestamp         = state?.timestamp?.toString() ?: "",
+                    )
                 }
 
-                val fleetStatus = FleetStatusResponse(
-                    totalVehicles = allStates.size,
-                    activeVehicles = activeCount,
-                    vehicles = allStates.map { state ->
-                        VehicleStatusSummary(
-                            vehicleId = state.vehicleId,
-                            routeId = state.routeId,
-                            status = state.status.name,
-                            speed = state.speed,
-                            progress = state.progress,
-                            distanceFromRoute = state.distanceFromRoute,
-                            timestamp = state.timestamp.toString()
-                        )
-                    }
-                )
+                val activeCount = vehicleSummaries.count {
+                    it.status == "IN_TRANSIT" || it.status == "IDLE"
+                }
 
                 call.respond(
                     HttpStatusCode.OK,
-                    ApiResponse.success(fleetStatus, call.requestId)
+                    ApiResponse.success(
+                        FleetStatusResponse(
+                            totalVehicles  = allVehicles.size,
+                            activeVehicles = activeCount,
+                            vehicles       = vehicleSummaries,
+                        ),
+                        call.requestId
+                    )
                 )
             }
 

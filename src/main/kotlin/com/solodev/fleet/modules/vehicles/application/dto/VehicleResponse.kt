@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class VehicleResponse(
         val id: String,
-        val vin: String,
+        val vin: String? = null,
         val licensePlate: String,
         val make: String,
         val model: String,

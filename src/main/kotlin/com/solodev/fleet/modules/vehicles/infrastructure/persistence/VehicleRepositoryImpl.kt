@@ -30,7 +30,7 @@ class VehicleRepositoryImpl(private val cacheManager: RedisCacheManager? = null)
     private fun ResultRow.toVehicle() =
             Vehicle(
                     id = VehicleId(this[VehiclesTable.id].value.toString()),
-                    vin = this[VehiclesTable.vin] ?: "",
+                    vin = this[VehiclesTable.vin],
                     licensePlate = this[VehiclesTable.plateNumber],
                     make = this[VehiclesTable.make],
                     model = this[VehiclesTable.model],

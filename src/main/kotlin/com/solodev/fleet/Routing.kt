@@ -4,6 +4,8 @@ import com.solodev.fleet.modules.accounts.application.AccountingService
 import com.solodev.fleet.modules.accounts.application.ReconciliationService
 import com.solodev.fleet.modules.accounts.infrastructure.http.accountingRoutes
 import com.solodev.fleet.modules.accounts.infrastructure.persistence.*
+import com.solodev.fleet.modules.drivers.infrastructure.http.driverRoutes
+import com.solodev.fleet.modules.drivers.infrastructure.persistence.DriverRepositoryImpl
 import com.solodev.fleet.modules.maintenance.infrastructure.http.maintenanceRoutes
 import com.solodev.fleet.modules.maintenance.infrastructure.persistence.MaintenanceRepositoryImpl
 import com.solodev.fleet.modules.rentals.infrastructure.http.customerRoutes
@@ -48,6 +50,7 @@ fun Application.configureRouting(
     val tokenRepo = VerificationTokenRepositoryImpl()
     val customerRepo = CustomerRepositoryImpl()
     val maintenanceRepo = MaintenanceRepositoryImpl()
+    val driverRepo = DriverRepositoryImpl()
     val invoiceRepo = InvoiceRepositoryImpl()
     val paymentRepo = PaymentRepositoryImpl()
     val accountRepo = AccountRepositoryImpl()
@@ -85,12 +88,25 @@ fun Application.configureRouting(
                     vehicleRepository = vehicleRepo,
                     accountingService = accountingService,
             )
-            customerRoutes(customerRepository = customerRepo)
+            customerRoutes(
+                    customerRepository = customerRepo,
+                    rentalRepository = rentalRepo,
+                    vehicleRepository = vehicleRepo,
+                    driverRepository = driverRepo,
+                    userRepository = userRepo,
+                    tokenRepository = tokenRepo,
+            )
+            driverRoutes(
+                    driverRepository = driverRepo,
+                    userRepository = userRepo,
+                    tokenRepository = tokenRepo,
+            )
             maintenanceRoutes(maintenanceRepository = maintenanceRepo)
             trackingRoutes(
                 updateVehicleLocation = updateVehicleLocation,
                 spatialAdapter = spatialAdapter,
                 deltaBroadcaster = deltaBroadcaster,
+                vehicleRepository = vehicleRepo,
                 historyRepository = locationHistoryRepository
             )
         }
