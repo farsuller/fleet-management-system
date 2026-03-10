@@ -8,8 +8,10 @@ import java.util.UUID
 fun VehicleStateDelta.Companion.full(state: VehicleRouteState): VehicleStateDelta {
     return VehicleStateDelta(
         vehicleId = UUID.fromString(state.vehicleId),
-        progress = state.progress,
-        bearing = state.heading,
+        routeProgress = state.progress,
+        headingDeg = state.heading,
+        latitude = state.latitude,
+        longitude = state.longitude,
         status = state.status,
         distanceFromRoute = state.distanceFromRoute,
         timestamp = state.timestamp
@@ -22,8 +24,10 @@ fun VehicleStateDelta.Companion.diff(
 ): VehicleStateDelta {
     return VehicleStateDelta(
         vehicleId = UUID.fromString(newState.vehicleId),
-        progress = if (lastState.progress != newState.progress) newState.progress else null,
-        bearing = if (lastState.heading != newState.heading) newState.heading else null,
+        routeProgress = if (lastState.progress != newState.progress) newState.progress else null,
+        headingDeg = if (lastState.heading != newState.heading) newState.heading else null,
+        latitude = if (lastState.latitude != newState.latitude) newState.latitude else null,
+        longitude = if (lastState.longitude != newState.longitude) newState.longitude else null,
         status = if (lastState.status != newState.status) newState.status else null,
         distanceFromRoute = if (lastState.distanceFromRoute != newState.distanceFromRoute) newState.distanceFromRoute else null,
         timestamp = newState.timestamp

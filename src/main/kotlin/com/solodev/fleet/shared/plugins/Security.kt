@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.solodev.fleet.shared.models.ApiResponse
 import io.ktor.http.*
+import io.ktor.http.auth.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
@@ -11,14 +12,14 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.Route
 import io.ktor.util.pipeline.*
 
-/** Enumeration of all valid staff and user roles in the system. */
+/** Enumeration of all valid back-office staff roles in the system.
+ *  CUSTOMER and DRIVER are separate domain entities with their own tables.
+ */
 enum class UserRole {
-    ADMIN, // Full system access
-    FLEET_MANAGER, // Manage vehicles and inventory
-    CUSTOMER_SUPPORT, // View customers and handle basic issues
-    RENTAL_AGENT, // Manage active rental lifecycles
-    CUSTOMER, // Basic self-service access
-    DRIVER // Vehicle telemetry and shift management
+    ADMIN,           // Full system access
+    FLEET_MANAGER,   // Manage vehicles and inventory
+    CUSTOMER_SUPPORT, // Handle customer inquiries and basic support
+    RENTAL_AGENT,    // Manage active rental lifecycles
 }
 
 /** Extension to extract and map roles from the JWT 'roles' claim into our UserRole enum. */
@@ -81,6 +82,14 @@ fun Application.configureSecurity() {
     install(Authentication) {
         jwt("auth-jwt") {
             realm = jwtRealm
+            // Also accept token via query parameter to support browser WebSocket connections,
+            // which cannot send custom headers during the upgrade handshake.
+            authHeader { call ->
+                call.request.parseAuthorizationHeader()
+                    ?: call.request.queryParameters["token"]?.let { token ->
+                        HttpAuthHeader.Single("Bearer", token)
+                    }
+            }
             verifier(
                     JWT.require(Algorithm.HMAC256(jwtSecret))
                             .withIssuer(jwtIssuer)

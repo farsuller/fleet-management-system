@@ -9,6 +9,7 @@ import com.solodev.fleet.shared.plugins.requestId
 import com.solodev.fleet.shared.utils.JwtService
 import io.ktor.http.*
 import io.ktor.server.auth.*
+import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -98,6 +99,15 @@ fun Route.userRoutes(
 
                 val response = LoginResponse(token = token, user = UserResponse.fromDomain(user))
                 call.respond(ApiResponse.success(response, call.requestId))
+            } catch (e: BadRequestException) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse.error(
+                        "INVALID_REQUEST",
+                        "Invalid request body. Expected JSON: {\"email\": \"...\", \"password\": \"...\"}",
+                        call.requestId
+                    )
+                )
             } catch (e: IllegalArgumentException) {
                 call.respond(
                     HttpStatusCode.Unauthorized,

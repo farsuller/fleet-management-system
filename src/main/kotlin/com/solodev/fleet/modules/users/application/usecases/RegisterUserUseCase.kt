@@ -20,9 +20,9 @@ class RegisterUserUseCase(
                 }
 
                 val customerRole =
-                        repository.findRoleByName("CUSTOMER")
+                        repository.findRoleByName("CUSTOMER_SUPPORT")
                                 ?: throw IllegalStateException(
-                                        "Default CUSTOMER role not found in database"
+                                        "Default CUSTOMER_SUPPORT role not found in database"
                                 )
 
                 val user =

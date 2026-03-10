@@ -3,6 +3,7 @@ package com.solodev.fleet.modules.vehicles.infrastructure.persistence
 import com.solodev.fleet.modules.vehicles.domain.model.Vehicle
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleState
+import com.solodev.fleet.modules.vehicles.domain.model.VehicleType
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 import com.solodev.fleet.shared.domain.model.Location
 import com.solodev.fleet.shared.exceptions.ConflictException
@@ -30,12 +31,13 @@ class VehicleRepositoryImpl(private val cacheManager: RedisCacheManager? = null)
     private fun ResultRow.toVehicle() =
             Vehicle(
                     id = VehicleId(this[VehiclesTable.id].value.toString()),
-                    vin = this[VehiclesTable.vin] ?: "",
+                    vin = this[VehiclesTable.vin],
                     licensePlate = this[VehiclesTable.plateNumber],
                     make = this[VehiclesTable.make],
                     model = this[VehiclesTable.model],
                     year = this[VehiclesTable.year],
                     color = this[VehiclesTable.color],
+                    vehicleType = VehicleType.valueOf(this[VehiclesTable.vehicleType]),
                     state = VehicleState.valueOf(this[VehiclesTable.status]),
                     mileageKm = this[VehiclesTable.currentOdometerKm],
                     dailyRateAmount = this[VehiclesTable.dailyRate],
@@ -106,6 +108,7 @@ class VehicleRepositoryImpl(private val cacheManager: RedisCacheManager? = null)
                         it[model] = vehicle.model
                         it[year] = vehicle.year
                         it[color] = vehicle.color
+                        it[vehicleType] = vehicle.vehicleType.name
                         it[status] = vehicle.state.name
                         it[currentOdometerKm] = vehicle.mileageKm
                         it[dailyRate] = vehicle.dailyRateAmount
@@ -134,6 +137,7 @@ class VehicleRepositoryImpl(private val cacheManager: RedisCacheManager? = null)
                 it[model] = vehicle.model
                 it[year] = vehicle.year
                 it[color] = vehicle.color
+                it[vehicleType] = vehicle.vehicleType.name
                 it[status] = vehicle.state.name
                 it[currentOdometerKm] = vehicle.mileageKm
                 it[dailyRate] = vehicle.dailyRateAmount

@@ -29,8 +29,10 @@ class VehicleStateDeltaExtensionsTest {
         val delta = VehicleStateDelta.full(state)
 
         assertEquals(UUID.fromString(vehicleUuid), delta.vehicleId)
-        assertEquals(0.42, delta.progress)
-        assertEquals(180.0, delta.bearing)
+        assertEquals(0.42, delta.routeProgress)
+        assertEquals(180.0, delta.headingDeg)
+        assertEquals(14.5995, delta.latitude)
+        assertEquals(121.0244, delta.longitude)
         assertEquals(VehicleStatus.IN_TRANSIT, delta.status)
         assertEquals(5.0, delta.distanceFromRoute)
         assertNotNull(delta.timestamp)
@@ -56,8 +58,10 @@ class VehicleStateDeltaExtensionsTest {
         val newState = lastState.copy(progress = 0.45)
         val delta = VehicleStateDelta.diff(lastState, newState)
 
-        assertEquals(0.45, delta.progress)
-        assertNull(delta.bearing)
+        assertEquals(0.45, delta.routeProgress)
+        assertNull(delta.headingDeg)
+        assertNull(delta.latitude)
+        assertNull(delta.longitude)
         assertNull(delta.status)
         assertNull(delta.distanceFromRoute)
     }
@@ -81,8 +85,10 @@ class VehicleStateDeltaExtensionsTest {
 
         val delta = VehicleStateDelta.diff(state, state)
 
-        assertNull(delta.progress)
-        assertNull(delta.bearing)
+        assertNull(delta.routeProgress)
+        assertNull(delta.headingDeg)
+        assertNull(delta.latitude)
+        assertNull(delta.longitude)
         assertNull(delta.status)
         assertNull(delta.distanceFromRoute)
         assertFalse(delta.hasChanges())

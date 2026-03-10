@@ -1,6 +1,7 @@
 package com.solodev.fleet.modules.accounts.infrastructure.persistence
 
 import com.solodev.fleet.modules.accounts.domain.model.Payment
+import com.solodev.fleet.modules.accounts.domain.model.PaymentCollectionType
 import com.solodev.fleet.modules.accounts.domain.model.PaymentStatus
 import com.solodev.fleet.modules.accounts.domain.repository.PaymentRepository
 import com.solodev.fleet.modules.rentals.domain.model.CustomerId
@@ -9,6 +10,8 @@ import java.time.Instant
 import java.util.*
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
@@ -34,6 +37,8 @@ class PaymentRepositoryImpl : PaymentRepository {
                 it[paymentNumber] = payment.paymentNumber
                 it[customerId] = UUID.fromString(payment.customerId.value)
                 it[invoiceId] = payment.invoiceId
+                it[driverId] = payment.driverId
+                it[collectionType] = payment.collectionType.name
                 it[paymentMethod] = payment.paymentMethod
                 it[amount] = payment.amount
                 it[transactionReference] = payment.transactionReference
@@ -54,6 +59,12 @@ class PaymentRepositoryImpl : PaymentRepository {
                 .singleOrNull()
     }
 
+    override suspend fun findByIds(ids: List<UUID>): List<Payment> = dbQuery {
+        PaymentsTable.selectAll()
+                .where { PaymentsTable.id inList ids }
+                .map { toDomain(it) }
+    }
+
     override suspend fun findByInvoiceId(invoiceId: UUID): List<Payment> = dbQuery {
         PaymentsTable.selectAll().where { PaymentsTable.invoiceId eq invoiceId }.map {
             toDomain(it)
@@ -66,6 +77,16 @@ class PaymentRepositoryImpl : PaymentRepository {
         }
     }
 
+    override suspend fun findByDriverId(driverId: UUID): List<Payment> = dbQuery {
+        PaymentsTable.selectAll().where { PaymentsTable.driverId eq driverId }.map { toDomain(it) }
+    }
+
+    override suspend fun findPendingByDriverId(driverId: UUID): List<Payment> = dbQuery {
+        PaymentsTable.selectAll()
+                .where { (PaymentsTable.driverId eq driverId) and (PaymentsTable.status eq "PENDING") }
+                .map { toDomain(it) }
+    }
+
     override suspend fun findAll(): List<Payment> = dbQuery {
         PaymentsTable.selectAll().map { toDomain(it) }
     }
@@ -76,11 +97,15 @@ class PaymentRepositoryImpl : PaymentRepository {
                 paymentNumber = row[PaymentsTable.paymentNumber],
                 customerId = CustomerId(row[PaymentsTable.customerId].toString()),
                 invoiceId = row[PaymentsTable.invoiceId]?.value,
+                driverId = row[PaymentsTable.driverId]?.value,
                 amount = row[PaymentsTable.amount],
                 paymentMethod = row[PaymentsTable.paymentMethod],
                 transactionReference = row[PaymentsTable.transactionReference],
                 status = PaymentStatus.valueOf(row[PaymentsTable.status]),
                 paymentDate = row[PaymentsTable.paymentDate] ?: Instant.now(),
+                collectionType = PaymentCollectionType.valueOf(
+                        row[PaymentsTable.collectionType] ?: PaymentCollectionType.DIRECT.name
+                ),
                 notes = row[PaymentsTable.notes]
         )
     }

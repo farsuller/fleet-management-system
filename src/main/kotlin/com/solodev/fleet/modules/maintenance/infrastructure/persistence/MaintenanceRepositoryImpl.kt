@@ -102,6 +102,12 @@ class MaintenanceRepositoryImpl : MaintenanceRepository {
                 .singleOrNull()
     }
 
+    override suspend fun findAll(): List<MaintenanceJob> = dbQuery {
+        MaintenanceJobsTable.selectAll()
+                .orderBy(MaintenanceJobsTable.scheduledDate to SortOrder.ASC)
+                .map { it.toMaintenanceJob() }
+    }
+
     override suspend fun findByVehicleId(vehicleId: VehicleId): List<MaintenanceJob> = dbQuery {
         MaintenanceJobsTable.selectAll()
                 .where { MaintenanceJobsTable.vehicleId eq UUID.fromString(vehicleId.value) }

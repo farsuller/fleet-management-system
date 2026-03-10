@@ -24,8 +24,8 @@ class SerializationTest {
     fun `should serialize VehicleStateDelta with UUID and Instant`() {
         val delta = VehicleStateDelta(
             vehicleId = UUID.randomUUID(),
-            progress = 0.42,
-            bearing = 180.0,
+            routeProgress = 0.42,
+            headingDeg = 180.0,
             status = VehicleStatus.IN_TRANSIT,
             distanceFromRoute = 5.0,
             timestamp = Instant.now()
@@ -35,7 +35,7 @@ class SerializationTest {
         val deserialized = json.decodeFromString<VehicleStateDelta>(jsonStr)
 
         assertEquals(delta.vehicleId, deserialized.vehicleId)
-        assertEquals(delta.progress, deserialized.progress)
+        assertEquals(delta.routeProgress, deserialized.routeProgress)
         assertEquals(delta.timestamp, deserialized.timestamp)
     }
 
@@ -43,8 +43,8 @@ class SerializationTest {
     fun `should handle null optional fields in delta`() {
         val delta = VehicleStateDelta(
             vehicleId = UUID.randomUUID(),
-            progress = null,
-            bearing = null,
+            routeProgress = null,
+            headingDeg = null,
             status = null,
             distanceFromRoute = null,
             timestamp = Instant.now()
@@ -53,8 +53,8 @@ class SerializationTest {
         val jsonStr = json.encodeToString(delta)
         val deserialized = json.decodeFromString<VehicleStateDelta>(jsonStr)
 
-        assertNull(deserialized.progress)
-        assertNull(deserialized.bearing)
+        assertNull(deserialized.routeProgress)
+        assertNull(deserialized.headingDeg)
         assertNull(deserialized.status)
     }
 

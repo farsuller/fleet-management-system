@@ -1,9 +1,11 @@
 package com.solodev.fleet.modules.accounts.infrastructure.persistence
 
+import com.solodev.fleet.modules.drivers.infrastructure.persistence.DriversTable
 import com.solodev.fleet.modules.rentals.infrastructure.persistence.CustomersTable
 import com.solodev.fleet.modules.rentals.infrastructure.persistence.RentalsTable
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.ReferenceOption
+import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.javatime.timestamp
 
@@ -49,12 +51,12 @@ object InvoicesTable : UUIDTable("invoices") {
             reference("rental_id", RentalsTable, onDelete = ReferenceOption.SET_NULL).nullable()
     val status = varchar("status", 20)
 
-    // Amounts
+    // Amounts — balance is a DB-generated column (GENERATED ALWAYS AS) and is NOT written by
+    // application code; the domain model computes it as subtotal + tax - paidAmount.
     val subtotal = integer("subtotal")
     val tax = integer("tax").default(0)
     val paidAmount = integer("paid_amount").default(0)
     val currencyCode = varchar("currency_code", 3).default("PHP")
-    val balance = integer("balance")
 
     // Dates
     val issueDate = date("issue_date")
@@ -82,6 +84,12 @@ object PaymentsTable : UUIDTable("payments") {
     val customerId = reference("customer_id", CustomersTable, onDelete = ReferenceOption.RESTRICT)
     val invoiceId =
             reference("invoice_id", InvoicesTable, onDelete = ReferenceOption.SET_NULL).nullable()
+    /** Nullable FK to driver who collected this payment on behalf of the company. */
+    val driverId =
+            reference("driver_id", DriversTable, onDelete = ReferenceOption.SET_NULL)
+                    .nullable()
+    /** DIRECT = customer paid company; DRIVER_COLLECTED = collected by driver, awaiting remittance. */
+    val collectionType = varchar("collection_type", 20).default("DIRECT")
     val paymentMethod = varchar("payment_method", 50)
     val amount = integer("amount")
     val currencyCode = varchar("currency_code", 3).default("PHP")
@@ -102,4 +110,25 @@ object PaymentMethodsTable : UUIDTable("payment_methods") {
     val description = text("description").nullable()
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
+}
+
+/** Exposed table definition for driver remittances (batch hand-over of collected payments). */
+object DriverRemittancesTable : UUIDTable("driver_remittances") {
+    val remittanceNumber = varchar("remittance_number", 50).uniqueIndex()
+    val driverId = reference("driver_id", DriversTable, onDelete = ReferenceOption.RESTRICT)
+    val remittanceDate = timestamp("remittance_date")
+    val totalAmount = integer("total_amount")
+    val status = varchar("status", 20).default("PENDING")
+    val notes = text("notes").nullable()
+    val createdAt = timestamp("created_at")
+}
+
+/**
+ * Junction table linking each remittance to the individual payments it clears.
+ * A remittance covers many DRIVER_COLLECTED payments.
+ */
+object DriverRemittancePaymentsTable : Table("driver_remittance_payments") {
+    val remittanceId = reference("remittance_id", DriverRemittancesTable, onDelete = ReferenceOption.CASCADE)
+    val paymentId = reference("payment_id", PaymentsTable, onDelete = ReferenceOption.RESTRICT)
+    override val primaryKey = PrimaryKey(remittanceId, paymentId)
 }

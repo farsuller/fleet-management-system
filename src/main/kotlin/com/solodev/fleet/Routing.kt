@@ -3,7 +3,14 @@ package com.solodev.fleet
 import com.solodev.fleet.modules.accounts.application.AccountingService
 import com.solodev.fleet.modules.accounts.application.ReconciliationService
 import com.solodev.fleet.modules.accounts.infrastructure.http.accountingRoutes
-import com.solodev.fleet.modules.accounts.infrastructure.persistence.*
+import com.solodev.fleet.modules.accounts.infrastructure.persistence.AccountRepositoryImpl
+import com.solodev.fleet.modules.accounts.infrastructure.persistence.DriverRemittanceRepositoryImpl
+import com.solodev.fleet.modules.accounts.infrastructure.persistence.InvoiceRepositoryImpl
+import com.solodev.fleet.modules.accounts.infrastructure.persistence.LedgerRepositoryImpl
+import com.solodev.fleet.modules.accounts.infrastructure.persistence.PaymentMethodRepositoryImpl
+import com.solodev.fleet.modules.accounts.infrastructure.persistence.PaymentRepositoryImpl
+import com.solodev.fleet.modules.drivers.infrastructure.http.driverRoutes
+import com.solodev.fleet.modules.drivers.infrastructure.persistence.DriverRepositoryImpl
 import com.solodev.fleet.modules.maintenance.infrastructure.http.maintenanceRoutes
 import com.solodev.fleet.modules.maintenance.infrastructure.persistence.MaintenanceRepositoryImpl
 import com.solodev.fleet.modules.rentals.infrastructure.http.customerRoutes
@@ -48,13 +55,20 @@ fun Application.configureRouting(
     val tokenRepo = VerificationTokenRepositoryImpl()
     val customerRepo = CustomerRepositoryImpl()
     val maintenanceRepo = MaintenanceRepositoryImpl()
+    val driverRepo = DriverRepositoryImpl()
     val invoiceRepo = InvoiceRepositoryImpl()
     val paymentRepo = PaymentRepositoryImpl()
     val accountRepo = AccountRepositoryImpl()
     val ledgerRepo = LedgerRepositoryImpl()
     val paymentMethodRepo = PaymentMethodRepositoryImpl()
+    val remittanceRepo = DriverRemittanceRepositoryImpl()
 
     val accountingService = AccountingService(accountRepo = accountRepo, ledgerRepo = ledgerRepo)
+    val issueInvoiceUseCase = com.solodev.fleet.modules.accounts.application.usecases.IssueInvoiceUseCase(
+        invoiceRepo = invoiceRepo,
+        accountRepo = accountRepo,
+        ledgerRepo = ledgerRepo
+    )
     val reconciliationService =
             ReconciliationService(
                     invoiceRepo = invoiceRepo,
@@ -84,13 +98,28 @@ fun Application.configureRouting(
                     rentalRepository = rentalRepo,
                     vehicleRepository = vehicleRepo,
                     accountingService = accountingService,
+                    issueInvoiceUseCase = issueInvoiceUseCase,
+                    invoiceRepository = invoiceRepo
             )
-            customerRoutes(customerRepository = customerRepo)
+            customerRoutes(
+                    customerRepository = customerRepo,
+                    rentalRepository = rentalRepo,
+                    vehicleRepository = vehicleRepo,
+                    driverRepository = driverRepo,
+                    userRepository = userRepo,
+                    tokenRepository = tokenRepo,
+            )
+            driverRoutes(
+                    driverRepository = driverRepo,
+                    userRepository = userRepo,
+                    tokenRepository = tokenRepo,
+            )
             maintenanceRoutes(maintenanceRepository = maintenanceRepo)
             trackingRoutes(
                 updateVehicleLocation = updateVehicleLocation,
                 spatialAdapter = spatialAdapter,
                 deltaBroadcaster = deltaBroadcaster,
+                vehicleRepository = vehicleRepo,
                 historyRepository = locationHistoryRepository
             )
         }
@@ -111,6 +140,8 @@ fun Application.configureRouting(
                         accountRepository = accountRepo,
                         ledgerRepository = ledgerRepo,
                         paymentMethodRepository = paymentMethodRepo,
+                        customerRepository = customerRepo,
+                        remittanceRepository = remittanceRepo,
                         reconciliationService = reconciliationService
                 )
             }

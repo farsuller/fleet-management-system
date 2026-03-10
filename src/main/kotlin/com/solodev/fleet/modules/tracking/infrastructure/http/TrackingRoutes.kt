@@ -24,6 +24,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import java.time.Instant
 import org.slf4j.LoggerFactory
+import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
+import com.solodev.fleet.shared.models.PaginationParams
+import kotlinx.serialization.json.*
 
 private val logger = LoggerFactory.getLogger("TrackingRoutes")
 
@@ -80,11 +83,17 @@ data class FleetStatusResponse(
 @Serializable
 data class VehicleStatusSummary(
     val vehicleId: String,
+    val licensePlate: String = "",
+    val make: String = "",
+    val model: String = "",
     val routeId: String? = null,
     val status: String,
     val speed: Double,
     val progress: Double,
     val distanceFromRoute: Double,
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val heading: Double = 0.0,
     val timestamp: String
 )
 
@@ -113,18 +122,50 @@ data class TrackingRecord(
     val timestamp: String
 )
 
+/** Request body for creating a route from a GeoJSON string. */
+@Serializable
+data class CreateRouteRequest(
+    val name: String,
+    val description: String? = null,
+    /** Raw GeoJSON — Feature, FeatureCollection, or bare LineString geometry. */
+    val geojson: String,
+)
+
+/**
+ * Converts a GeoJSON string to a WKT LINESTRING.
+ * Accepts Feature, FeatureCollection (uses first feature), or bare LineString geometry.
+ * Returns null if no valid LineString can be extracted.
+ */
+private fun geoJsonLineStringToWkt(geojson: String): String? = runCatching {
+    val root = Json.parseToJsonElement(geojson).jsonObject
+    val geometry: JsonObject? = when (root["type"]?.jsonPrimitive?.content) {
+        "FeatureCollection" -> root["features"]?.jsonArray?.firstOrNull()?.jsonObject?.get("geometry")?.jsonObject
+        "Feature"           -> root["geometry"]?.jsonObject
+        "LineString"        -> root
+        else                -> null
+    }
+    if (geometry?.get("type")?.jsonPrimitive?.content != "LineString") return@runCatching null
+    val coords = geometry["coordinates"]?.jsonArray ?: return@runCatching null
+    val wktCoords = coords.joinToString(", ") { pt ->
+        val arr = pt.jsonArray
+        "${arr[0].jsonPrimitive.double} ${arr[1].jsonPrimitive.double}"
+    }
+    "LINESTRING($wktCoords)"
+}.getOrNull()
+
 /** API routes for vehicle tracking and spatial features. */
 fun Route.trackingRoutes(
     updateVehicleLocation: UpdateVehicleLocationUseCase,
     spatialAdapter: PostGISAdapter,
     deltaBroadcaster: RedisDeltaBroadcaster,
+    vehicleRepository: VehicleRepository,
     historyRepository: LocationHistoryRepository = LocationHistoryRepository(),
     rateLimiter: LocationUpdateRateLimiter = LocationUpdateRateLimiter(maxUpdatesPerMinute = 60),
     idempotencyManager: IdempotencyKeyManager = IdempotencyKeyManager(ttlMinutes = 24 * 60),
     circuitBreaker: CircuitBreaker = CircuitBreaker("LocationUpdate", failureThreshold = 5)
 ) {
     route("/v1/tracking") {
-        get("/routes") {
+        get("/routes/active") {
             val routes = spatialAdapter.findAllRoutes()
             call.respond(ApiResponse.success(routes, call.requestId))
         }
@@ -254,32 +295,45 @@ fun Route.trackingRoutes(
                 )
             }
 
-            // Phase 7: Get fleet real-time status
+            // Phase 7: Get fleet real-time status — joins all vehicles with latest tracking state
             get("/fleet/status") {
-                val allStates = historyRepository.getAllLatestVehicleStates()
-                val activeCount = allStates.count {
-                    it.status == VehicleStatus.IN_TRANSIT || it.status == VehicleStatus.IDLE
+                val allLatestStates = historyRepository.getAllLatestVehicleStates()
+                val stateByVehicleId = allLatestStates.associateBy { it.vehicleId }
+                val (allVehicles, _) = vehicleRepository.findAll(PaginationParams(limit = 500, cursor = null))
+
+                val vehicleSummaries = allVehicles.map { vehicle ->
+                    val state = stateByVehicleId[vehicle.id.value]
+                    VehicleStatusSummary(
+                        vehicleId         = vehicle.id.value,
+                        licensePlate      = vehicle.licensePlate,
+                        make              = vehicle.make,
+                        model             = vehicle.model,
+                        routeId           = state?.routeId,
+                        status            = state?.status?.name ?: "OFFLINE",
+                        speed             = state?.speed ?: 0.0,
+                        progress          = state?.progress ?: 0.0,
+                        distanceFromRoute = state?.distanceFromRoute ?: 0.0,
+                        latitude          = state?.latitude ?: 0.0,
+                        longitude         = state?.longitude ?: 0.0,
+                        heading           = state?.heading ?: 0.0,
+                        timestamp         = state?.timestamp?.toString() ?: "",
+                    )
                 }
 
-                val fleetStatus = FleetStatusResponse(
-                    totalVehicles = allStates.size,
-                    activeVehicles = activeCount,
-                    vehicles = allStates.map { state ->
-                        VehicleStatusSummary(
-                            vehicleId = state.vehicleId,
-                            routeId = state.routeId,
-                            status = state.status.name,
-                            speed = state.speed,
-                            progress = state.progress,
-                            distanceFromRoute = state.distanceFromRoute,
-                            timestamp = state.timestamp.toString()
-                        )
-                    }
-                )
+                val activeCount = vehicleSummaries.count {
+                    it.status == "IN_TRANSIT" || it.status == "IDLE"
+                }
 
                 call.respond(
                     HttpStatusCode.OK,
-                    ApiResponse.success(fleetStatus, call.requestId)
+                    ApiResponse.success(
+                        FleetStatusResponse(
+                            totalVehicles  = allVehicles.size,
+                            activeVehicles = activeCount,
+                            vehicles       = vehicleSummaries,
+                        ),
+                        call.requestId
+                    )
                 )
             }
 
@@ -325,6 +379,46 @@ fun Route.trackingRoutes(
                     call.respond(
                         HttpStatusCode.InternalServerError,
                         ApiResponse.error("HISTORY_FETCH_ERROR", "Failed to fetch tracking history", call.requestId)
+                    )
+                }
+            }
+        }
+    }
+
+    // ── Route Management ──────────────────────────────────────────────────────
+
+    /**
+     * POST /v1/tracking/routes
+     * Accepts a GeoJSON LineString (Feature, FeatureCollection, or bare geometry)
+     * and saves it as a route in the PostGIS `routes` table.
+     */
+    authenticate("auth-jwt") {
+        route("/v1/tracking/routes") {
+            post {
+                try {
+                    val body = call.receive<CreateRouteRequest>()
+
+                    val wkt = geoJsonLineStringToWkt(body.geojson)
+                        ?: return@post call.respond(
+                            HttpStatusCode.UnprocessableEntity,
+                            ApiResponse.error(
+                                "INVALID_GEOJSON",
+                                "GeoJSON must contain a LineString geometry",
+                                call.requestId,
+                            )
+                        )
+
+                    val route = spatialAdapter.createRoute(
+                        name        = body.name,
+                        description = body.description,
+                        wktLineString = wkt,
+                    )
+                    call.respond(HttpStatusCode.Created, ApiResponse.success(route, call.requestId))
+                } catch (e: Exception) {
+                    logger.error("Error creating route", e)
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        ApiResponse.error("ROUTE_CREATE_ERROR", e.message ?: "Failed to create route", call.requestId)
                     )
                 }
             }

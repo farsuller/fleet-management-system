@@ -59,6 +59,7 @@ components:
         year: { type: integer }
         licensePlate: { type: string }
         vin: { type: string }
+        vehicleType: { type: string, enum: [SEDAN, SUV, VAN, TRUCK, BUS, MOTORCYCLE, AMBULANCE, OTHER], default: OTHER }
     VehicleUpdateRequest:
       type: object
       properties:
@@ -75,6 +76,7 @@ components:
         year: { type: integer }
         licensePlate: { type: string }
         vin: { type: string }
+        vehicleType: { type: string, enum: [SEDAN, SUV, VAN, TRUCK, BUS, MOTORCYCLE, AMBULANCE, OTHER] }
         state: { type: string, enum: [AVAILABLE, RENTED, MAINTENANCE, RETIRED] }
         odometerKm: { type: integer }
     VehicleStateRequest:
@@ -176,11 +178,15 @@ components:
       type: object
       properties:
         id: { type: string, format: uuid }
+        userId: { type: string, format: uuid, nullable: true }
+        firstName: { type: string }
+        lastName: { type: string }
         email: { type: string }
-        fullName: { type: string }
         phone: { type: string }
-        driversLicense: { type: string }
+        driverLicenseNumber: { type: string }
+        licenseExpiryMs: { type: integer, format: int64, description: "License expiry epoch milliseconds" }
         isActive: { type: boolean }
+        createdAt: { type: integer, format: int64, description: "Account creation epoch milliseconds" }
 
     # --- Maintenance Module ---
     MaintenanceRequest:
@@ -194,14 +200,15 @@ components:
       type: object
       properties:
         id: { type: string, format: uuid }
+        jobNumber: { type: string, example: 'MAINT-1741603200000' }
         vehicleId: { type: string, format: uuid }
-        description: { type: string }
         status: { type: string, enum: [SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED] }
+        jobType: { type: string, enum: [ROUTINE, REPAIR, INSPECTION, EMERGENCY] }
+        description: { type: string }
         scheduledDate: { type: string, format: date-time }
-        startDate: { type: string, format: date-time, nullable: true }
-        completionDate: { type: string, format: date-time, nullable: true }
-        laborCost: { type: integer }
-        partsCost: { type: integer }
+        startedAt: { type: string, format: date-time, nullable: true }
+        completedAt: { type: string, format: date-time, nullable: true }
+        totalCost: { type: number, format: double }
     MaintenanceStatusUpdateRequest:
       type: object
       properties:
@@ -224,15 +231,32 @@ components:
             properties:
               description: { type: string }
               amount: { type: integer }
+    CustomerSummary:
+      type: object
+      description: Condensed customer information embedded in invoice responses
+      properties:
+        id: { type: string, format: uuid }
+        fullName: { type: string }
+        email: { type: string, format: email }
+        phoneNumber: { type: string, nullable: true }
     InvoiceResponse:
       type: object
       properties:
         id: { type: string, format: uuid }
-        invoiceNumber: { type: string }
-        customerId: { type: string, format: uuid }
+        invoiceNumber: { type: string, example: 'INV-1739632400000' }
+        customer: { $ref: '#/components/schemas/CustomerSummary', nullable: true }
+        rentalId: { type: string, format: uuid, nullable: true }
         status: { type: string, enum: [DRAFT, ISSUED, PAID, OVERDUE, CANCELLED] }
-        totalAmount: { type: integer }
+        subtotal: { type: integer, description: 'Pre-tax amount in whole PHP units' }
+        tax: { type: integer, description: 'Tax amount in whole PHP units' }
+        total: { type: integer, description: 'Total in whole PHP units (subtotal + tax)' }
+        paidAmount: { type: integer, description: 'Amount paid so far in whole PHP units' }
+        balance: { type: integer, description: 'Remaining balance in whole PHP units' }
+        currencyCode: { type: string, example: 'PHP' }
+        issueDate: { type: string, format: date-time }
         dueDate: { type: string, format: date-time }
+        paidDate: { type: string, format: date-time, nullable: true }
+        notes: { type: string, nullable: true }
     PaymentRequest:
       type: object
       required: [amount, paymentMethod]
@@ -251,12 +275,56 @@ components:
     PaymentResponse:
       type: object
       properties:
-        id: { type: string }
+        id: { type: string, format: uuid }
         paymentNumber: { type: string }
+        customerId: { type: string, format: uuid }
+        invoiceId: { type: string, format: uuid, nullable: true }
+        driverId: { type: string, format: uuid, nullable: true }
         amount: { type: integer }
         paymentMethod: { type: string }
-        status: { type: string }
+        transactionReference: { type: string, nullable: true }
+        status: { type: string, enum: [PENDING, COMPLETED, FAILED, REFUNDED] }
+        collectionType: { type: string, enum: [DIRECT, DRIVER_COLLECTED], default: DIRECT }
         paymentDate: { type: string, format: date-time }
+        notes: { type: string, nullable: true }
+    DriverCollectionRequest:
+      type: object
+      required: [driverId, customerId, invoiceId, amount, paymentMethod, collectedAt]
+      description: Records a payment collected by a driver from a customer in the field
+      properties:
+        driverId: { type: string, format: uuid, description: 'Driver who collected the payment' }
+        customerId: { type: string, format: uuid, description: 'Customer who made the payment' }
+        invoiceId: { type: string, format: uuid, description: 'Invoice being paid' }
+        amount: { type: integer, description: 'Amount collected in whole PHP units' }
+        paymentMethod: { type: string, example: 'CASH', description: 'Payment method used' }
+        transactionReference: { type: string, nullable: true, description: 'Reference number (e.g. GCash ref)' }
+        collectedAt: { type: string, format: date-time, description: 'ISO-8601 datetime of collection' }
+    DriverRemittanceRequest:
+      type: object
+      required: [driverId, paymentIds, remittanceDate]
+      description: Submits a batch of driver-collected payments to back-office for settlement
+      properties:
+        driverId: { type: string, format: uuid }
+        paymentIds:
+          type: array
+          items: { type: string, format: uuid }
+          minItems: 1
+          description: IDs of PENDING DRIVER_COLLECTED payments to include in this remittance
+        remittanceDate: { type: string, format: date-time, description: 'ISO-8601 datetime of hand-over' }
+        notes: { type: string, nullable: true }
+    DriverRemittanceResponse:
+      type: object
+      description: Represents a driver remittance batch — the physical hand-over of collected payments
+      properties:
+        id: { type: string, format: uuid }
+        remittanceNumber: { type: string, example: 'REM-1739632400000' }
+        driverId: { type: string, format: uuid }
+        remittanceDate: { type: string, format: date-time }
+        totalAmount: { type: integer, description: 'Sum of all included payments in whole PHP units' }
+        status: { type: string, enum: [PENDING, SUBMITTED, VERIFIED, DISCREPANCY] }
+        paymentIds:
+          type: array
+          items: { type: string, format: uuid }
         notes: { type: string, nullable: true }
     AccountRequest:
       type: object
@@ -747,9 +815,60 @@ paths:
       responses:
         '200':
           description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/CustomerResponse' }
+        '404':
+          description: Customer not found
+
+  /v1/customers/{id}/deactivate:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    patch:
+      summary: Toggle customer active status
+      description: Flips the `isActive` flag on the customer record (deactivate if active, reactivate if inactive).
+      tags: [Customers]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Updated customer record
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/CustomerResponse' }
+        '404':
+          description: Customer not found
 
   # --- Maintenance ---
   /v1/maintenance:
+    get:
+      summary: List all maintenance jobs
+      tags: [Maintenance]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { type: string, enum: [SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED] }
+          description: Filter by job status
+      responses:
+        '200':
+          description: List of maintenance jobs
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/MaintenanceResponse' }
     post:
       summary: Schedule maintenance
       tags: [Maintenance]
@@ -761,6 +880,13 @@ paths:
       responses:
         '201':
           description: Created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/MaintenanceResponse' }
 
   /v1/maintenance/vehicle/{id}:
     parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
@@ -808,6 +934,22 @@ paths:
 
   # --- Accounting ---
   /v1/accounting/invoices:
+    get:
+      summary: List all invoices
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/InvoiceResponse' }
     post:
       summary: Issue invoice
       tags: [Accounting]
@@ -819,6 +961,13 @@ paths:
       responses:
         '201':
           description: Created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/InvoiceResponse' }
 
   /v1/accounting/invoices/{id}/pay:
     parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
@@ -850,6 +999,25 @@ paths:
         '200':
           description: Ok
 
+  /v1/accounting/invoices/customer/{customerId}:
+    parameters: [{ name: customerId, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      summary: List invoices for a customer
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: List of invoices for the specified customer
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/InvoiceResponse' }
+
   /v1/accounting/payments/customer/{id}:
     parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
     get:
@@ -860,6 +1028,70 @@ paths:
         '200':
           description: Ok
 
+  /v1/accounting/payments/driver-collection:
+    post:
+      summary: Record a payment collected by a driver from a customer
+      description: |
+        Creates a PENDING / DRIVER_COLLECTED payment. No GL entries are posted until
+        the driver submits a remittance via POST /v1/accounting/remittances.
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DriverCollectionRequest' }
+      responses:
+        '201':
+          description: Driver collection recorded
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/PaymentResponse' }
+        '400':
+          description: Validation error (overpayment, wrong customer, wrong invoice status)
+
+  /v1/accounting/payments/driver/{driverId}/pending:
+    parameters: [{ name: driverId, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      summary: List all PENDING driver-collected payments for a driver
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Pending driver-collected payments awaiting remittance
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/PaymentResponse' }
+
+  /v1/accounting/payments/driver/{driverId}/all:
+    parameters: [{ name: driverId, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      summary: List all payments collected by a driver (any status)
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: All driver-collected payments
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/PaymentResponse' }
+
   /v1/accounting/payments/{id}:
     parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
     delete:
@@ -869,6 +1101,71 @@ paths:
       responses:
         '200':
           description: Deleted
+
+  /v1/accounting/remittances:
+    post:
+      summary: Submit a driver remittance batch
+      description: |
+        Posts all included PENDING / DRIVER_COLLECTED payments as COMPLETED,
+        updates the linked invoices, and records GL entries
+        (DR: asset account per payment method / CR: Accounts Receivable 1100).
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DriverRemittanceRequest' }
+      responses:
+        '201':
+          description: Remittance submitted
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/DriverRemittanceResponse' }
+        '400':
+          description: Validation error (non-pending payment, wrong driver, wrong collection type)
+
+  /v1/accounting/remittances/driver/{driverId}:
+    parameters: [{ name: driverId, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      summary: List all remittances submitted by a driver
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Driver remittances list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/DriverRemittanceResponse' }
+
+  /v1/accounting/remittances/{remittanceId}:
+    parameters: [{ name: remittanceId, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      summary: Get a single remittance by ID
+      tags: [Accounting]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Remittance detail
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/DriverRemittanceResponse' }
+        '404':
+          description: Remittance not found
 
   /v1/accounting/accounts:
     get:

@@ -1296,6 +1296,56 @@
                     <li data-group="Vehicles" data-name="v1VehiclesPost" class="">
                       <a href="#api-Vehicles-v1VehiclesPost">v1VehiclesPost</a>
                     </li>
+                  <li class="nav-header" data-group="Drivers"><a href="#api-Drivers">API Methods - Drivers</a></li>
+                    <li data-group="Drivers" data-name="v1DriversGet" class="">
+                      <a href="#api-Drivers-v1DriversGet">v1DriversGet</a>
+                    </li>
+                    <li data-group="Drivers" data-name="v1DriversPost" class="">
+                      <a href="#api-Drivers-v1DriversPost">v1DriversPost</a>
+                    </li>
+                    <li data-group="Drivers" data-name="v1DriversRegisterPost" class="">
+                      <a href="#api-Drivers-v1DriversRegisterPost">v1DriversRegisterPost</a>
+                    </li>
+                    <li data-group="Drivers" data-name="v1DriversIdGet" class="">
+                      <a href="#api-Drivers-v1DriversIdGet">v1DriversIdGet</a>
+                    </li>
+                    <li data-group="Drivers" data-name="v1DriversIdDeactivatePatch" class="">
+                      <a href="#api-Drivers-v1DriversIdDeactivatePatch">v1DriversIdDeactivatePatch</a>
+                    </li>
+                    <li data-group="Drivers" data-name="v1DriversIdAssignPost" class="">
+                      <a href="#api-Drivers-v1DriversIdAssignPost">v1DriversIdAssignPost</a>
+                    </li>
+                    <li data-group="Drivers" data-name="v1DriversIdReleasePost" class="">
+                      <a href="#api-Drivers-v1DriversIdReleasePost">v1DriversIdReleasePost</a>
+                    </li>
+                    <li data-group="Drivers" data-name="v1DriversIdAssignmentsGet" class="">
+                      <a href="#api-Drivers-v1DriversIdAssignmentsGet">v1DriversIdAssignmentsGet</a>
+                    </li>
+                    <li data-group="Drivers" data-name="v1DriversIdHistoryGet" class="">
+                      <a href="#api-Drivers-v1DriversIdHistoryGet">v1DriversIdHistoryGet</a>
+                    </li>
+                  <li class="nav-header" data-group="Tracking"><a href="#api-Tracking">API Methods - Tracking</a></li>
+                    <li data-group="Tracking" data-name="v1TrackingRoutesActiveGet" class="">
+                      <a href="#api-Tracking-v1TrackingRoutesActiveGet">v1TrackingRoutesActiveGet</a>
+                    </li>
+                    <li data-group="Tracking" data-name="v1TrackingRoutesPost" class="">
+                      <a href="#api-Tracking-v1TrackingRoutesPost">v1TrackingRoutesPost</a>
+                    </li>
+                    <li data-group="Tracking" data-name="v1TrackingVehiclesIdLocationPost" class="">
+                      <a href="#api-Tracking-v1TrackingVehiclesIdLocationPost">v1TrackingVehiclesIdLocationPost</a>
+                    </li>
+                    <li data-group="Tracking" data-name="v1TrackingVehiclesIdStateGet" class="">
+                      <a href="#api-Tracking-v1TrackingVehiclesIdStateGet">v1TrackingVehiclesIdStateGet</a>
+                    </li>
+                    <li data-group="Tracking" data-name="v1TrackingFleetStatusGet" class="">
+                      <a href="#api-Tracking-v1TrackingFleetStatusGet">v1TrackingFleetStatusGet</a>
+                    </li>
+                    <li data-group="Tracking" data-name="v1TrackingVehiclesIdHistoryGet" class="">
+                      <a href="#api-Tracking-v1TrackingVehiclesIdHistoryGet">v1TrackingVehiclesIdHistoryGet</a>
+                    </li>
+                    <li data-group="Tracking" data-name="v1FleetLiveWs" class="">
+                      <a href="#api-Tracking-v1FleetLiveWs">v1FleetLiveWs</a>
+                    </li>
           </ul>
         </nav>
       </div>
@@ -9162,8 +9212,657 @@ except ApiException as e:
                       </div>
                       <hr>
                   </section>
-          </div>
-          <div id="footer">
+                <section id="api-Tracking">
+                  <h1>Tracking</h1>
+                    <div id="api-Tracking-v1TrackingRoutesActiveGet">
+                      <article id="api-Tracking-v1TrackingRoutesActiveGet-0" data-group="User" data-name="v1TrackingRoutesActiveGet" data-version="0">
+                        <div class="pull-left">
+                          <h1>v1TrackingRoutesActiveGet</h1>
+                          <p>List active routes (Digital Rails)</p>
+                        </div>
+                        <div class="pull-right"></div>
+                        <div class="clearfix"></div>
+                        <p></p>
+                        <p class="marked"></p>
+                        <p></p>
+                        <br />
+                        <pre class="prettyprint language-html prettyprinted" data-type="get"><code><span class="pln">/v1/tracking/routes/active</span></code></pre>
+                        <p>
+                          <h3>Usage and SDK Samples</h3>
+                        </p>
+                        <ul class="nav nav-tabs nav-tabs-examples">
+                          <li class="active"><a href="#examples-Tracking-v1TrackingRoutesActiveGet-0-curl">Curl</a></li>
+                        </ul>
+                        <div class="tab-content">
+                          <div class="tab-pane active" id="examples-Tracking-v1TrackingRoutesActiveGet-0-curl">
+                           <pre class="prettyprint"><code class="language-bsh">curl -X GET\
+"http://localhost:8080/v1/tracking/routes/active"</code></pre>
+                          </div>
+                        </div>
+                        <h2>Parameters</h2>
+                        <p>No parameters required. Public endpoint.</p>
+                        <h2>Responses</h2>
+                          <h3> Status: 200 - Ok </h3>
+                          <ul class="nav nav-tabs nav-tabs-examples" ></ul>
+                          <div class="tab-content" style='margin-bottom: 10px;'></div>
+                      </article>
+                    </div>
+                    <hr>
+                    <div id="api-Tracking-v1TrackingRoutesPost">
+                      <article id="api-Tracking-v1TrackingRoutesPost-0" data-group="User" data-name="v1TrackingRoutesPost" data-version="0">
+                        <div class="pull-left">
+                          <h1>v1TrackingRoutesPost</h1>
+                          <p>Create route from GeoJSON import</p>
+                        </div>
+                        <div class="pull-right"></div>
+                        <div class="clearfix"></div>
+                        <p></p>
+                        <p class="marked"></p>
+                        <p></p>
+                        <br />
+                        <pre class="prettyprint language-html prettyprinted" data-type="post"><code><span class="pln">/v1/tracking/routes</span></code></pre>
+                        <p>
+                          <h3>Usage and SDK Samples</h3>
+                        </p>
+                        <ul class="nav nav-tabs nav-tabs-examples">
+                          <li class="active"><a href="#examples-Tracking-v1TrackingRoutesPost-0-curl">Curl</a></li>
+                        </ul>
+                        <div class="tab-content">
+                          <div class="tab-pane active" id="examples-Tracking-v1TrackingRoutesPost-0-curl">
+                           <pre class="prettyprint"><code class="language-bsh">curl -X POST\
+ -H "Authorization: Bearer [[accessToken]]"\
+ -H "Content-Type: application/json"\
+ -d '{"name":"Village Main Loop","description":"Core route","geojson":"{\"type\":\"Feature\",\"geometry\":{\"type\":\"LineString\",\"coordinates\":[[121.0244,14.5995],[121.0350,14.6100]]},\"properties\":{}}"}'\
+"http://localhost:8080/v1/tracking/routes"</code></pre>
+                          </div>
+                        </div>
+                        <h2>Parameters</h2>
+                        <div class="methodsubtabletitle">Body parameters</div>
+                        <table id="methodsubtable">
+                          <tr><th width="150px">Name</th><th>Description</th></tr>
+                          <tr><td style="width:150px;">name (required)</td><td>Display name for the route</td></tr>
+                          <tr><td style="width:150px;">description</td><td>Optional description</td></tr>
+                          <tr><td style="width:150px;">geojson (required)</td><td>GeoJSON string — Feature, FeatureCollection, or bare LineString geometry</td></tr>
+                        </table>
+                        <h2>Responses</h2>
+                          <h3> Status: 201 - Created </h3>
+                          <ul class="nav nav-tabs nav-tabs-examples" ></ul>
+                          <div class="tab-content" style='margin-bottom: 10px;'></div>
+                      </article>
+                    </div>
+                    <hr>
+                    <div id="api-Tracking-v1TrackingVehiclesIdLocationPost">
+                      <article id="api-Tracking-v1TrackingVehiclesIdLocationPost-0" data-group="User" data-name="v1TrackingVehiclesIdLocationPost" data-version="0">
+                        <div class="pull-left">
+                          <h1>v1TrackingVehiclesIdLocationPost</h1>
+                          <p>Update vehicle location (GPS ping)</p>
+                        </div>
+                        <div class="pull-right"></div>
+                        <div class="clearfix"></div>
+                        <p></p>
+                        <p class="marked"></p>
+                        <p></p>
+                        <br />
+                        <pre class="prettyprint language-html prettyprinted" data-type="post"><code><span class="pln">/v1/tracking/vehicles/{id}/location</span></code></pre>
+                        <p>
+                          <h3>Usage and SDK Samples</h3>
+                        </p>
+                        <ul class="nav nav-tabs nav-tabs-examples">
+                          <li class="active"><a href="#examples-Tracking-v1TrackingVehiclesIdLocationPost-0-curl">Curl</a></li>
+                        </ul>
+                        <div class="tab-content">
+                          <div class="tab-pane active" id="examples-Tracking-v1TrackingVehiclesIdLocationPost-0-curl">
+                           <pre class="prettyprint"><code class="language-bsh">curl -X POST\
+ -H "Authorization: Bearer [[accessToken]]"\
+ -H "Content-Type: application/json"\
+ -d '{"latitude":14.5995,"longitude":121.0244,"routeId":"7b8e1e5b-...","speed":45.5,"heading":180.0,"accuracy":5.0}'\
+"http://localhost:8080/v1/tracking/vehicles/{id}/location"</code></pre>
+                          </div>
+                        </div>
+                        <h2>Parameters</h2>
+                        <div class="methodsubtabletitle">Path parameters</div>
+                        <table id="methodsubtable">
+                          <tr><th width="150px">Name</th><th>Description</th></tr>
+                          <tr><td style="width:150px;">id (required)</td><td>Vehicle UUID</td></tr>
+                        </table>
+                        <h2>Responses</h2>
+                          <h3> Status: 200 - Ok </h3>
+                          <ul class="nav nav-tabs nav-tabs-examples" ></ul>
+                          <div class="tab-content" style='margin-bottom: 10px;'></div>
+                      </article>
+                    </div>
+                    <hr>
+                    <div id="api-Tracking-v1TrackingVehiclesIdStateGet">
+                      <article id="api-Tracking-v1TrackingVehiclesIdStateGet-0" data-group="User" data-name="v1TrackingVehiclesIdStateGet" data-version="0">
+                        <div class="pull-left">
+                          <h1>v1TrackingVehiclesIdStateGet</h1>
+                          <p>Get current vehicle tracking state</p>
+                        </div>
+                        <div class="pull-right"></div>
+                        <div class="clearfix"></div>
+                        <p></p>
+                        <p class="marked"></p>
+                        <p></p>
+                        <br />
+                        <pre class="prettyprint language-html prettyprinted" data-type="get"><code><span class="pln">/v1/tracking/vehicles/{vehicleId}/state</span></code></pre>
+                        <p>
+                          <h3>Usage and SDK Samples</h3>
+                        </p>
+                        <ul class="nav nav-tabs nav-tabs-examples">
+                          <li class="active"><a href="#examples-Tracking-v1TrackingVehiclesIdStateGet-0-curl">Curl</a></li>
+                        </ul>
+                        <div class="tab-content">
+                          <div class="tab-pane active" id="examples-Tracking-v1TrackingVehiclesIdStateGet-0-curl">
+                           <pre class="prettyprint"><code class="language-bsh">curl -X GET\
+ -H "Authorization: Bearer [[accessToken]]"\
+"http://localhost:8080/v1/tracking/vehicles/{vehicleId}/state"</code></pre>
+                          </div>
+                        </div>
+                        <h2>Parameters</h2>
+                        <div class="methodsubtabletitle">Path parameters</div>
+                        <table id="methodsubtable">
+                          <tr><th width="150px">Name</th><th>Description</th></tr>
+                          <tr><td style="width:150px;">vehicleId (required)</td><td>Vehicle UUID</td></tr>
+                        </table>
+                        <h2>Responses</h2>
+                          <h3> Status: 200 - Ok </h3>
+                          <ul class="nav nav-tabs nav-tabs-examples" ></ul>
+                          <div class="tab-content" style='margin-bottom: 10px;'></div>
+                      </article>
+                    </div>
+                    <hr>
+                    <div id="api-Tracking-v1TrackingFleetStatusGet">
+                      <article id="api-Tracking-v1TrackingFleetStatusGet-0" data-group="User" data-name="v1TrackingFleetStatusGet" data-version="0">
+                        <div class="pull-left">
+                          <h1>v1TrackingFleetStatusGet</h1>
+                          <p>Get real-time fleet status (all vehicles)</p>
+                        </div>
+                        <div class="pull-right"></div>
+                        <div class="clearfix"></div>
+                        <p></p>
+                        <p class="marked"></p>
+                        <p></p>
+                        <br />
+                        <pre class="prettyprint language-html prettyprinted" data-type="get"><code><span class="pln">/v1/tracking/fleet/status</span></code></pre>
+                        <p>
+                          <h3>Usage and SDK Samples</h3>
+                        </p>
+                        <ul class="nav nav-tabs nav-tabs-examples">
+                          <li class="active"><a href="#examples-Tracking-v1TrackingFleetStatusGet-0-curl">Curl</a></li>
+                        </ul>
+                        <div class="tab-content">
+                          <div class="tab-pane active" id="examples-Tracking-v1TrackingFleetStatusGet-0-curl">
+                           <pre class="prettyprint"><code class="language-bsh">curl -X GET\
+ -H "Authorization: Bearer [[accessToken]]"\
+"http://localhost:8080/v1/tracking/fleet/status"</code></pre>
+                          </div>
+                        </div>
+                        <h2>Parameters</h2>
+                        <p>No parameters required.</p>
+                        <h2>Responses</h2>
+                          <h3> Status: 200 - Ok </h3>
+                          <ul class="nav nav-tabs nav-tabs-examples" ></ul>
+                          <div class="tab-content" style='margin-bottom: 10px;'></div>
+                      </article>
+                    </div>
+                    <hr>
+                    <div id="api-Tracking-v1TrackingVehiclesIdHistoryGet">
+                      <article id="api-Tracking-v1TrackingVehiclesIdHistoryGet-0" data-group="User" data-name="v1TrackingVehiclesIdHistoryGet" data-version="0">
+                        <div class="pull-left">
+                          <h1>v1TrackingVehiclesIdHistoryGet</h1>
+                          <p>Get vehicle tracking history</p>
+                        </div>
+                        <div class="pull-right"></div>
+                        <div class="clearfix"></div>
+                        <p></p>
+                        <p class="marked"></p>
+                        <p></p>
+                        <br />
+                        <pre class="prettyprint language-html prettyprinted" data-type="get"><code><span class="pln">/v1/tracking/vehicles/{vehicleId}/history</span></code></pre>
+                        <p>
+                          <h3>Usage and SDK Samples</h3>
+                        </p>
+                        <ul class="nav nav-tabs nav-tabs-examples">
+                          <li class="active"><a href="#examples-Tracking-v1TrackingVehiclesIdHistoryGet-0-curl">Curl</a></li>
+                        </ul>
+                        <div class="tab-content">
+                          <div class="tab-pane active" id="examples-Tracking-v1TrackingVehiclesIdHistoryGet-0-curl">
+                           <pre class="prettyprint"><code class="language-bsh">curl -X GET\
+ -H "Authorization: Bearer [[accessToken]]"\
+"http://localhost:8080/v1/tracking/vehicles/{vehicleId}/history?limit=100&amp;offset=0"</code></pre>
+                          </div>
+                        </div>
+                        <h2>Parameters</h2>
+                        <div class="methodsubtabletitle">Path parameters</div>
+                        <table id="methodsubtable">
+                          <tr><th width="150px">Name</th><th>Description</th></tr>
+                          <tr><td style="width:150px;">vehicleId (required)</td><td>Vehicle UUID</td></tr>
+                        </table>
+                        <div class="methodsubtabletitle">Query parameters</div>
+                        <table id="methodsubtable">
+                          <tr><th width="150px">Name</th><th>Description</th></tr>
+                          <tr><td style="width:150px;">limit</td><td>Max records to return (default: 100)</td></tr>
+                          <tr><td style="width:150px;">offset</td><td>Pagination offset (default: 0)</td></tr>
+                        </table>
+                        <h2>Responses</h2>
+                          <h3> Status: 200 - Ok </h3>
+                          <ul class="nav nav-tabs nav-tabs-examples" ></ul>
+                          <div class="tab-content" style='margin-bottom: 10px;'></div>
+                      </article>
+                    </div>
+                    <hr>
+                    <div id="api-Tracking-v1FleetLiveWs">
+                      <article id="api-Tracking-v1FleetLiveWs-0" data-group="User" data-name="v1FleetLiveWs" data-version="0">
+                        <div class="pull-left">
+                          <h1>v1FleetLiveWs</h1>
+                          <p>Live fleet WebSocket — real-time vehicle state updates</p>
+                        </div>
+                        <div class="pull-right"></div>
+                        <div class="clearfix"></div>
+                        <p></p>
+                        <p class="marked"></p>
+                        <p></p>
+                        <br />
+                        <pre class="prettyprint language-html prettyprinted" data-type="get"><code><span class="pln">/v1/fleet/live  [WebSocket]</span></code></pre>
+                        <p>
+                          <h3>Usage and SDK Samples</h3>
+                        </p>
+                        <ul class="nav nav-tabs nav-tabs-examples">
+                          <li class="active"><a href="#examples-Tracking-v1FleetLiveWs-0-curl">Connection</a></li>
+                        </ul>
+                        <div class="tab-content">
+                          <div class="tab-pane active" id="examples-Tracking-v1FleetLiveWs-0-curl">
+                           <pre class="prettyprint"><code class="language-bsh"># Connect via wscat (npm install -g wscat)
+wscat -c "ws://localhost:8080/v1/fleet/live" \
+  -H "Authorization: Bearer [[accessToken]]"
+
+# Or use Postman WebSocket with header:
+# Authorization: Bearer {JWT_TOKEN}</code></pre>
+                          </div>
+                        </div>
+                        <h2>Parameters</h2>
+                        <p>Authentication via <code>Authorization: Bearer</code> header or <code>token</code> query param.</p>
+                        <h2>Responses</h2>
+                          <h3> On connect: initial_state message with all vehicle states </h3>
+                          <h3> On update: delta message with only changed fields </h3>
+                          <ul class="nav nav-tabs nav-tabs-examples" ></ul>
+                          <div class="tab-content" style='margin-bottom: 10px;'></div>
+                      </article>
+                    </div>
+                    <hr>
+                  </section>
+                <section id="api-Drivers">
+                  <h1>Drivers</h1>
+                    <div id="api-Drivers-v1DriversGet">
+                      <article id="api-Drivers-v1DriversGet-0" data-group="User" data-name="v1DriversGet" data-version="0">
+                        <div class="pull-left">
+                          <h1>v1DriversGet</h1>
+                          <p>List all drivers</p>
+                        </div>
+                        <div class="pull-right"></div>
+                        <div class="clearfix"></div>
+                        <p></p>
+                        <p class="marked"></p>
+                        <p></p>
+                        <br />
+                        <pre class="prettyprint language-html prettyprinted" data-type="get"><code><span class="pln">/v1/drivers</span></code></pre>
+                        <p>
+                          <h3>Usage and SDK Samples</h3>
+                        </p>
+                        <ul class="nav nav-tabs nav-tabs-examples">
+                          <li class="active"><a href="#examples-Drivers-v1DriversGet-0-curl">Curl</a></li>
+                        </ul>
+                        <div class="tab-content">
+                          <div class="tab-pane active" id="examples-Drivers-v1DriversGet-0-curl">
+                           <pre class="prettyprint"><code class="language-bsh">curl -X GET\
+ -H "Authorization: Bearer [[accessToken]]"\
+"http://localhost:8080/v1/drivers"</code></pre>
+                          </div>
+                        </div>
+                        <h2>Parameters</h2>
+                        <div class="methodsubtabletitle">Query parameters</div>
+                        <table id="methodsubtable">
+                          <tr><th width="150px">Name</th><th>Description</th></tr>
+                          <tr><td style="width:150px;">isActive</td><td>Filter by active status (true/false)</td></tr>
+                        </table>
+                        <h2>Responses</h2>
+                          <h3> Status: 200 - Ok </h3>
+                          <ul class="nav nav-tabs nav-tabs-examples" ></ul>
+                          <div class="tab-content" style='margin-bottom: 10px;'></div>
+                      </article>
+                    </div>
+                    <hr>
+                    <div id="api-Drivers-v1DriversPost">
+                      <article id="api-Drivers-v1DriversPost-0" data-group="User" data-name="v1DriversPost" data-version="0">
+                        <div class="pull-left">
+                          <h1>v1DriversPost</h1>
+                          <p>Create driver (back-office)</p>
+                        </div>
+                        <div class="pull-right"></div>
+                        <div class="clearfix"></div>
+                        <p></p>
+                        <p class="marked"></p>
+                        <p></p>
+                        <br />
+                        <pre class="prettyprint language-html prettyprinted" data-type="post"><code><span class="pln">/v1/drivers</span></code></pre>
+                        <p>
+                          <h3>Usage and SDK Samples</h3>
+                        </p>
+                        <ul class="nav nav-tabs nav-tabs-examples">
+                          <li class="active"><a href="#examples-Drivers-v1DriversPost-0-curl">Curl</a></li>
+                        </ul>
+                        <div class="tab-content">
+                          <div class="tab-pane active" id="examples-Drivers-v1DriversPost-0-curl">
+                           <pre class="prettyprint"><code class="language-bsh">curl -X POST\
+ -H "Authorization: Bearer [[accessToken]]"\
+ -H "Content-Type: application/json"\
+ -d '{"firstName":"Maria","lastName":"Santos","licenseNumber":"A02-34-567890","phone":"+639189876543","email":"maria.santos@example.com","password":"InitialPass456!"}'\
+"http://localhost:8080/v1/drivers"</code></pre>
+                          </div>
+                        </div>
+                        <h2>Parameters</h2>
+                        <div class="methodsubtabletitle">Body parameters</div>
+                        <table id="methodsubtable">
+                          <tr><th width="150px">Name</th><th>Description</th></tr>
+                          <tr><td style="width:150px;">firstName (required)</td><td>Driver first name</td></tr>
+                          <tr><td style="width:150px;">lastName (required)</td><td>Driver last name</td></tr>
+                          <tr><td style="width:150px;">licenseNumber (required)</td><td>Driver's license number</td></tr>
+                          <tr><td style="width:150px;">phone</td><td>Phone number</td></tr>
+                          <tr><td style="width:150px;">email (required)</td><td>Email address (used for login)</td></tr>
+                          <tr><td style="width:150px;">password (required)</td><td>Initial password</td></tr>
+                        </table>
+                        <h2>Responses</h2>
+                          <h3> Status: 201 - Created </h3>
+                          <ul class="nav nav-tabs nav-tabs-examples" ></ul>
+                          <div class="tab-content" style='margin-bottom: 10px;'></div>
+                      </article>
+                    </div>
+                    <hr>
+                    <div id="api-Drivers-v1DriversRegisterPost">
+                      <article id="api-Drivers-v1DriversRegisterPost-0" data-group="User" data-name="v1DriversRegisterPost" data-version="0">
+                        <div class="pull-left">
+                          <h1>v1DriversRegisterPost</h1>
+                          <p>Driver self-registration (mobile app)</p>
+                        </div>
+                        <div class="pull-right"></div>
+                        <div class="clearfix"></div>
+                        <p></p>
+                        <p class="marked"></p>
+                        <p></p>
+                        <br />
+                        <pre class="prettyprint language-html prettyprinted" data-type="post"><code><span class="pln">/v1/drivers/register</span></code></pre>
+                        <p>
+                          <h3>Usage and SDK Samples</h3>
+                        </p>
+                        <ul class="nav nav-tabs nav-tabs-examples">
+                          <li class="active"><a href="#examples-Drivers-v1DriversRegisterPost-0-curl">Curl</a></li>
+                        </ul>
+                        <div class="tab-content">
+                          <div class="tab-pane active" id="examples-Drivers-v1DriversRegisterPost-0-curl">
+                           <pre class="prettyprint"><code class="language-bsh">curl -X POST\
+ -H "Content-Type: application/json"\
+ -d '{"firstName":"Juan","lastName":"dela Cruz","licenseNumber":"N01-12-345678","phone":"+639171234567","email":"juan.delacruz@example.com","password":"SecurePass123!"}'\
+"http://localhost:8080/v1/drivers/register"</code></pre>
+                          </div>
+                        </div>
+                        <h2>Parameters</h2>
+                        <p>No authentication required. Same body shape as POST /v1/drivers.</p>
+                        <h2>Responses</h2>
+                          <h3> Status: 201 - Created </h3>
+                          <ul class="nav nav-tabs nav-tabs-examples" ></ul>
+                          <div class="tab-content" style='margin-bottom: 10px;'></div>
+                      </article>
+                    </div>
+                    <hr>
+                    <div id="api-Drivers-v1DriversIdGet">
+                      <article id="api-Drivers-v1DriversIdGet-0" data-group="User" data-name="v1DriversIdGet" data-version="0">
+                        <div class="pull-left">
+                          <h1>v1DriversIdGet</h1>
+                          <p>Get driver by ID</p>
+                        </div>
+                        <div class="pull-right"></div>
+                        <div class="clearfix"></div>
+                        <p></p>
+                        <p class="marked"></p>
+                        <p></p>
+                        <br />
+                        <pre class="prettyprint language-html prettyprinted" data-type="get"><code><span class="pln">/v1/drivers/{id}</span></code></pre>
+                        <p>
+                          <h3>Usage and SDK Samples</h3>
+                        </p>
+                        <ul class="nav nav-tabs nav-tabs-examples">
+                          <li class="active"><a href="#examples-Drivers-v1DriversIdGet-0-curl">Curl</a></li>
+                        </ul>
+                        <div class="tab-content">
+                          <div class="tab-pane active" id="examples-Drivers-v1DriversIdGet-0-curl">
+                           <pre class="prettyprint"><code class="language-bsh">curl -X GET\
+ -H "Authorization: Bearer [[accessToken]]"\
+"http://localhost:8080/v1/drivers/{id}"</code></pre>
+                          </div>
+                        </div>
+                        <h2>Parameters</h2>
+                        <div class="methodsubtabletitle">Path parameters</div>
+                        <table id="methodsubtable">
+                          <tr><th width="150px">Name</th><th>Description</th></tr>
+                          <tr><td style="width:150px;">id (required)</td><td>Driver UUID</td></tr>
+                        </table>
+                        <h2>Responses</h2>
+                          <h3> Status: 200 - Ok </h3>
+                          <ul class="nav nav-tabs nav-tabs-examples" ></ul>
+                          <div class="tab-content" style='margin-bottom: 10px;'></div>
+                      </article>
+                    </div>
+                    <hr>
+                    <div id="api-Drivers-v1DriversIdDeactivatePatch">
+                      <article id="api-Drivers-v1DriversIdDeactivatePatch-0" data-group="User" data-name="v1DriversIdDeactivatePatch" data-version="0">
+                        <div class="pull-left">
+                          <h1>v1DriversIdDeactivatePatch</h1>
+                          <p>Deactivate driver</p>
+                        </div>
+                        <div class="pull-right"></div>
+                        <div class="clearfix"></div>
+                        <p></p>
+                        <p class="marked"></p>
+                        <p></p>
+                        <br />
+                        <pre class="prettyprint language-html prettyprinted" data-type="patch"><code><span class="pln">/v1/drivers/{id}/deactivate</span></code></pre>
+                        <p>
+                          <h3>Usage and SDK Samples</h3>
+                        </p>
+                        <ul class="nav nav-tabs nav-tabs-examples">
+                          <li class="active"><a href="#examples-Drivers-v1DriversIdDeactivatePatch-0-curl">Curl</a></li>
+                        </ul>
+                        <div class="tab-content">
+                          <div class="tab-pane active" id="examples-Drivers-v1DriversIdDeactivatePatch-0-curl">
+                           <pre class="prettyprint"><code class="language-bsh">curl -X PATCH\
+ -H "Authorization: Bearer [[accessToken]]"\
+"http://localhost:8080/v1/drivers/{id}/deactivate"</code></pre>
+                          </div>
+                        </div>
+                        <h2>Parameters</h2>
+                        <div class="methodsubtabletitle">Path parameters</div>
+                        <table id="methodsubtable">
+                          <tr><th width="150px">Name</th><th>Description</th></tr>
+                          <tr><td style="width:150px;">id (required)</td><td>Driver UUID</td></tr>
+                        </table>
+                        <h2>Responses</h2>
+                          <h3> Status: 200 - Ok </h3>
+                          <ul class="nav nav-tabs nav-tabs-examples" ></ul>
+                          <div class="tab-content" style='margin-bottom: 10px;'></div>
+                      </article>
+                    </div>
+                    <hr>
+                    <div id="api-Drivers-v1DriversIdAssignPost">
+                      <article id="api-Drivers-v1DriversIdAssignPost-0" data-group="User" data-name="v1DriversIdAssignPost" data-version="0">
+                        <div class="pull-left">
+                          <h1>v1DriversIdAssignPost</h1>
+                          <p>Assign driver to vehicle</p>
+                        </div>
+                        <div class="pull-right"></div>
+                        <div class="clearfix"></div>
+                        <p></p>
+                        <p class="marked"></p>
+                        <p></p>
+                        <br />
+                        <pre class="prettyprint language-html prettyprinted" data-type="post"><code><span class="pln">/v1/drivers/{id}/assign</span></code></pre>
+                        <p>
+                          <h3>Usage and SDK Samples</h3>
+                        </p>
+                        <ul class="nav nav-tabs nav-tabs-examples">
+                          <li class="active"><a href="#examples-Drivers-v1DriversIdAssignPost-0-curl">Curl</a></li>
+                        </ul>
+                        <div class="tab-content">
+                          <div class="tab-pane active" id="examples-Drivers-v1DriversIdAssignPost-0-curl">
+                           <pre class="prettyprint"><code class="language-bsh">curl -X POST\
+ -H "Authorization: Bearer [[accessToken]]"\
+ -H "Content-Type: application/json"\
+ -d '{"vehicleId":"0a8e652a-604d-4cfb-81c6-e14eccc80ac8","notes":"Morning shift assignment"}'\
+"http://localhost:8080/v1/drivers/{id}/assign"</code></pre>
+                          </div>
+                        </div>
+                        <h2>Parameters</h2>
+                        <div class="methodsubtabletitle">Path parameters</div>
+                        <table id="methodsubtable">
+                          <tr><th width="150px">Name</th><th>Description</th></tr>
+                          <tr><td style="width:150px;">id (required)</td><td>Driver UUID</td></tr>
+                        </table>
+                        <div class="methodsubtabletitle">Body parameters</div>
+                        <table id="methodsubtable">
+                          <tr><th width="150px">Name</th><th>Description</th></tr>
+                          <tr><td style="width:150px;">vehicleId (required)</td><td>Vehicle UUID to assign</td></tr>
+                          <tr><td style="width:150px;">notes</td><td>Optional assignment notes</td></tr>
+                        </table>
+                        <h2>Responses</h2>
+                          <h3> Status: 200 - Ok </h3>
+                          <ul class="nav nav-tabs nav-tabs-examples" ></ul>
+                          <div class="tab-content" style='margin-bottom: 10px;'></div>
+                      </article>
+                    </div>
+                    <hr>
+                    <div id="api-Drivers-v1DriversIdReleasePost">
+                      <article id="api-Drivers-v1DriversIdReleasePost-0" data-group="User" data-name="v1DriversIdReleasePost" data-version="0">
+                        <div class="pull-left">
+                          <h1>v1DriversIdReleasePost</h1>
+                          <p>Release driver from vehicle</p>
+                        </div>
+                        <div class="pull-right"></div>
+                        <div class="clearfix"></div>
+                        <p></p>
+                        <p class="marked"></p>
+                        <p></p>
+                        <br />
+                        <pre class="prettyprint language-html prettyprinted" data-type="post"><code><span class="pln">/v1/drivers/{id}/release</span></code></pre>
+                        <p>
+                          <h3>Usage and SDK Samples</h3>
+                        </p>
+                        <ul class="nav nav-tabs nav-tabs-examples">
+                          <li class="active"><a href="#examples-Drivers-v1DriversIdReleasePost-0-curl">Curl</a></li>
+                        </ul>
+                        <div class="tab-content">
+                          <div class="tab-pane active" id="examples-Drivers-v1DriversIdReleasePost-0-curl">
+                           <pre class="prettyprint"><code class="language-bsh">curl -X POST\
+ -H "Authorization: Bearer [[accessToken]]"\
+"http://localhost:8080/v1/drivers/{id}/release"</code></pre>
+                          </div>
+                        </div>
+                        <h2>Parameters</h2>
+                        <div class="methodsubtabletitle">Path parameters</div>
+                        <table id="methodsubtable">
+                          <tr><th width="150px">Name</th><th>Description</th></tr>
+                          <tr><td style="width:150px;">id (required)</td><td>Driver UUID</td></tr>
+                        </table>
+                        <h2>Responses</h2>
+                          <h3> Status: 200 - Ok </h3>
+                          <ul class="nav nav-tabs nav-tabs-examples" ></ul>
+                          <div class="tab-content" style='margin-bottom: 10px;'></div>
+                      </article>
+                    </div>
+                    <hr>
+                    <div id="api-Drivers-v1DriversIdAssignmentsGet">
+                      <article id="api-Drivers-v1DriversIdAssignmentsGet-0" data-group="User" data-name="v1DriversIdAssignmentsGet" data-version="0">
+                        <div class="pull-left">
+                          <h1>v1DriversIdAssignmentsGet</h1>
+                          <p>Get driver assignment history</p>
+                        </div>
+                        <div class="pull-right"></div>
+                        <div class="clearfix"></div>
+                        <p></p>
+                        <p class="marked"></p>
+                        <p></p>
+                        <br />
+                        <pre class="prettyprint language-html prettyprinted" data-type="get"><code><span class="pln">/v1/drivers/{id}/assignments</span></code></pre>
+                        <p>
+                          <h3>Usage and SDK Samples</h3>
+                        </p>
+                        <ul class="nav nav-tabs nav-tabs-examples">
+                          <li class="active"><a href="#examples-Drivers-v1DriversIdAssignmentsGet-0-curl">Curl</a></li>
+                        </ul>
+                        <div class="tab-content">
+                          <div class="tab-pane active" id="examples-Drivers-v1DriversIdAssignmentsGet-0-curl">
+                           <pre class="prettyprint"><code class="language-bsh">curl -X GET\
+ -H "Authorization: Bearer [[accessToken]]"\
+"http://localhost:8080/v1/drivers/{id}/assignments"</code></pre>
+                          </div>
+                        </div>
+                        <h2>Parameters</h2>
+                        <div class="methodsubtabletitle">Path parameters</div>
+                        <table id="methodsubtable">
+                          <tr><th width="150px">Name</th><th>Description</th></tr>
+                          <tr><td style="width:150px;">id (required)</td><td>Driver UUID</td></tr>
+                        </table>
+                        <h2>Responses</h2>
+                          <h3> Status: 200 - Ok </h3>
+                          <ul class="nav nav-tabs nav-tabs-examples" ></ul>
+                          <div class="tab-content" style='margin-bottom: 10px;'></div>
+                      </article>
+                    </div>
+                    <hr>
+                    <div id="api-Drivers-v1DriversIdHistoryGet">
+                      <article id="api-Drivers-v1DriversIdHistoryGet-0" data-group="User" data-name="v1DriversIdHistoryGet" data-version="0">
+                        <div class="pull-left">
+                          <h1>v1DriversIdHistoryGet</h1>
+                          <p>Get driver work hours history</p>
+                        </div>
+                        <div class="pull-right"></div>
+                        <div class="clearfix"></div>
+                        <p></p>
+                        <p class="marked"></p>
+                        <p></p>
+                        <br />
+                        <pre class="prettyprint language-html prettyprinted" data-type="get"><code><span class="pln">/v1/drivers/{id}/history</span></code></pre>
+                        <p>
+                          <h3>Usage and SDK Samples</h3>
+                        </p>
+                        <ul class="nav nav-tabs nav-tabs-examples">
+                          <li class="active"><a href="#examples-Drivers-v1DriversIdHistoryGet-0-curl">Curl</a></li>
+                        </ul>
+                        <div class="tab-content">
+                          <div class="tab-pane active" id="examples-Drivers-v1DriversIdHistoryGet-0-curl">
+                           <pre class="prettyprint"><code class="language-bsh">curl -X GET\
+ -H "Authorization: Bearer [[accessToken]]"\
+"http://localhost:8080/v1/drivers/{id}/history?startDate=2026-03-01&amp;endDate=2026-03-31"</code></pre>
+                          </div>
+                        </div>
+                        <h2>Parameters</h2>
+                        <div class="methodsubtabletitle">Path parameters</div>
+                        <table id="methodsubtable">
+                          <tr><th width="150px">Name</th><th>Description</th></tr>
+                          <tr><td style="width:150px;">id (required)</td><td>Driver UUID</td></tr>
+                        </table>
+                        <div class="methodsubtabletitle">Query parameters</div>
+                        <table id="methodsubtable">
+                          <tr><th width="150px">Name</th><th>Description</th></tr>
+                          <tr><td style="width:150px;">startDate</td><td>ISO 8601 date (YYYY-MM-DD)</td></tr>
+                          <tr><td style="width:150px;">endDate</td><td>ISO 8601 date (YYYY-MM-DD)</td></tr>
+                        </table>
+                        <h2>Responses</h2>
+                          <h3> Status: 200 - Ok </h3>
+                          <ul class="nav nav-tabs nav-tabs-examples" ></ul>
+                          <div class="tab-content" style='margin-bottom: 10px;'></div>
+                      </article>
+                    </div>
+                    <hr>
+                  </section>
             <div id="api-_footer">
               <p>Suggestions, contact, support and error reporting;
                   <div class="app-desc">Information URL: <a href="https://helloreverb.com">https://helloreverb.com</a></div>

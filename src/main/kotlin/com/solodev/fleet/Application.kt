@@ -4,8 +4,10 @@ import com.solodev.fleet.modules.vehicles.infrastructure.persistence.VehicleRepo
 import com.solodev.fleet.shared.infrastructure.cache.RedisCacheManager
 import com.solodev.fleet.shared.plugins.*
 import com.solodev.fleet.shared.utils.JwtService
+import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
+import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.websocket.WebSockets
 import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
@@ -33,6 +35,22 @@ fun main(args: Array<String>) {
  * Order matters: RequestId must be configured early so it's available in error handlers.
  */
 fun Application.module() {
+    install(CORS) {
+        allowHost("localhost:8081")
+        allowHost("localhost:8080")
+        allowHost("localhost:8082")
+        allowHost("127.0.0.1:8081")
+        allowHost("127.0.0.1:8082")
+        allowHeader(HttpHeaders.ContentType)
+        allowHeader(HttpHeaders.Authorization)
+        allowMethod(HttpMethod.Post)
+        allowMethod(HttpMethod.Get)
+        allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Patch)
+        allowMethod(HttpMethod.Delete)
+        allowMethod(HttpMethod.Options)
+    }
+
     configureRequestId()
     configureObservability()
     configureSerialization()

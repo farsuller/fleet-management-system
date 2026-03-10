@@ -14,6 +14,7 @@ object VehiclesTable : UUIDTable("vehicles") {
     val make = varchar("make", 100)
     val model = varchar("model", 100)
     val year = integer("year")
+    val vehicleType = varchar("vehicle_type", 20).default("OTHER")
     val status = varchar("status", 20)
     val passengerCapacity = integer("passenger_capacity").nullable()
     val currentOdometerKm = integer("current_odometer_km").default(0)

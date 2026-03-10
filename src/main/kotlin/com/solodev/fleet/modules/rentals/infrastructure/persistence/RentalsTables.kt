@@ -51,6 +51,9 @@ object RentalsTable : UUIDTable("rentals") {
     val pickupLocation = varchar("pickup_location", 255).nullable()
     val dropoffLocation = varchar("dropoff_location", 255).nullable()
 
+    // Invoice link (FK enforced at DB level; stored as plain UUID here to avoid circular import)
+    val invoiceId = uuid("invoice_id").nullable()
+
     // Metadata
     val notes = text("notes").nullable()
     val createdByUserId = uuid("created_by_user_id").nullable()

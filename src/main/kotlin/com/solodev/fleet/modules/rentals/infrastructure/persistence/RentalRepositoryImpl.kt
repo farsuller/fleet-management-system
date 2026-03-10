@@ -30,7 +30,8 @@ class RentalRepositoryImpl : RentalRepository {
                     totalAmount = this[RentalsTable.totalAmount],
                     currencyCode = this[RentalsTable.currencyCode],
                     startOdometerKm = this[RentalsTable.startOdometerKm],
-                    endOdometerKm = this[RentalsTable.endOdometerKm]
+                    endOdometerKm = this[RentalsTable.endOdometerKm],
+                    invoiceId = this[RentalsTable.invoiceId]
             )
 
     override suspend fun findById(id: RentalId): Rental? = dbQuery {
@@ -61,6 +62,7 @@ class RentalRepositoryImpl : RentalRepository {
                 it[startOdometerKm] = rental.startOdometerKm
                 it[endOdometerKm] = rental.endOdometerKm
                 it[totalAmount] = rental.totalAmount
+                it[invoiceId] = rental.invoiceId
                 it[updatedAt] = Instant.now()
             }
         } else {

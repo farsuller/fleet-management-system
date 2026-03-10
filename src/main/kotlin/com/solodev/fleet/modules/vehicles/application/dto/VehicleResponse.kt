@@ -7,12 +7,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class VehicleResponse(
         val id: String,
-        val vin: String,
+        val vin: String? = null,
         val licensePlate: String,
         val make: String,
         val model: String,
         val year: Int,
         val color: String?,
+        val vehicleType: String,
         val state: String,
         val mileageKm: Int,
         val dailyRate: Double?,
@@ -32,6 +33,7 @@ data class VehicleResponse(
                                 model = v.model,
                                 year = v.year,
                                 color = v.color,
+                                vehicleType = v.vehicleType.name,
                                 state = v.state.name,
                                 mileageKm = v.mileageKm,
                                 dailyRate = v.dailyRateAmount?.let { it / 100.0 },

@@ -17,7 +17,9 @@ import io.ktor.server.routing.*
 fun Route.rentalRoutes(
     rentalRepository: RentalRepository,
     vehicleRepository: VehicleRepository,
-    accountingService: AccountingService
+    accountingService: AccountingService,
+    issueInvoiceUseCase: com.solodev.fleet.modules.accounts.application.usecases.IssueInvoiceUseCase,
+    invoiceRepository: com.solodev.fleet.modules.accounts.domain.repository.InvoiceRepository
     ) {
     val createRentalUseCase = CreateRentalUseCase(rentalRepository, vehicleRepository)
     val getRentalUseCase = GetRentalUseCase(rentalRepository)
@@ -26,7 +28,12 @@ fun Route.rentalRoutes(
         vehicleRepository = vehicleRepository,
         accountingService = accountingService
     )
-    val completeRentalUseCase = CompleteRentalUseCase(rentalRepository, vehicleRepository)
+    val completeRentalUseCase = CompleteRentalUseCase(
+        rentalRepository = rentalRepository,
+        vehicleRepository = vehicleRepository,
+        issueInvoiceUseCase = issueInvoiceUseCase,
+        invoiceRepository = invoiceRepository
+    )
     val cancelRentalUseCase = CancelRentalUseCase(rentalRepository)
     val listRentalsUseCase = ListRentalsUseCase(rentalRepository)
 

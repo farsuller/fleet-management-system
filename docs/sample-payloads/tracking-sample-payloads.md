@@ -40,9 +40,9 @@ This document details the tracking and spatial features, including real-time veh
 > Phase 7 addition: Response now includes `progress`, `status`, and `distanceFromRoute` for real-time tracking.
 
 ### List Available Routes
-**Endpoint**: `GET /v1/tracking/routes`
-**Context**: Retrieves all pre-defined routes (Digital Rails) available in the system. Use these IDs to enable route snapping in the location update endpoint.
-**Permissions**: Public / Authenticated
+**Endpoint**: `GET /v1/tracking/routes/active`
+**Context**: Retrieves all active pre-defined routes (Digital Rails) available in the system. Use these IDs to enable route snapping in the location update endpoint.
+**Permissions**: Public (no auth required)
 
 **Response**: `200 OK`
 ```json
@@ -60,6 +60,38 @@ This document details the tracking and spatial features, including real-time veh
   "requestId": "req_..."
 }
 ```
+
+### Create Route from GeoJSON
+**Endpoint**: `POST /v1/tracking/routes`
+**Context**: Import a route by providing a GeoJSON string (e.g., exported from geojson.io). Accepts a GeoJSON `Feature`, `FeatureCollection`, or bare `LineString` geometry. The server converts it to WKT and stores it in PostGIS.
+**Permissions**: Authenticated (Admin/Manager)
+
+**Request**:
+```json
+{
+  "name": "Village Main Loop",
+  "description": "Core route through main village streets",
+  "geojson": "{\"type\":\"Feature\",\"geometry\":{\"type\":\"LineString\",\"coordinates\":[[121.0244,14.5995],[121.0300,14.6050],[121.0350,14.6100],[121.0400,14.6120]]},\"properties\":{}}"
+}
+```
+
+**Response**: `201 Created`
+```json
+{
+  "success": true,
+  "data": {
+    "id": "7b8e1e5b-550e-4e2f-8c3a-9d2e1f3c4b5a",
+    "name": "Village Main Loop",
+    "description": "Core route through main village streets",
+    "distance": 8750.0,
+    "waypoints": 4
+  },
+  "requestId": "req_..."
+}
+```
+
+> [!NOTE]
+> The `geojson` field must be a **JSON string** (i.e., the GeoJSON object serialized as a string). The server accepts `Feature`, `FeatureCollection` (first feature used), or a bare `LineString` geometry object.
 
 ## Phase 7 - Real-Time Vehicle Tracking
 

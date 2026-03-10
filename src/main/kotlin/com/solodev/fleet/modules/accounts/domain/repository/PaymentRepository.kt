@@ -6,8 +6,11 @@ import java.util.UUID
 interface PaymentRepository {
     suspend fun save(payment: Payment): Payment
     suspend fun findById(id: UUID): Payment?
+    suspend fun findByIds(ids: List<UUID>): List<Payment>
     suspend fun findByInvoiceId(invoiceId: UUID): List<Payment>
     suspend fun findByCustomerId(customerId: UUID): List<Payment>
+    suspend fun findByDriverId(driverId: UUID): List<Payment>
+    suspend fun findPendingByDriverId(driverId: UUID): List<Payment>
     suspend fun findAll(): List<Payment>
     suspend fun delete(id: UUID): Boolean
 }
