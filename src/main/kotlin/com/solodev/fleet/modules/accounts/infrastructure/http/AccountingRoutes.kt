@@ -2,12 +2,11 @@ package com.solodev.fleet.modules.accounts.infrastructure.http
 
 import com.solodev.fleet.modules.accounts.application.ReconciliationService
 import com.solodev.fleet.modules.accounts.application.dto.*
-import com.solodev.fleet.modules.accounts.application.usecases.GenerateFinancialReportsUseCase
-import com.solodev.fleet.modules.accounts.application.usecases.IssueInvoiceUseCase
-import com.solodev.fleet.modules.accounts.application.usecases.ManageAccountUseCase
-import com.solodev.fleet.modules.accounts.application.usecases.PayInvoiceUseCase
+import com.solodev.fleet.modules.accounts.application.usecases.*
 import com.solodev.fleet.modules.accounts.domain.model.PaymentMethod
 import com.solodev.fleet.modules.accounts.domain.repository.*
+import com.solodev.fleet.modules.rentals.domain.model.CustomerId
+import com.solodev.fleet.modules.rentals.domain.repository.CustomerRepository
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.Idempotency
 import com.solodev.fleet.shared.plugins.requestId
@@ -25,6 +24,8 @@ fun Route.accountingRoutes(
     accountRepository: AccountRepository,
     ledgerRepository: LedgerRepository,
     paymentMethodRepository: PaymentMethodRepository,
+    customerRepository: CustomerRepository,
+    remittanceRepository: DriverRemittanceRepository,
     reconciliationService: ReconciliationService
 ) {
     val issueInvoiceUseCase =
@@ -43,17 +44,56 @@ fun Route.accountingRoutes(
             paymentMethodRepo = paymentMethodRepository
         )
 
+    val recordDriverCollectionUseCase = RecordDriverCollectionUseCase(
+        invoiceRepository = invoiceRepository,
+        paymentRepository = paymentRepository
+    )
+
+    val recordDriverRemittanceUseCase = RecordDriverRemittanceUseCase(
+        paymentRepository = paymentRepository,
+        invoiceRepository = invoiceRepository,
+        accountRepository = accountRepository,
+        ledgerRepository = ledgerRepository,
+        paymentMethodRepository = paymentMethodRepository,
+        remittanceRepository = remittanceRepository
+    )
+
     val manageAccountUseCase = ManageAccountUseCase(accountRepository = accountRepository)
     val reportsUseCase = GenerateFinancialReportsUseCase(
             accountRepo = accountRepository,
             ledgerRepo = ledgerRepository
     )
 
+    /** Helper: load customer snapshot for a given UUID string; returns null if not found. */
+    suspend fun customerSummaryFor(customerIdValue: String) =
+        customerRepository.findById(CustomerId(customerIdValue))
+
     route("/v1/accounting") {
-        // List all invoices
+        // List all invoices (with customer snapshot)
         get("/invoices") {
             val invoices = invoiceRepository.findAll()
-            call.respond(ApiResponse.success(invoices.map { InvoiceResponse.fromDomain(it) }, call.requestId))
+            val responses = invoices.map { invoice ->
+                val customer = customerSummaryFor(invoice.customerId.value)
+                InvoiceResponse.fromDomain(invoice, customer)
+            }
+            call.respond(ApiResponse.success(responses, call.requestId))
+        }
+
+        // List invoices for a specific customer
+        get("/invoices/customer/{customerId}") {
+            val customerId = call.parameters["customerId"]
+                ?: return@get call.respond(HttpStatusCode.BadRequest)
+            try {
+                val customer = customerRepository.findById(CustomerId(customerId))
+                val invoices = invoiceRepository.findByCustomerId(UUID.fromString(customerId))
+                val responses = invoices.map { InvoiceResponse.fromDomain(it, customer) }
+                call.respond(ApiResponse.success(responses, call.requestId))
+            } catch (e: IllegalArgumentException) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse.error("INVALID_ID", "Invalid Customer ID", call.requestId)
+                )
+            }
         }
 
         // Issue New Invoice
@@ -61,9 +101,10 @@ fun Route.accountingRoutes(
             try {
                 val request = call.receive<InvoiceRequest>()
                 val invoice = issueInvoiceUseCase.execute(request)
+                val customer = customerSummaryFor(invoice.customerId.value)
                 call.respond(
                     HttpStatusCode.Created,
-                    ApiResponse.success(InvoiceResponse.fromDomain(invoice), call.requestId)
+                    ApiResponse.success(InvoiceResponse.fromDomain(invoice, customer), call.requestId)
                 )
             } catch (e: Exception) {
                 call.respond(
@@ -78,7 +119,7 @@ fun Route.accountingRoutes(
         }
 
         install(Idempotency)
-        // Pay Invoice (Updated to return a formal Receipt)
+        // Pay Invoice (returns a formal Receipt)
         post("/invoices/{id}/pay") {
             val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
             val request = call.receive<PaymentRequest>()
@@ -90,8 +131,6 @@ fun Route.accountingRoutes(
                         paymentMethod = request.paymentMethod,
                         notes = request.notes
                     )
-
-                // Return the data-rich receipt response
                 call.respond(
                     ApiResponse.success(
                         PaymentReceiptResponse.fromDomain(receipt),
@@ -135,6 +174,112 @@ fun Route.accountingRoutes(
                     ApiResponse.error("INVALID_ID", "Invalid Customer ID", call.requestId)
                 )
             }
+        }
+
+        // Record a driver-collected payment (field collection; PENDING until remitted)
+        post("/payments/driver-collection") {
+            try {
+                val request = call.receive<DriverCollectionRequest>()
+                val payment = recordDriverCollectionUseCase.execute(request)
+                call.respond(
+                    HttpStatusCode.Created,
+                    ApiResponse.success(PaymentResponse.fromDomain(payment), call.requestId)
+                )
+            } catch (e: IllegalArgumentException) {
+                call.respond(
+                    HttpStatusCode.UnprocessableEntity,
+                    ApiResponse.error("COLLECTION_ERROR", e.message ?: "Invalid request", call.requestId)
+                )
+            }
+        }
+
+        // List PENDING collections for a driver (not yet remitted)
+        get("/payments/driver/{driverId}/pending") {
+            val driverId = call.parameters["driverId"]
+                ?: return@get call.respond(HttpStatusCode.BadRequest)
+            try {
+                val payments = paymentRepository.findPendingByDriverId(UUID.fromString(driverId))
+                call.respond(
+                    ApiResponse.success(
+                        payments.map { PaymentResponse.fromDomain(it) },
+                        call.requestId
+                    )
+                )
+            } catch (e: IllegalArgumentException) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse.error("INVALID_ID", "Invalid Driver ID", call.requestId)
+                )
+            }
+        }
+
+        // List all payments (including remitted) for a driver
+        get("/payments/driver/{driverId}/all") {
+            val driverId = call.parameters["driverId"]
+                ?: return@get call.respond(HttpStatusCode.BadRequest)
+            try {
+                val payments = paymentRepository.findByDriverId(UUID.fromString(driverId))
+                call.respond(
+                    ApiResponse.success(
+                        payments.map { PaymentResponse.fromDomain(it) },
+                        call.requestId
+                    )
+                )
+            } catch (e: IllegalArgumentException) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse.error("INVALID_ID", "Invalid Driver ID", call.requestId)
+                )
+            }
+        }
+
+        // Submit a driver remittance (clears PENDING payments, posts GL)
+        post("/remittances") {
+            try {
+                val request = call.receive<DriverRemittanceRequest>()
+                val remittance = recordDriverRemittanceUseCase.execute(request)
+                call.respond(
+                    HttpStatusCode.Created,
+                    ApiResponse.success(DriverRemittanceResponse.fromDomain(remittance), call.requestId)
+                )
+            } catch (e: IllegalArgumentException) {
+                call.respond(
+                    HttpStatusCode.UnprocessableEntity,
+                    ApiResponse.error("REMITTANCE_ERROR", e.message ?: "Invalid request", call.requestId)
+                )
+            }
+        }
+
+        // List all remittances for a driver
+        get("/remittances/driver/{driverId}") {
+            val driverId = call.parameters["driverId"]
+                ?: return@get call.respond(HttpStatusCode.BadRequest)
+            try {
+                val remittances = remittanceRepository.findByDriverId(UUID.fromString(driverId))
+                call.respond(
+                    ApiResponse.success(
+                        remittances.map { DriverRemittanceResponse.fromDomain(it) },
+                        call.requestId
+                    )
+                )
+            } catch (e: IllegalArgumentException) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse.error("INVALID_ID", "Invalid Driver ID", call.requestId)
+                )
+            }
+        }
+
+        // Get a single remittance by ID
+        get("/remittances/{remittanceId}") {
+            val remittanceId = call.parameters["remittanceId"]
+                ?: return@get call.respond(HttpStatusCode.BadRequest)
+            val remittance = remittanceRepository.findById(UUID.fromString(remittanceId))
+                ?: return@get call.respond(
+                    HttpStatusCode.NotFound,
+                    ApiResponse.error("NOT_FOUND", "Remittance not found", call.requestId)
+                )
+            call.respond(ApiResponse.success(DriverRemittanceResponse.fromDomain(remittance), call.requestId))
         }
 
         // --- Chart of Accounts ---

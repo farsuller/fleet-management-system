@@ -10,6 +10,7 @@ data class VehicleRequest(
         val model: String,
         val year: Int,
         val color: String? = null,
+        val vehicleType: String = "OTHER",
         val mileageKm: Int = 0,
         val dailyRate: Double? = null,
         val passengerCapacity: Int? = null

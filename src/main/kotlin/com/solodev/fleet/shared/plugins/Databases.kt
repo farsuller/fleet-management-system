@@ -150,6 +150,9 @@ fun Application.configureDatabases() {
             "V021__update_roles_for_backoffice.sql",
             "V022__create_drivers_and_assignments.sql",
             "V023__relocate_vehicles_to_new_route.sql",
+            "V024__add_driver_payment_fields.sql",
+            "V025__add_invoice_id_to_rentals.sql",
+            "V026__add_vehicle_type.sql",
         )
 
     log.info("Extracting ${migrationFiles.size} migrations to: ${migrationDir.absolutePath}...")

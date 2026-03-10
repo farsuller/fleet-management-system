@@ -62,7 +62,9 @@ data class Rental(
     val totalAmount: Int,
     val currencyCode: String = "PHP",
     val startOdometerKm: Int? = null,
-    val endOdometerKm: Int? = null
+    val endOdometerKm: Int? = null,
+    /** UUID of the invoice auto-generated when this rental was completed. Null until completed. */
+    val invoiceId: java.util.UUID? = null
 ) {
     init {
         require(endDate.isAfter(startDate)) { "End date must be after start date" }
@@ -88,4 +90,11 @@ data class Rental(
     }
 
     fun cancel(): Rental = copy(status = RentalStatus.CANCELLED)
+
+    /** Number of days the rental actually ran. Minimum 1; uses booked dates if actual dates missing. */
+    fun durationDays(): Int {
+        val start = actualStartDate ?: startDate
+        val end   = actualEndDate   ?: endDate
+        return (java.time.Duration.between(start, end).toDays().toInt()).coerceAtLeast(1)
+    }
 }

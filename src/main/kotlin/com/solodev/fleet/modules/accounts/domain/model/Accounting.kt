@@ -167,17 +167,25 @@ data class Invoice(
         get() = !isPaid && Instant.now().isAfter(dueDate)
 }
 
+/** Indicates whether a payment was made directly to the company or collected by a driver. */
+enum class PaymentCollectionType {
+    DIRECT,           // customer paid company directly (online, bank, walk-in)
+    DRIVER_COLLECTED  // driver collected on behalf of company; awaits remittance
+}
+
 /** Payment domain entity. */
 data class Payment(
         val id: UUID,
         val paymentNumber: String,
         val customerId: CustomerId,
         val invoiceId: UUID?,
+        val driverId: UUID? = null,
         val amount: Int,
         val paymentMethod: String,
         val transactionReference: String? = null,
         val status: PaymentStatus,
         val paymentDate: Instant,
+        val collectionType: PaymentCollectionType = PaymentCollectionType.DIRECT,
         val notes: String? = null
 )
 

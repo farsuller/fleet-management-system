@@ -108,6 +108,18 @@ tasks.test {
     // Ryuk disabled to prevent reaper container errors on Windows Docker Desktop.
     environment("TESTCONTAINERS_RYUK_DISABLED", "true")
 
+    // Collect failed test class names so the summary can show them
+    val failedClasses = mutableSetOf<String>()
+
+    afterTest(KotlinClosure2({ desc: TestDescriptor, result: TestResult ->
+        if (result.resultType == TestResult.ResultType.FAILURE) {
+            val className = desc.className ?: desc.parent?.className ?: "Unknown"
+            failedClasses += className.substringAfterLast('.')
+            println("  FAILED: ${desc.className}#${desc.name}")
+            result.exception?.let { println("         ${it.message}") }
+        }
+    }))
+
     afterSuite(KotlinClosure2({ desc: TestDescriptor, result: TestResult ->
         if (desc.parent == null) {
             val pass    = result.successfulTestCount
@@ -115,6 +127,9 @@ tasks.test {
             val skip    = result.skippedTestCount
             val total   = result.testCount
             val outcome = if (result.resultType == TestResult.ResultType.SUCCESS) "PASSED" else "FAILED"
+            if (failedClasses.isNotEmpty()) {
+                println("Failed classes: ${failedClasses.sorted().joinToString(", ")}")
+            }
             println("Test Results: $outcome")
             println("Total: $total  |  Passed: $pass  |  Failed: $fail  |  Skipped: $skip")
         }

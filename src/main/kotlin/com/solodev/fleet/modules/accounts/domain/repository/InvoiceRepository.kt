@@ -7,6 +7,7 @@ interface InvoiceRepository {
     suspend fun save(invoice: Invoice): Invoice
     suspend fun findById(id: UUID): Invoice?
     suspend fun findByInvoiceNumber(invoiceNumber: String): Invoice?
-
+    suspend fun findByCustomerId(customerId: UUID): List<Invoice>
+    suspend fun findByRentalId(rentalId: UUID): Invoice?
     suspend fun findAll(): List<Invoice>
 }

@@ -7,8 +7,13 @@ import kotlinx.serialization.Serializable
 data class PaymentResponse(
         val id: String,
         val paymentNumber: String,
+        val customerId: String,
+        val invoiceId: String?,
+        val driverId: String?,
         val amount: Int,
         val paymentMethod: String,
+        val transactionReference: String?,
+        val collectionType: String,
         val status: String,
         val paymentDate: String,
         val notes: String? = null
@@ -18,8 +23,13 @@ data class PaymentResponse(
                         PaymentResponse(
                                 id = payment.id.toString(),
                                 paymentNumber = payment.paymentNumber,
+                                customerId = payment.customerId.value,
+                                invoiceId = payment.invoiceId?.toString(),
+                                driverId = payment.driverId?.toString(),
                                 amount = payment.amount,
                                 paymentMethod = payment.paymentMethod,
+                                transactionReference = payment.transactionReference,
+                                collectionType = payment.collectionType.name,
                                 status = payment.status.name,
                                 paymentDate = payment.paymentDate.toString(),
                                 notes = payment.notes

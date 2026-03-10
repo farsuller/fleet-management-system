@@ -22,6 +22,7 @@ This document provides sample payloads for the Vehicle API, designed to help fro
       "model": "Camry",
       "year": 2024,
       "color": "Silver",
+      "vehicleType": "SEDAN",
       "state": "AVAILABLE",
       "mileageKm": 15000,
       "dailyRate": 2500.0,
@@ -39,6 +40,7 @@ This document provides sample payloads for the Vehicle API, designed to help fro
       "model": "Civic",
       "year": 2023,
       "color": "Blue",
+      "vehicleType": "SEDAN",
       "state": "RENTED",
       "mileageKm": 8500,
       "dailyRate": 2000,
@@ -61,6 +63,9 @@ This document provides sample payloads for the Vehicle API, designed to help fro
 > - **Business**: Used for insurance, legal compliance (ISO 3779), and tracking lifecycle/recalls.
 > - **Technical**: Acts as a unique database constraint. Must be exactly 17 characters and should ideally pass a mathematical checksum for real-world integration.
 
+> **`vehicleType`** (optional, defaults to `OTHER`): Classifies the vehicle body type.  
+> Valid values: `SEDAN`, `SUV`, `VAN`, `TRUCK`, `BUS`, `MOTORCYCLE`, `AMBULANCE`, `OTHER`
+
 ```json
 {
   "vin": "1HGBH41JXMN109186",
@@ -69,6 +74,7 @@ This document provides sample payloads for the Vehicle API, designed to help fro
   "model": "Camry",
   "year": 2024,
   "color": "Silver",
+  "vehicleType": "SEDAN",
   "mileageKm": 0,
   "dailyRate": 2500.0,
   "passengerCapacity": 5
@@ -87,6 +93,7 @@ This document provides sample payloads for the Vehicle API, designed to help fro
     "model": "Camry",
     "year": 2024,
     "color": "Silver",
+    "vehicleType": "SEDAN",
     "state": "AVAILABLE",
     "mileageKm": 0,
     "dailyRate": 2500,
@@ -136,6 +143,7 @@ This document provides sample payloads for the Vehicle API, designed to help fro
     "model": "Camry",
     "year": 2024,
     "color": "Silver",
+    "vehicleType": "SEDAN",
     "state": "AVAILABLE",
     "mileageKm": 15000,
     "dailyRate": 2500,
@@ -167,6 +175,7 @@ This document provides sample payloads for the Vehicle API, designed to help fro
 ```json
 {
   "color": "Red",
+  "vehicleType": "SEDAN",
   "dailyRate": 2800,
   "passengerCapacity": 4
 }
@@ -184,6 +193,7 @@ This document provides sample payloads for the Vehicle API, designed to help fro
     "model": "Camry",
     "year": 2024,
     "color": "Red",
+    "vehicleType": "SEDAN",
     "state": "AVAILABLE",
     "mileageKm": 15000,
     "dailyRate": 2800,
@@ -218,6 +228,7 @@ This document provides sample payloads for the Vehicle API, designed to help fro
     "model": "Camry",
     "year": 2024,
     "color": "Red",
+    "vehicleType": "SEDAN",
     "state": "MAINTENANCE",
     "mileageKm": 15000,
     "dailyRate": 2800,

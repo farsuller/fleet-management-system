@@ -11,6 +11,19 @@ value class VehicleId(val value: String) {
     }
 }
 
+/** Classification of the vehicle by body/use type. */
+@Serializable
+enum class VehicleType {
+    SEDAN,
+    SUV,
+    VAN,
+    TRUCK,
+    BUS,
+    MOTORCYCLE,
+    AMBULANCE,
+    OTHER
+}
+
 /** Vehicle state in the fleet lifecycle. */
 @Serializable
 enum class VehicleState {
@@ -35,6 +48,7 @@ data class Vehicle(
         val model: String,
         val year: Int,
         val color: String? = null,
+        val vehicleType: VehicleType = VehicleType.OTHER,
         val state: VehicleState = VehicleState.AVAILABLE,
         val mileageKm: Int = 0,
         val dailyRateAmount: Int? = null,

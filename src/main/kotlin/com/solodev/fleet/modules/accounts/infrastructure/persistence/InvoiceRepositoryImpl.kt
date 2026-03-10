@@ -55,6 +55,19 @@ class InvoiceRepositoryImpl : InvoiceRepository {
                 .singleOrNull()
     }
 
+    override suspend fun findByCustomerId(customerId: UUID): List<Invoice> = dbQuery {
+        InvoicesTable.selectAll()
+                .where { InvoicesTable.customerId eq customerId }
+                .map { it.toInvoice() }
+    }
+
+    override suspend fun findByRentalId(rentalId: UUID): Invoice? = dbQuery {
+        InvoicesTable.selectAll()
+                .where { InvoicesTable.rentalId eq rentalId }
+                .map { it.toInvoice() }
+                .singleOrNull()
+    }
+
     override suspend fun save(invoice: Invoice): Invoice = dbQuery {
         val now = Instant.now()
 
