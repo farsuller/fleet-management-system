@@ -34,9 +34,22 @@ object LocationHistoryTable : Table("location_history") {
     val timestamp = timestamp("timestamp")
     val createdAt = timestamp("created_at").default(Instant.now())
 
+    // NEW columns
+    val accelX       = double("accel_x").nullable()
+    val accelY       = double("accel_y").nullable()
+    val accelZ       = double("accel_z").nullable()
+    val gyroX        = double("gyro_x").nullable()
+    val gyroY        = double("gyro_y").nullable()
+    val gyroZ        = double("gyro_z").nullable()
+    val batteryLevel = short("battery_level").nullable()
+    val harshBrake   = bool("harsh_brake").default(false)
+    val harshAccel   = bool("harsh_accel").default(false)
+    val sharpTurn    = bool("sharp_turn").default(false)
+
     override val primaryKey = PrimaryKey(id)
     init {
         index(false, vehicleId, timestamp)  // For querying history by vehicle
+        index(false, harshBrake, harshAccel, sharpTurn) // For quick event filtering
     }
 }
 
@@ -63,6 +76,17 @@ class LocationHistoryRepository {
             it[LocationHistoryTable.latitude] = state.latitude
             it[LocationHistoryTable.longitude] = state.longitude
             it[LocationHistoryTable.timestamp] = state.timestamp
+            // NEW
+            it[LocationHistoryTable.accelX]       = state.accelX
+            it[LocationHistoryTable.accelY]       = state.accelY
+            it[LocationHistoryTable.accelZ]       = state.accelZ
+            it[LocationHistoryTable.gyroX]        = state.gyroX
+            it[LocationHistoryTable.gyroY]        = state.gyroY
+            it[LocationHistoryTable.gyroZ]        = state.gyroZ
+            it[LocationHistoryTable.batteryLevel]  = state.batteryLevel?.toShort()
+            it[LocationHistoryTable.harshBrake]    = state.harshBrake
+            it[LocationHistoryTable.harshAccel]    = state.harshAccel
+            it[LocationHistoryTable.sharpTurn]     = state.sharpTurn
         }
         id
     }
@@ -92,7 +116,17 @@ class LocationHistoryRepository {
                     distanceFromRoute = row[LocationHistoryTable.distanceFromRoute],
                     latitude = row[LocationHistoryTable.latitude],
                     longitude = row[LocationHistoryTable.longitude],
-                    timestamp = row[LocationHistoryTable.timestamp]
+                    timestamp = row[LocationHistoryTable.timestamp],
+                    accelX = row[LocationHistoryTable.accelX],
+                    accelY = row[LocationHistoryTable.accelY],
+                    accelZ = row[LocationHistoryTable.accelZ],
+                    gyroX = row[LocationHistoryTable.gyroX],
+                    gyroY = row[LocationHistoryTable.gyroY],
+                    gyroZ = row[LocationHistoryTable.gyroZ],
+                    batteryLevel = row[LocationHistoryTable.batteryLevel]?.toInt(),
+                    harshBrake = row[LocationHistoryTable.harshBrake],
+                    harshAccel = row[LocationHistoryTable.harshAccel],
+                    sharpTurn = row[LocationHistoryTable.sharpTurn]
                 )
             }
     }
@@ -129,7 +163,17 @@ class LocationHistoryRepository {
                     distanceFromRoute = row[LocationHistoryTable.distanceFromRoute],
                     latitude = row[LocationHistoryTable.latitude],
                     longitude = row[LocationHistoryTable.longitude],
-                    timestamp = row[LocationHistoryTable.timestamp]
+                    timestamp = row[LocationHistoryTable.timestamp],
+                    accelX = row[LocationHistoryTable.accelX],
+                    accelY = row[LocationHistoryTable.accelY],
+                    accelZ = row[LocationHistoryTable.accelZ],
+                    gyroX = row[LocationHistoryTable.gyroX],
+                    gyroY = row[LocationHistoryTable.gyroY],
+                    gyroZ = row[LocationHistoryTable.gyroZ],
+                    batteryLevel = row[LocationHistoryTable.batteryLevel]?.toInt(),
+                    harshBrake = row[LocationHistoryTable.harshBrake],
+                    harshAccel = row[LocationHistoryTable.harshAccel],
+                    sharpTurn = row[LocationHistoryTable.sharpTurn]
                 )
             }
             .firstOrNull()
@@ -143,7 +187,9 @@ class LocationHistoryRepository {
         val sql = """
             SELECT DISTINCT ON (vehicle_id)
                 vehicle_id, route_id, progress, segment_id, speed, heading,
-                status, distance_from_route, latitude, longitude, timestamp
+                status, distance_from_route, latitude, longitude, timestamp,
+                accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, battery_level,
+                harsh_brake, harsh_accel, sharp_turn
             FROM location_history
             ORDER BY vehicle_id, timestamp DESC
         """.trimIndent()
@@ -163,7 +209,17 @@ class LocationHistoryRepository {
                         distanceFromRoute = rs.getDouble("distance_from_route"),
                         latitude = rs.getDouble("latitude"),
                         longitude = rs.getDouble("longitude"),
-                        timestamp = rs.getTimestamp("timestamp").toInstant()
+                        timestamp = rs.getTimestamp("timestamp").toInstant(),
+                        accelX = rs.getObject("accel_x") as? Double,
+                        accelY = rs.getObject("accel_y") as? Double,
+                        accelZ = rs.getObject("accel_z") as? Double,
+                        gyroX = rs.getObject("gyro_x") as? Double,
+                        gyroY = rs.getObject("gyro_y") as? Double,
+                        gyroZ = rs.getObject("gyro_z") as? Double,
+                        batteryLevel = rs.getObject("battery_level") as? Int,
+                        harshBrake = rs.getBoolean("harsh_brake"),
+                        harshAccel = rs.getBoolean("harsh_accel"),
+                        sharpTurn = rs.getBoolean("sharp_turn")
                     )
                 )
             }

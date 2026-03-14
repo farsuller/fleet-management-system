@@ -235,6 +235,91 @@ This document covers the driver management API, including self-registration from
 
 ---
 
+## Driver Shift Management (Mobile App)
+
+### Start Driver Shift
+**Endpoint**: `POST /v1/drivers/shifts/start`
+**Context**: Driver starts their shift and associates themselves with a specific vehicle.
+**Permissions**: Authenticated (Driver/JWT)
+
+**Request**:
+```json
+{
+  "vehicleId": "0a8e652a-604d-4cfb-81c6-e14eccc80ac8",
+  "notes": "Starting morning shift, vehicle inspection passed."
+}
+```
+
+**Response**: `201 Created`
+```json
+{
+  "success": true,
+  "data": {
+    "id": "shift_uuid_123",
+    "driverId": "d3e5f7a9-1234-5678-abcd-ef0123456789",
+    "vehicleId": "0a8e652a-604d-4cfb-81c6-e14eccc80ac8",
+    "startedAt": "2026-03-13T06:00:00Z",
+    "endedAt": null,
+    "notes": "Starting morning shift, vehicle inspection passed.",
+    "isActive": true
+  },
+  "requestId": "req_shift_start_01"
+}
+```
+
+### End Driver Shift
+**Endpoint**: `POST /v1/drivers/shifts/end`
+**Context**: Driver ends their active shift.
+**Permissions**: Authenticated (Driver/JWT)
+
+**Request**:
+```json
+{
+  "notes": "Shift ended, no issues reported."
+}
+```
+
+**Response**: `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "id": "shift_uuid_123",
+    "driverId": "d3e5f7a9-1234-5678-abcd-ef0123456789",
+    "vehicleId": "0a8e652a-604d-4cfb-81c6-e14eccc80ac8",
+    "startedAt": "2026-03-13T06:00:00Z",
+    "endedAt": "2026-03-13T18:00:00Z",
+    "notes": "Shift ended, no issues reported.",
+    "isActive": false
+  },
+  "requestId": "req_shift_end_01"
+}
+```
+
+### Get Active Shift
+**Endpoint**: `GET /v1/drivers/shifts/active`
+**Context**: Check if the current driver has an active shift.
+**Permissions**: Authenticated (Driver/JWT)
+
+**Response**: `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "id": "shift_uuid_123",
+    "driverId": "d3e5f7a9-1234-5678-abcd-ef0123456789",
+    "vehicleId": "0a8e652a-604d-4cfb-81c6-e14eccc80ac8",
+    "startedAt": "2026-03-13T06:00:00Z",
+    "endedAt": null,
+    "notes": "Starting morning shift",
+    "isActive": true
+  },
+  "requestId": "req_shift_active_01"
+}
+```
+
+---
+
 ## Work Hours
 
 ### Get Driver Work Hours History

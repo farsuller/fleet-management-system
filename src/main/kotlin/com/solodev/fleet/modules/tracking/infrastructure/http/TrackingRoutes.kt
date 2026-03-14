@@ -1,9 +1,7 @@
 package com.solodev.fleet.modules.tracking.infrastructure.http
 
-import com.solodev.fleet.modules.tracking.application.dto.LocationUpdateDTO
-import com.solodev.fleet.modules.tracking.application.dto.SensorPing
-import com.solodev.fleet.modules.tracking.application.dto.VehicleStatus
-import com.solodev.fleet.modules.tracking.application.usecases.UpdateVehicleLocationUseCase
+import com.solodev.fleet.modules.tracking.application.dto.*
+import com.solodev.fleet.modules.tracking.application.usecases.*
 import com.solodev.fleet.modules.tracking.infrastructure.persistence.PostGISAdapter
 import com.solodev.fleet.modules.tracking.infrastructure.persistence.LocationHistoryRepository
 import com.solodev.fleet.modules.tracking.infrastructure.websocket.RedisDeltaBroadcaster
@@ -13,6 +11,11 @@ import com.solodev.fleet.modules.tracking.infrastructure.resilience.CircuitBreak
 import com.solodev.fleet.shared.domain.model.Location
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.requestId
+import io.ktor.server.auth.jwt.JWTPrincipal
+import com.solodev.fleet.shared.plugins.UserRole
+import com.solodev.fleet.shared.plugins.Authorization
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
@@ -160,6 +163,7 @@ fun Route.trackingRoutes(
     deltaBroadcaster: RedisDeltaBroadcaster,
     vehicleRepository: VehicleRepository,
     historyRepository: LocationHistoryRepository = LocationHistoryRepository(),
+    receptionService: CoordinateReceptionService,
     rateLimiter: LocationUpdateRateLimiter = LocationUpdateRateLimiter(maxUpdatesPerMinute = 60),
     idempotencyManager: IdempotencyKeyManager = IdempotencyKeyManager(ttlMinutes = 24 * 60),
     circuitBreaker: CircuitBreaker = CircuitBreaker("LocationUpdate", failureThreshold = 5)
@@ -225,7 +229,18 @@ fun Route.trackingRoutes(
 
                     // Phase 7: Circuit breaker protection for PostGIS operations
                     circuitBreaker.execute {
-                        updateVehicleLocation.execute(sensorPing)
+                        updateVehicleLocation.execute(
+                            UpdateVehicleLocationCommand(
+                                vehicleId = vehicleId,
+                                latitude = dto.latitude,
+                                longitude = dto.longitude,
+                                speed = dto.speed,
+                                heading = dto.heading,
+                                accuracy = dto.accuracy,
+                                routeId = dto.routeId,
+                                recordedAt = Instant.now()
+                            )
+                        )
                     }
 
                     // Return success response with tracking data
@@ -441,6 +456,127 @@ fun Route.trackingRoutes(
                 println("WebSocket error: ${e.message}")
             } finally {
                 deltaBroadcaster.removeSession(sessionId)
+            }
+        }
+
+        // ── Driver sensor batch ping ─────────────────────────────────────────────────
+        route("/v1/sensors/ping") {
+            post {
+                // Check coordinate reception toggle
+                if (!receptionService.isReceptionEnabled()) {
+                    call.respond(
+                        HttpStatusCode.ServiceUnavailable,
+                        ApiResponse.error(
+                            "COORDINATE_RECEPTION_DISABLED",
+                            "Coordinate reception is currently disabled",
+                            call.requestId,
+                        )
+                    )
+                    return@post
+                }
+
+                // Batch processing logic
+                val pings = call.receive<List<SensorPing>>()
+                if (pings.isEmpty()) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        ApiResponse.error("EMPTY_BATCH", "Ping batch must not be empty", call.requestId)
+                    )
+                    return@post
+                }
+
+                // Idempotency check
+                val idempotencyKey = call.request.headers["Idempotency-Key"]
+                if (idempotencyKey != null) {
+                    val cached = idempotencyManager.getCachedResponse(idempotencyKey)
+                    if (cached != null) {
+                        call.respond(HttpStatusCode.fromValue(cached.httpStatus), cached.responseBody)
+                        return@post
+                    }
+                }
+
+                var accepted = 0
+                var rejected = 0
+
+                pings.forEach { ping ->
+                    if (!ping.isValid()) {
+                        rejected++
+                        return@forEach
+                    }
+
+                    val lat = ping.resolvedLatitude() ?: run { rejected++; return@forEach }
+                    val lon = ping.resolvedLongitude() ?: run { rejected++; return@forEach }
+
+                    try {
+                        updateVehicleLocation.execute(
+                            UpdateVehicleLocationCommand(
+                                vehicleId = ping.vehicleId,
+                                latitude = lat,
+                                longitude = lon,
+                                speed = ping.speed,
+                                heading = ping.heading,
+                                accuracy = ping.accuracy,
+                                routeId = ping.routeId,
+                                accelX = ping.accelX,
+                                accelY = ping.accelY,
+                                accelZ = ping.accelZ,
+                                gyroX = ping.gyroX,
+                                gyroY = ping.gyroY,
+                                gyroZ = ping.gyroZ,
+                                batteryLevel = ping.batteryLevel,
+                                harshBrake = ping.hasHarshBrake(),
+                                harshAccel = ping.hasHarshAccel(),
+                                sharpTurn = ping.hasSharpTurn(),
+                                recordedAt = ping.timestamp,
+                            )
+                        )
+                        accepted++
+                    } catch (e: Exception) {
+                        logger.warn("SensorPing failed for vehicle=${ping.vehicleId}: ${e.message}")
+                        rejected++
+                    }
+                }
+
+                val response = ApiResponse.success(
+                    SensorPingBatchResponse(accepted, rejected),
+                    call.requestId
+                )
+
+                if (idempotencyKey != null) {
+                    idempotencyManager.recordRequest(
+                        idempotencyKey,
+                        Json.encodeToString(ApiResponse.serializer(SensorPingBatchResponse.serializer()), response),
+                        HttpStatusCode.Accepted.value
+                    )
+                }
+
+                call.respond(HttpStatusCode.Accepted, response)
+            }
+        }
+
+        // Phase 4: Admin Coordinate Reception Control
+        route("/v1/tracking/admin/coordinate-reception") {
+            install(Authorization) {
+                requiredRoles = listOf(UserRole.ADMIN, UserRole.FLEET_MANAGER)
+            }
+
+            get {
+                val status = receptionService.getStatus()
+                call.respond(ApiResponse.success<CoordinateReceptionStatus>(status, call.requestId))
+            }
+
+            post {
+                try {
+                    val request = call.receive<CoordinateReceptionRequest>()
+                    val userId = call.principal<JWTPrincipal>()?.payload?.getClaim("id")?.asString() ?: "unknown"
+                    val status = receptionService.setReceptionEnabled(request.enabled, userId)
+                    call.respond(ApiResponse.success<CoordinateReceptionStatus>(status, call.requestId))
+                } catch (e: Exception) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        ApiResponse.error("TOGGLE_ERROR", "Failed to toggle reception: ${e.message}", call.requestId)
+                    )
+                }
             }
         }
     }

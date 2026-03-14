@@ -3,12 +3,12 @@ package com.solodev.fleet.shared.plugins
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.*
+import java.sql.Connection
 import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.postgis.PGgeometry
 import org.postgresql.PGConnection
-import java.sql.Connection
 
 /**
  * Configures the database layer.
@@ -46,7 +46,7 @@ fun Application.configureDatabases() {
             jdbcUrl = "jdbc:postgresql://$host$port$path$query"
         } catch (e: Exception) {
             environment.log.warn(
-                "Failed to parse complex JDBC URL (${e.message}), falling back to simple prefixing"
+                    "Failed to parse complex JDBC URL (${e.message}), falling back to simple prefixing"
             )
             if (!jdbcUrl.startsWith("jdbc:")) jdbcUrl = "jdbc:$jdbcUrl"
         }
@@ -63,16 +63,16 @@ fun Application.configureDatabases() {
     log.info("Using Password: ${password.take(2)}***${password.takeLast(2)}")
 
     val hikariConfig =
-        HikariConfig().apply {
-            this.jdbcUrl = jdbcUrl
-            this.username = username
-            this.password = password
-            this.driverClassName = driverClassName
-            this.maximumPoolSize = maximumPoolSize
-            isAutoCommit = false
-            transactionIsolation = "TRANSACTION_REPEATABLE_READ"
-            validate()
-        }
+            HikariConfig().apply {
+                this.jdbcUrl = jdbcUrl
+                this.username = username
+                this.password = password
+                this.driverClassName = driverClassName
+                this.maximumPoolSize = maximumPoolSize
+                isAutoCommit = false
+                transactionIsolation = "TRANSACTION_REPEATABLE_READ"
+                validate()
+            }
 
     val dataSource = HikariDataSource(hikariConfig)
 
@@ -81,9 +81,9 @@ fun Application.configureDatabases() {
         try {
             dataSource.connection.use { conn ->
                 conn.createStatement()
-                    .execute(
-                        "CREATE ALIAS IF NOT EXISTS gen_random_uuid FOR \"java.util.UUID.randomUUID\""
-                    )
+                        .execute(
+                                "CREATE ALIAS IF NOT EXISTS gen_random_uuid FOR \"java.util.UUID.randomUUID\""
+                        )
             }
         } catch (e: Exception) {
             log.warn("Failed to create H2 alias for gen_random_uuid", e)
@@ -116,7 +116,7 @@ fun Application.configureDatabases() {
 
     // Diagnostic: Obtain verified classloader
     val flywayClassLoader: ClassLoader =
-        Thread.currentThread().contextClassLoader ?: Application::class.java.classLoader
+            Thread.currentThread().contextClassLoader ?: Application::class.java.classLoader
 
     // Workaround: Copy migrations to /tmp to bypass classpath scanning issues in Fat JAR
     // Reverted to /tmp because /app proved to be read-only at runtime on Render.
@@ -127,33 +127,35 @@ fun Application.configureDatabases() {
     }
 
     val migrationFiles =
-        listOf(
-            "V001__create_users_schema.sql",
-            "V002__create_vehicles_schema.sql",
-            "V003__create_rentals_schema.sql",
-            "V004__create_maintenance_schema.sql",
-            "V005__create_accounting_schema.sql",
-            "V006__create_integration_tables.sql",
-            "V007__update_currency_to_php.sql",
-            "V008__add_customer_is_active.sql",
-            "V009__create_verification_tokens.sql",
-            "V010__update_payment_method_check.sql",
-            "V011__seed_chart_of_accounts.sql",
-            "V012__create_payment_methods_table.sql",
-            "V013__rename_currency_columns_to_whole_units.sql",
-            "V014__refresh_accounting_functions.sql",
-            "V015__add_driver_role.sql",
-            "V017__Add_PostGIS.sql",
-            "V018__Seed_Village_Routes.sql",
-            "V019__create_location_history_table.sql",
-            "V020__seed_fleet_vehicles_and_tracking.sql",
-            "V021__update_roles_for_backoffice.sql",
-            "V022__create_drivers_and_assignments.sql",
-            "V023__relocate_vehicles_to_new_route.sql",
-            "V024__add_driver_payment_fields.sql",
-            "V025__add_invoice_id_to_rentals.sql",
-            "V026__add_vehicle_type.sql",
-        )
+            listOf(
+                    "V001__create_users_schema.sql",
+                    "V002__create_vehicles_schema.sql",
+                    "V003__create_rentals_schema.sql",
+                    "V004__create_maintenance_schema.sql",
+                    "V005__create_accounting_schema.sql",
+                    "V006__create_integration_tables.sql",
+                    "V007__update_currency_to_php.sql",
+                    "V008__add_customer_is_active.sql",
+                    "V009__create_verification_tokens.sql",
+                    "V010__update_payment_method_check.sql",
+                    "V011__seed_chart_of_accounts.sql",
+                    "V012__create_payment_methods_table.sql",
+                    "V013__rename_currency_columns_to_whole_units.sql",
+                    "V014__refresh_accounting_functions.sql",
+                    "V015__add_driver_role.sql",
+                    "V017__Add_PostGIS.sql",
+                    "V018__Seed_Village_Routes.sql",
+                    "V019__create_location_history_table.sql",
+                    "V020__seed_fleet_vehicles_and_tracking.sql",
+                    "V021__update_roles_for_backoffice.sql",
+                    "V022__create_drivers_and_assignments.sql",
+                    "V023__relocate_vehicles_to_new_route.sql",
+                    "V024__add_driver_payment_fields.sql",
+                    "V025__add_invoice_id_to_rentals.sql",
+                    "V026__add_vehicle_type.sql",
+                    "V027__add_sensor_fields_to_location_history.sql",
+                    "V028__create_driver_shifts.sql",
+            )
 
     log.info("Extracting ${migrationFiles.size} migrations to: ${migrationDir.absolutePath}...")
 
@@ -163,9 +165,9 @@ fun Application.configureDatabases() {
         if (inputStream != null) {
             val destFile = java.io.File(migrationDir, fileName)
             java.nio.file.Files.copy(
-                inputStream,
-                destFile.toPath(),
-                java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                    inputStream,
+                    destFile.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
             )
         } else {
             log.warn("Extraction: Could not find migration in classpath: $resourcePath")
@@ -174,25 +176,25 @@ fun Application.configureDatabases() {
 
     // Audit the directory with granular details before Flyway starts
     val auditResults =
-        migrationDir.listFiles()?.map {
-            "${it.name}(size=${it.length()}, readable=${it.canRead()})"
-        }
-            ?: emptyList()
+            migrationDir.listFiles()?.map {
+                "${it.name}(size=${it.length()}, readable=${it.canRead()})"
+            }
+                    ?: emptyList()
     log.info("Migration Audit: Files in ${migrationDir.absolutePath}: $auditResults")
 
     // Run Flyway Migrations - Pointing to filesystem to guarantee discovery
     // Adding trailing slash to path as some Flyway versions require it for directory walking
     val filesystemLocation = "filesystem:${migrationDir.absolutePath}/"
     val flyway =
-        Flyway.configure()
-            .dataSource(dataSource)
-            .locations(filesystemLocation)
-            .sqlMigrationPrefix("V")
-            .sqlMigrationSeparator("__")
-            .sqlMigrationSuffixes(".sql")
-            .validateOnMigrate(false)
-            .ignoreMigrationPatterns("*:*")
-            .load()
+            Flyway.configure()
+                    .dataSource(dataSource)
+                    .locations(filesystemLocation)
+                    .sqlMigrationPrefix("V")
+                    .sqlMigrationSeparator("__")
+                    .sqlMigrationSuffixes(".sql")
+                    .validateOnMigrate(false)
+                    .ignoreMigrationPatterns("*:*")
+                    .load()
 
     try {
         val info = flyway.info()
@@ -200,7 +202,7 @@ fun Application.configureDatabases() {
         val pending = info.pending().size
         val applied = info.applied().size
         log.info(
-            "Flyway status: $applied applied, $pending pending, $all total discovered in filesystem:${migrationDir.absolutePath}"
+                "Flyway status: $applied applied, $pending pending, $all total discovered in filesystem:${migrationDir.absolutePath}"
         )
 
         // Repair handles checksum mismatches (common in tests)
@@ -210,11 +212,11 @@ fun Application.configureDatabases() {
             log.info("Executing $pending Flyway migrations...")
             val result = flyway.migrate()
             log.info(
-                "Flyway migrations completed successfully. Applied ${result.migrationsExecuted} migrations."
+                    "Flyway migrations completed successfully. Applied ${result.migrationsExecuted} migrations."
             )
         } else if (all == 0) {
             log.warn(
-                "WARNING: No migrations discovered by Flyway. Triggering Manual JDBC Fallback..."
+                    "WARNING: No migrations discovered by Flyway. Triggering Manual JDBC Fallback..."
             )
 
             dataSource.connection.use { conn ->
@@ -236,7 +238,7 @@ fun Application.configureDatabases() {
                 }
             }
             log.info(
-                "Manual JDBC Fallback completed successfully. (Note: Flyway tracking was bypassed)"
+                    "Manual JDBC Fallback completed successfully. (Note: Flyway tracking was bypassed)"
             )
         }
     } catch (e: Exception) {
@@ -246,7 +248,7 @@ fun Application.configureDatabases() {
             throw e // Fail fast in production
         } else {
             log.warn(
-                "Non-fatal migration error in test environment (H2). Falling back to automatic schema handling."
+                    "Non-fatal migration error in test environment (H2). Falling back to automatic schema handling."
             )
         }
     }

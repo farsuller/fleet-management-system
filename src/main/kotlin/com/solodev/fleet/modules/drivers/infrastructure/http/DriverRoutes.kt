@@ -23,6 +23,9 @@ fun Route.driverRoutes(
     val getDriverUseCase       = GetDriverUseCase(driverRepository)
     val listDriversUseCase     = ListDriversUseCase(driverRepository)
     val deactivateDriverUseCase = DeactivateDriverUseCase(driverRepository)
+    val startShiftUseCase      = StartShiftUseCase(driverRepository)
+    val endShiftUseCase        = EndShiftUseCase(driverRepository)
+    val getActiveShiftUseCase  = GetActiveShiftUseCase(driverRepository)
 
     // ── Public: mobile-app driver self-registration ───────────────────────────
     route("/v1/drivers/register") {
@@ -198,6 +201,47 @@ fun Route.driverRoutes(
                         )
                     val history = driverRepository.findAssignmentHistoryByDriver(driverObj.id)
                     call.respond(ApiResponse.success(history.map { AssignmentResponse.fromDomain(it) }, call.requestId))
+                }
+            }
+        }
+
+        // ── Driver Shift Lifecycle (Mobile/Driver App) ──────────────────────────
+        route("/v1/drivers/shifts") {
+            post("start") {
+                val userId = call.principal<io.ktor.server.auth.jwt.JWTPrincipal>()?.payload?.getClaim("id")?.asString()
+                    ?: return@post call.respond(HttpStatusCode.Unauthorized, ApiResponse.error("UNAUTHORIZED", "Driver ID missing from token", call.requestId))
+                
+                try {
+                    val request = call.receive<StartShiftRequest>()
+                    val shift = startShiftUseCase.execute(userId, request.vehicleId, request.notes)
+                    call.respond(HttpStatusCode.Created, ApiResponse.success(ShiftResponse.fromDomain(shift), call.requestId))
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.BadRequest, ApiResponse.error("SHIFT_START_ERROR", e.message ?: "Failed to start shift", call.requestId))
+                }
+            }
+
+            post("end") {
+                val userId = call.principal<io.ktor.server.auth.jwt.JWTPrincipal>()?.payload?.getClaim("id")?.asString()
+                    ?: return@post call.respond(HttpStatusCode.Unauthorized, ApiResponse.error("UNAUTHORIZED", "Driver ID missing from token", call.requestId))
+
+                try {
+                    val request = call.receive<EndShiftRequest>()
+                    val shift = endShiftUseCase.execute(userId, request.notes)
+                    call.respond(ApiResponse.success(ShiftResponse.fromDomain(shift), call.requestId))
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.BadRequest, ApiResponse.error("SHIFT_END_ERROR", e.message ?: "Failed to end shift", call.requestId))
+                }
+            }
+
+            get("active") {
+                val userId = call.principal<io.ktor.server.auth.jwt.JWTPrincipal>()?.payload?.getClaim("id")?.asString()
+                    ?: return@get call.respond(HttpStatusCode.Unauthorized, ApiResponse.error("UNAUTHORIZED", "Driver ID missing from token", call.requestId))
+
+                val shift = getActiveShiftUseCase.execute(userId)
+                if (shift == null) {
+                    call.respond(ApiResponse.success(null as ShiftResponse?, call.requestId))
+                } else {
+                    call.respond(ApiResponse.success(ShiftResponse.fromDomain(shift), call.requestId))
                 }
             }
         }

@@ -8,6 +8,7 @@ import com.solodev.fleet.shared.helpers.dbQuery
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
+import com.solodev.fleet.modules.drivers.domain.model.DriverShift
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -41,6 +42,15 @@ class DriverRepositoryImpl : DriverRepository {
         assignedAt  = this[VehicleDriverAssignmentsTable.assignedAt],
         releasedAt  = this[VehicleDriverAssignmentsTable.releasedAt],
         notes       = this[VehicleDriverAssignmentsTable.notes],
+    )
+
+    private fun ResultRow.toDriverShift() = DriverShift(
+        id        = this[DriverShiftsTable.id],
+        driverId  = this[DriverShiftsTable.driverId],
+        vehicleId = this[DriverShiftsTable.vehicleId],
+        startedAt = this[DriverShiftsTable.startedAt],
+        endedAt   = this[DriverShiftsTable.endedAt],
+        notes     = this[DriverShiftsTable.notes],
     )
 
     override suspend fun findById(id: DriverId): Driver? = dbQuery {
@@ -199,5 +209,49 @@ class DriverRepositoryImpl : DriverRepository {
             .where { VehicleDriverAssignmentsTable.driverId eq UUID.fromString(driverId.value) }
             .orderBy(VehicleDriverAssignmentsTable.assignedAt, SortOrder.DESC)
             .map { it.toAssignment() }
+    }
+
+    // ── Shift operations ────────────────────────────────────────────────────
+
+    override suspend fun findActiveShift(driverId: String): DriverShift? = dbQuery {
+        DriverShiftsTable.selectAll()
+            .where { (DriverShiftsTable.driverId eq UUID.fromString(driverId)) and (DriverShiftsTable.endedAt.isNull()) }
+            .map { it.toDriverShift() }
+            .singleOrNull()
+    }
+
+    override suspend fun startShift(driverId: String, vehicleId: String, notes: String?): DriverShift = dbQuery {
+        val active = findActiveShift(driverId)
+        if (active != null) throw IllegalStateException("Driver already has an active shift")
+
+        val id = UUID.randomUUID()
+        val now = Instant.now()
+        val driverUuid = UUID.fromString(driverId)
+        val vehicleUuid = UUID.fromString(vehicleId)
+        DriverShiftsTable.insert {
+            it[DriverShiftsTable.id] = id
+            it[DriverShiftsTable.driverId] = driverUuid
+            it[DriverShiftsTable.vehicleId] = vehicleUuid
+            it[DriverShiftsTable.startedAt] = now
+            it[DriverShiftsTable.notes] = notes
+        }
+        DriverShift(id, driverUuid, vehicleUuid, now, null, notes)
+    }
+
+    override suspend fun endShift(driverId: String, notes: String?): DriverShift? = dbQuery {
+        val active = findActiveShift(driverId) ?: return@dbQuery null
+        val now = Instant.now()
+        DriverShiftsTable.update({ DriverShiftsTable.id eq active.id }) {
+            it[endedAt] = now
+            if (notes != null) it[DriverShiftsTable.notes] = notes
+        }
+        active.copy(endedAt = now, notes = notes ?: active.notes)
+    }
+
+    override suspend fun findShiftHistory(driverId: String): List<DriverShift> = dbQuery {
+        DriverShiftsTable.selectAll()
+            .where { DriverShiftsTable.driverId eq UUID.fromString(driverId) }
+            .orderBy(DriverShiftsTable.startedAt, SortOrder.DESC)
+            .map { it.toDriverShift() }
     }
 }

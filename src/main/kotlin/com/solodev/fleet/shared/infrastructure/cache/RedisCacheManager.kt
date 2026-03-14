@@ -31,4 +31,25 @@ class RedisCacheManager(@PublishedApi internal val jedisPool: JedisPool?) {
             fetcher()
         }
     }
+    suspend inline fun <reified T> set(key: String, value: T, ttlSeconds: Long = 3600) {
+        val pool = jedisPool ?: return
+        try {
+            pool.resource.use { jedis ->
+                jedis.setex(key, ttlSeconds, json.encodeToString(value))
+            }
+        } catch (e: Exception) {
+            // Log error
+        }
+    }
+
+    suspend fun delete(key: String) {
+        val pool = jedisPool ?: return
+        try {
+            pool.resource.use { jedis ->
+                jedis.del(key)
+            }
+        } catch (e: Exception) {
+            // Log error
+        }
+    }
 }

@@ -143,7 +143,8 @@ abstract class IntegrationTestBase {
                     verification_tokens,
                     staff_profiles,
                     user_roles,
-                    users
+                    users,
+                    driver_shifts
                 CASCADE
                 """.trimIndent()
             )

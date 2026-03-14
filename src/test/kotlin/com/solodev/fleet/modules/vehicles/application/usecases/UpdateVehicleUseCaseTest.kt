@@ -74,8 +74,30 @@ class UpdateVehicleUseCaseTest {
         // Assert
         assertThat(result).isNotNull()
         assertThat(result!!.licensePlate).isEqualTo("ABC-1234")   // unchanged
+        assertThat(result.make).isEqualTo("Toyota")               // unchanged
+        assertThat(result.model).isEqualTo("Corolla")             // unchanged
+        assertThat(result.year).isEqualTo(2023)                   // unchanged
         assertThat(result.dailyRateAmount).isEqualTo(150000)       // unchanged
         assertThat(result.color).isEqualTo("Red")
+    }
+
+    @Test
+    fun shouldUpdateMakeModelAndYear_WhenProvided() = runBlocking {
+        // Arrange
+        val request = VehicleUpdateRequest(make = "Honda", model = "Civic", year = 2024)
+        val savedSlot = slot<Vehicle>()
+        coEvery { repository.findById(VehicleId("vehicle-1")) } returns existingVehicle
+        coEvery { repository.save(capture(savedSlot)) } returnsArgument 0
+
+        // Act
+        val result = useCase.execute("vehicle-1", request)
+
+        // Assert
+        assertThat(result).isNotNull()
+        assertThat(result!!.make).isEqualTo("Honda")
+        assertThat(result.model).isEqualTo("Civic")
+        assertThat(result.year).isEqualTo(2024)
+        assertThat(savedSlot.captured.make).isEqualTo("Honda")
     }
 
     @Test

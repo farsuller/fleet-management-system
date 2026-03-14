@@ -2,6 +2,7 @@ package com.solodev.fleet.modules.drivers.domain.repository
 
 import com.solodev.fleet.modules.drivers.domain.model.Driver
 import com.solodev.fleet.modules.drivers.domain.model.DriverId
+import com.solodev.fleet.modules.drivers.domain.model.DriverShift
 import com.solodev.fleet.modules.drivers.domain.model.VehicleDriverAssignment
 
 interface DriverRepository {
@@ -19,4 +20,10 @@ interface DriverRepository {
     suspend fun findActiveAssignmentByDriver(driverId: DriverId): VehicleDriverAssignment?
     suspend fun findAssignmentHistoryByVehicle(vehicleId: String): List<VehicleDriverAssignment>
     suspend fun findAssignmentHistoryByDriver(driverId: DriverId): List<VehicleDriverAssignment>
+
+    // Shift management
+    suspend fun findActiveShift(driverId: String): DriverShift?
+    suspend fun startShift(driverId: String, vehicleId: String, notes: String?): DriverShift
+    suspend fun endShift(driverId: String, notes: String?): DriverShift?
+    suspend fun findShiftHistory(driverId: String): List<DriverShift>
 }

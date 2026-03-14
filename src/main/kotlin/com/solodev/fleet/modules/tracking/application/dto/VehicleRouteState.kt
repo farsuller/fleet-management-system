@@ -17,7 +17,18 @@ data class VehicleRouteState(
     val latitude: Double,                // GPS latitude coordinate
     val longitude: Double,               // GPS longitude coordinate
     @Contextual
-    val timestamp: Instant               // UTC moment of this state
+    val timestamp: Instant,              // UTC moment of this state
+    // NEW — sensor fusion fields
+    val accelX:       Double?  = null,
+    val accelY:       Double?  = null,
+    val accelZ:       Double?  = null,
+    val gyroX:        Double?  = null,
+    val gyroY:        Double?  = null,
+    val gyroZ:        Double?  = null,
+    val batteryLevel: Int?     = null,
+    val harshBrake:   Boolean  = false,
+    val harshAccel:   Boolean  = false,
+    val sharpTurn:    Boolean  = false,
 ) {
     /**
      * Returns true if vehicle has deviated significantly from the route.

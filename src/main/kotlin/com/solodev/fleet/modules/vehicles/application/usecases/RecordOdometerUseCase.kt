@@ -15,6 +15,11 @@ class RecordOdometerUseCase(
         }
 
         val updated = vehicle.copy(mileageKm = newMileage)
-        return repository.save(updated)
+        val saved = repository.save(updated)
+        
+        // Record history
+        repository.recordOdometerReading(vehicle.id, newMileage)
+        
+        return saved
     }
 }

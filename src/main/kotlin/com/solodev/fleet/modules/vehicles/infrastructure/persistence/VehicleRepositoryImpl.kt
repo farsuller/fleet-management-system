@@ -152,6 +152,9 @@ class VehicleRepositoryImpl(private val cacheManager: RedisCacheManager? = null)
             }
         }
 
+        // Invalidate cache
+        cacheManager?.delete("vehicle:${vehicle.id.value}")
+
         vehicle
     }
 
@@ -175,6 +178,11 @@ class VehicleRepositoryImpl(private val cacheManager: RedisCacheManager? = null)
     override suspend fun deleteById(id: VehicleId): Boolean = dbQuery {
         val deletedCount =
                 VehiclesTable.deleteWhere { VehiclesTable.id eq UUID.fromString(id.value) }
+        
+        if (deletedCount > 0) {
+            cacheManager?.delete("vehicle:${id.value}")
+        }
+        
         deletedCount > 0
     }
 
@@ -182,12 +190,10 @@ class VehicleRepositoryImpl(private val cacheManager: RedisCacheManager? = null)
      * Record an odometer reading for a vehicle. This creates a historical record in the
      * odometer_readings table.
      */
-    suspend fun recordOdometerReading(
+    override suspend fun recordOdometerReading(
             vehicleId: VehicleId,
-            readingKm: Int,
-            recordedByUserId: UUID? = null,
-            notes: String? = null
-    ): UUID = dbQuery {
+            readingKm: Int
+    ): String = dbQuery {
         val readingId = UUID.randomUUID()
         val now = Instant.now()
 
@@ -195,16 +201,14 @@ class VehicleRepositoryImpl(private val cacheManager: RedisCacheManager? = null)
             it[id] = readingId
             it[OdometerReadingsTable.vehicleId] = UUID.fromString(vehicleId.value)
             it[OdometerReadingsTable.readingKm] = readingKm
-            it[OdometerReadingsTable.recordedByUserId] = recordedByUserId
             it[recordedAt] = now
-            it[OdometerReadingsTable.notes] = notes
         }
 
-        readingId
+        readingId.toString()
     }
 
     /** Get odometer reading history for a vehicle. */
-    suspend fun getOdometerHistory(vehicleId: VehicleId): List<OdometerReading> = dbQuery {
+    override suspend fun getOdometerHistory(vehicleId: VehicleId): List<OdometerReading> = dbQuery {
         OdometerReadingsTable.selectAll()
                 .where { OdometerReadingsTable.vehicleId eq UUID.fromString(vehicleId.value) }
                 .orderBy(OdometerReadingsTable.recordedAt to SortOrder.DESC)

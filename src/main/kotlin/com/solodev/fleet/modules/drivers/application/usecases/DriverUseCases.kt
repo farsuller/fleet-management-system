@@ -3,6 +3,7 @@ package com.solodev.fleet.modules.drivers.application.usecases
 import com.solodev.fleet.modules.drivers.application.dto.DriverRequest
 import com.solodev.fleet.modules.drivers.domain.model.Driver
 import com.solodev.fleet.modules.drivers.domain.model.DriverId
+import com.solodev.fleet.modules.drivers.domain.model.DriverShift
 import com.solodev.fleet.modules.drivers.domain.repository.DriverRepository
 import java.time.Instant
 import java.time.LocalDate
@@ -56,5 +57,33 @@ class DeactivateDriverUseCase(private val driverRepository: DriverRepository) {
     suspend fun execute(id: String): Driver? {
         val driver = driverRepository.findById(DriverId(id)) ?: return null
         return driverRepository.save(driver.copy(isActive = !driver.isActive))
+    }
+}
+
+class StartShiftUseCase(private val driverRepository: DriverRepository) {
+    suspend fun execute(driverId: String, vehicleId: String, notes: String?): DriverShift {
+        // Validation: Verify driver exists
+        driverRepository.findById(DriverId(driverId)) ?: throw IllegalArgumentException("Driver not found: $driverId")
+        
+        // Validation: Check if there's already an active shift
+        val activeShift = driverRepository.findActiveShift(driverId)
+        if (activeShift != null) {
+            throw IllegalStateException("Driver already has an active shift (id=${activeShift.id})")
+        }
+
+        return driverRepository.startShift(driverId, vehicleId, notes)
+    }
+}
+
+class EndShiftUseCase(private val driverRepository: DriverRepository) {
+    suspend fun execute(driverId: String, notes: String?): DriverShift {
+        return driverRepository.endShift(driverId, notes) 
+            ?: throw IllegalStateException("No active shift found for driver: $driverId")
+    }
+}
+
+class GetActiveShiftUseCase(private val driverRepository: DriverRepository) {
+    suspend fun execute(driverId: String): DriverShift? {
+        return driverRepository.findActiveShift(driverId)
     }
 }

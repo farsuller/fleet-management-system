@@ -17,6 +17,7 @@ import com.solodev.fleet.modules.rentals.infrastructure.http.customerRoutes
 import com.solodev.fleet.modules.rentals.infrastructure.http.rentalRoutes
 import com.solodev.fleet.modules.rentals.infrastructure.persistence.CustomerRepositoryImpl
 import com.solodev.fleet.modules.rentals.infrastructure.persistence.RentalRepositoryImpl
+import com.solodev.fleet.modules.tracking.application.usecases.CoordinateReceptionService
 import com.solodev.fleet.modules.tracking.application.usecases.UpdateVehicleLocationUseCase
 import com.solodev.fleet.modules.tracking.infrastructure.http.trackingRoutes
 import com.solodev.fleet.modules.tracking.infrastructure.metrics.SpatialMetrics
@@ -82,11 +83,13 @@ fun Application.configureRouting(
     val spatialMetrics = SpatialMetrics(registry) // Micrometer registry from observability
     val deltaBroadcaster = RedisDeltaBroadcaster(redisCache, vehicleRepo, jedisPool)
     val locationHistoryRepository = LocationHistoryRepository()  // Persist tracking records
+    val coordinateReceptionService = CoordinateReceptionService(redisCache)
     val updateVehicleLocation = UpdateVehicleLocationUseCase(
         postGISAdapter = spatialAdapter,
         broadcaster = deltaBroadcaster,
         metrics = spatialMetrics,
-        historyRepository = locationHistoryRepository
+        historyRepository = locationHistoryRepository,
+        receptionService = coordinateReceptionService
     )
     routing {
         // Interactive API Documentation
@@ -120,7 +123,8 @@ fun Application.configureRouting(
                 spatialAdapter = spatialAdapter,
                 deltaBroadcaster = deltaBroadcaster,
                 vehicleRepository = vehicleRepo,
-                historyRepository = locationHistoryRepository
+                historyRepository = locationHistoryRepository,
+                receptionService = coordinateReceptionService
             )
         }
 
