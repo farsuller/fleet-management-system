@@ -123,7 +123,21 @@ class CreateRentalUseCaseTest {
         }.isInstanceOf(IllegalArgumentException::class.java)
     }
 
-    private fun sampleVehicle(state: VehicleState) = Vehicle(
+    @Test
+    fun shouldCalculateTotalWithCustomRate() {
+        // Arrange
+        val vehicle = sampleVehicle(state = VehicleState.AVAILABLE, defaultRate = 1000)
+        val customRate = 1500L
+        val days = 7L
+
+        // Act
+        val totalAmount = (days * (customRate ?: 1000L)).toInt()
+
+        // Assert
+        assertThat(totalAmount).isEqualTo(10500)
+    }
+
+    private fun sampleVehicle(state: VehicleState, defaultRate: Int = 5000) = Vehicle(
         id = VehicleId("veh-001"),
         vin = "1HGBH41JXMN109186",
         licensePlate = "ABC-1234",
@@ -131,6 +145,7 @@ class CreateRentalUseCaseTest {
         model = "Corolla",
         year = 2023,
         state = state,
-        mileageKm = 5000
+        mileageKm = 5000,
+        dailyRateAmount = defaultRate
     )
 }

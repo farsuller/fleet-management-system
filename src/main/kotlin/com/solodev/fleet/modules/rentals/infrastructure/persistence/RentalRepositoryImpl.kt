@@ -1,11 +1,10 @@
 package com.solodev.fleet.modules.rentals.infrastructure.persistence
 
-import com.solodev.fleet.modules.rentals.domain.model.CustomerId
-import com.solodev.fleet.modules.rentals.domain.model.Rental
-import com.solodev.fleet.modules.rentals.domain.model.RentalId
-import com.solodev.fleet.modules.rentals.domain.model.RentalStatus
+import com.solodev.fleet.modules.rentals.domain.model.*
 import com.solodev.fleet.modules.rentals.domain.repository.RentalRepository
+import com.solodev.fleet.modules.rentals.domain.repository.RentalWithDetails
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
+import com.solodev.fleet.modules.vehicles.infrastructure.persistence.VehiclesTable
 import com.solodev.fleet.shared.helpers.dbQuery
 import java.time.Instant
 import java.util.*
@@ -125,5 +124,49 @@ class RentalRepositoryImpl : RentalRepository {
     override suspend fun deleteById(id: RentalId): Boolean = dbQuery {
         val deletedCount = RentalsTable.deleteWhere { RentalsTable.id eq UUID.fromString(id.value) }
         deletedCount > 0
+    }
+
+    override suspend fun findAllPaged(
+        page: Int,
+        limit: Int,
+        status: RentalStatus?,
+        vehicleId: VehicleId?,
+        customerId: CustomerId?
+    ): List<RentalWithDetails> = dbQuery {
+        val query = RentalsTable
+            .join(VehiclesTable, JoinType.LEFT, RentalsTable.vehicleId, VehiclesTable.id)
+            .join(CustomersTable, JoinType.LEFT, RentalsTable.customerId, CustomersTable.id)
+            .selectAll()
+
+        status?.let { query.andWhere { RentalsTable.status eq it.name } }
+        vehicleId?.let { query.andWhere { RentalsTable.vehicleId eq UUID.fromString(it.value) } }
+        customerId?.let { query.andWhere { RentalsTable.customerId eq UUID.fromString(it.value) } }
+
+        query.limit(limit, offset = ((page - 1) * limit).toLong())
+            .orderBy(RentalsTable.createdAt to SortOrder.DESC)
+            .map { row ->
+                val rental = row.toRental()
+                RentalWithDetails(
+                    rental = rental,
+                    vehiclePlateNumber = row.getOrNull(VehiclesTable.plateNumber),
+                    vehicleMake = row.getOrNull(VehiclesTable.make),
+                    vehicleModel = row.getOrNull(VehiclesTable.model),
+                    customerName = row.getOrNull(CustomersTable.firstName)?.let { first -> 
+                        row.getOrNull(CustomersTable.lastName)?.let { last -> "$first $last" } ?: first
+                    }
+                )
+            }
+    }
+
+    override suspend fun count(
+        status: RentalStatus?,
+        vehicleId: VehicleId?,
+        customerId: CustomerId?
+    ): Long = dbQuery {
+        val query = RentalsTable.selectAll()
+        status?.let { query.andWhere { RentalsTable.status eq it.name } }
+        vehicleId?.let { query.andWhere { RentalsTable.vehicleId eq UUID.fromString(it.value) } }
+        customerId?.let { query.andWhere { RentalsTable.customerId eq UUID.fromString(it.value) } }
+        query.count()
     }
 }

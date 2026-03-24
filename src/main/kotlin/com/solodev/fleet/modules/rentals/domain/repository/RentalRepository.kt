@@ -7,6 +7,15 @@ import com.solodev.fleet.modules.rentals.domain.model.RentalStatus
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import java.time.Instant
 
+/** Domain model holding a Rental along with basic related entity info for listing. */
+data class RentalWithDetails(
+    val rental: Rental,
+    val vehiclePlateNumber: String?,
+    val vehicleMake: String?,
+    val vehicleModel: String?,
+    val customerName: String?
+)
+
 /** Repository interface for Rental persistence. */
 interface RentalRepository {
     /** Find a rental by its unique identifier. */
@@ -42,4 +51,20 @@ interface RentalRepository {
 
     /** Find all rentals. */
     suspend fun findAll(): List<Rental>
+
+    /** Find rentals with pagination and filtering, including enriched details. */
+    suspend fun findAllPaged(
+        page: Int = 1,
+        limit: Int = 10,
+        status: RentalStatus? = null,
+        vehicleId: VehicleId? = null,
+        customerId: CustomerId? = null
+    ): List<RentalWithDetails>
+
+    /** Count total rentals matching the filters. */
+    suspend fun count(
+        status: RentalStatus? = null,
+        vehicleId: VehicleId? = null,
+        customerId: CustomerId? = null
+    ): Long
 }

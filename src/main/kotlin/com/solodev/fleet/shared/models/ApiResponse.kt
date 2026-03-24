@@ -18,12 +18,13 @@ data class ApiResponse<T>(
     val success: Boolean,
     val data: T? = null,
     val error: ErrorDetail? = null,
-    val requestId: String
+    val requestId: String,
+    val metadata: Map<String, String>? = null
 ) {
     companion object {
         // Factory for successful responses
-        fun <T> success(data: T, requestId: String) =
-            ApiResponse(success = true, data = data, requestId = requestId)
+        fun <T> success(data: T, requestId: String, metadata: Map<String, String>? = null) =
+            ApiResponse(success = true, data = data, requestId = requestId, metadata = metadata)
 
         // Factory for error responses
         fun error(code: String, message: String, requestId: String) =

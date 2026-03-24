@@ -27,7 +27,14 @@ fun Route.vehicleRoutes(repository: VehicleRepository) {
     authenticate("auth-jwt") {
         route("/v1/vehicles") {
             get {
-                val params = call.paginationParams() // Extracts limit and cursor
+                val stateFilter = call.request.queryParameters["state"]
+                val baseParams = call.paginationParams()
+                val params = if (stateFilter != null) {
+                    baseParams.copy(filters = baseParams.filters + ("state" to stateFilter))
+                } else {
+                    baseParams
+                }
+                
                 val result = listVehiclesUseCase.execute(params)
                 call.respond(ApiResponse.success(result, call.requestId))
             }

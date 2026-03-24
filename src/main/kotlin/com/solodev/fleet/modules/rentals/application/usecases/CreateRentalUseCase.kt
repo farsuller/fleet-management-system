@@ -52,16 +52,17 @@ class CreateRentalUseCase(
                         status = RentalStatus.RESERVED,
                         startDate = startDate,
                         endDate = endDate,
-                        totalAmount = calculateCost(vehicle, startDate, endDate),
-                        dailyRateAmount = dailyRate(vehicle)
+                        totalAmount = calculateCost(vehicle, startDate, endDate, request.dailyRateAmount),
+                        dailyRateAmount = request.dailyRateAmount?.toInt() ?: dailyRate(vehicle)
                 )
 
         rentalRepository.save(rental)
     }
 
-    private fun calculateCost(vehicle: Vehicle, start: Instant, end: Instant): Int {
+    private fun calculateCost(vehicle: Vehicle, start: Instant, end: Instant, customRate: Long?): Int {
         val days = java.time.Duration.between(start, end).toDays().toInt()
-        return days * dailyRate(vehicle)
+        val rate = customRate?.toInt() ?: dailyRate(vehicle)
+        return days * rate
     }
 
     private fun dailyRate(vehicle: Vehicle): Int = vehicle.dailyRateAmount ?: 5000

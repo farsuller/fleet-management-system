@@ -35,14 +35,38 @@ fun Route.rentalRoutes(
         invoiceRepository = invoiceRepository
     )
     val cancelRentalUseCase = CancelRentalUseCase(rentalRepository)
+    val deleteRentalUseCase = DeleteRentalUseCase(rentalRepository)
     val listRentalsUseCase = ListRentalsUseCase(rentalRepository)
 
     authenticate("auth-jwt") {
         route("/v1/rentals") {
             get {
-                val rentals = listRentalsUseCase.execute()
+                val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 10
+                val status = call.request.queryParameters["status"]?.let {
+                    try { com.solodev.fleet.modules.rentals.domain.model.RentalStatus.valueOf(it) } catch (e: Exception) { null }
+                }
+                val vehicleId = call.request.queryParameters["vehicleId"]
+                val customerId = call.request.queryParameters["customerId"]
+
+                val (rentals, total) = listRentalsUseCase.execute(
+                    page = page,
+                    limit = limit,
+                    status = status,
+                    vehicleId = vehicleId,
+                    customerId = customerId
+                )
+                
                 val response = rentals.map { RentalResponse.fromDomain(it) }
-                call.respond(ApiResponse.success(response, call.requestId))
+                call.respond(ApiResponse.success(
+                    data = response, 
+                    requestId = call.requestId,
+                    metadata = mapOf(
+                        "total" to total.toString(),
+                        "page" to page.toString(),
+                        "limit" to limit.toString()
+                    )
+                ))
             }
 
             post {
@@ -209,6 +233,29 @@ fun Route.rentalRoutes(
                                 e.message ?: "Cannot cancel",
                                 call.requestId
                             )
+                        )
+                    }
+                }
+
+                delete {
+                    val id =
+                        call.parameters["id"]
+                            ?: return@delete call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse.error(
+                                    "MISSING_ID",
+                                    "Rental ID required",
+                                    call.requestId
+                                )
+                            )
+
+                    val deleted = deleteRentalUseCase.execute(id)
+                    if (deleted) {
+                        call.respond(HttpStatusCode.NoContent)
+                    } else {
+                        call.respond(
+                            HttpStatusCode.NotFound,
+                            ApiResponse.error("NOT_FOUND", "Rental not found", call.requestId)
                         )
                     }
                 }

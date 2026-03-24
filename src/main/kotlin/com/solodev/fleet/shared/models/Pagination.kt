@@ -12,5 +12,6 @@ data class PaginatedResponse<T>(
 
 data class PaginationParams(
     val limit: Int,
-    val cursor: String?
+    val cursor: String?,
+    val filters: Map<String, String> = emptyMap()
 )

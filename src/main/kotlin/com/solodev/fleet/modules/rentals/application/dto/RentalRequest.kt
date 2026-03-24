@@ -8,7 +8,8 @@ data class RentalRequest(
         val vehicleId: String,
         val customerId: String,
         val startDate: String, // ISO-8601
-        val endDate: String // ISO-8601
+        val endDate: String, // ISO-8601
+        val dailyRateAmount: Long? = null
 ) {
         init {
                 require(vehicleId.isNotBlank()) { "Vehicle ID cannot be blank" }

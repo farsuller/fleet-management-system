@@ -165,9 +165,16 @@ class VehicleRepositoryImpl(private val cacheManager: RedisCacheManager? = null)
     }
 
     override suspend fun findAll(params: PaginationParams): Pair<List<Vehicle>, Long> = dbQuery {
-        val totalCount = VehiclesTable.selectAll().count()
+        var baseQuery = VehiclesTable.selectAll()
+        
+        // Apply filters
+        params.filters["state"]?.let { stateValue ->
+            baseQuery = baseQuery.where { VehiclesTable.status eq stateValue }
+        }
 
-        var query = VehiclesTable.selectAll()
+        val totalCount = baseQuery.count()
+
+        var query = baseQuery
 
         params.cursor?.let { lastId ->
             query = query.where { VehiclesTable.id greater UUID.fromString(lastId) }

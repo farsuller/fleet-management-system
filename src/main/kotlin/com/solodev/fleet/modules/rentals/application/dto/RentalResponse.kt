@@ -18,7 +18,11 @@ data class RentalResponse(
         val endOdometerKm: Int?,
         val dailyRate: Int,
         val totalCost: Int,
-        val currencyCode: String
+        val currencyCode: String,
+        val vehiclePlateNumber: String? = null,
+        val vehicleMake: String? = null,
+        val vehicleModel: String? = null,
+        val customerName: String? = null
 ) {
         companion object {
                 fun fromDomain(r: Rental) =
@@ -37,6 +41,14 @@ data class RentalResponse(
                                 dailyRate = r.dailyRateAmount,
                                 totalCost = r.totalAmount,
                                 currencyCode = r.currencyCode
+                        )
+
+                fun fromDomain(d: com.solodev.fleet.modules.rentals.domain.repository.RentalWithDetails) =
+                        fromDomain(d.rental).copy(
+                                vehiclePlateNumber = d.vehiclePlateNumber,
+                                vehicleMake = d.vehicleMake,
+                                vehicleModel = d.vehicleModel,
+                                customerName = d.customerName
                         )
         }
 }
