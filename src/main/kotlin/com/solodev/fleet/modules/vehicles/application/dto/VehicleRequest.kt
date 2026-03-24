@@ -13,7 +13,9 @@ data class VehicleRequest(
         val vehicleType: String = "OTHER",
         val mileageKm: Int = 0,
         val dailyRate: Double? = null,
-        val passengerCapacity: Int? = null
+        val passengerCapacity: Int? = null,
+        val lastServiceMileage: Int? = null,
+        val nextServiceMileage: Int? = null
 ) {
         init {
                 vin?.let {

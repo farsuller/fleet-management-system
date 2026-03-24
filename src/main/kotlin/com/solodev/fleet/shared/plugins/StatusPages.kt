@@ -6,6 +6,7 @@ import com.solodev.fleet.shared.models.ErrorDetail
 import com.solodev.fleet.shared.models.FieldError
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import org.jetbrains.exposed.exceptions.ExposedSQLException
@@ -114,6 +115,37 @@ fun Application.configureStatusPages() {
                                     ErrorDetail(
                                             code = cause.errorCode,
                                             message = cause.message ?: "Rate limit exceeded"
+                                    ),
+                            requestId = call.requestId
+                    )
+            )
+        }
+
+        // Serialization and Bad Request handling
+        exception<BadRequestException> { call, cause ->
+            call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse<Nothing>(
+                            success = false,
+                            error =
+                                    ErrorDetail(
+                                            code = "BAD_REQUEST",
+                                            message = cause.message ?: "Invalid request format"
+                                    ),
+                            requestId = call.requestId
+                    )
+            )
+        }
+
+        exception<kotlinx.serialization.SerializationException> { call, cause ->
+            call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse<Nothing>(
+                            success = false,
+                            error =
+                                    ErrorDetail(
+                                            code = "SERIALIZATION_ERROR",
+                                            message = "Malformed JSON or type mismatch: ${cause.message}"
                                     ),
                             requestId = call.requestId
                     )

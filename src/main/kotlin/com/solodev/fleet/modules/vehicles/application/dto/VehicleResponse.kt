@@ -21,7 +21,9 @@ data class VehicleResponse(
         val passengerCapacity: Int?,
         val lastLocation: Location? = null,
         val routeProgress: Double = 0.0,
-        val bearing: Double = 0.0
+        val bearing: Double = 0.0,
+        val lastServiceMileage: Int? = null,
+        val nextServiceMileage: Int? = null
 ) {
         companion object {
                 fun fromDomain(v: Vehicle) =
@@ -41,7 +43,9 @@ data class VehicleResponse(
                                 passengerCapacity = v.passengerCapacity,
                                 lastLocation = v.lastLocation,
                                 routeProgress = v.routeProgress,
-                                bearing = v.bearing
+                                bearing = v.bearing,
+                                lastServiceMileage = v.lastServiceMileage,
+                                nextServiceMileage = v.nextServiceMileage
                         )
         }
 }

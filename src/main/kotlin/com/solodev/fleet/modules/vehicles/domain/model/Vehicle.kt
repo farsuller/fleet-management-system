@@ -57,6 +57,8 @@ data class Vehicle(
         val lastLocation: Location? = null,
         val routeProgress: Double = 0.0,
         val bearing: Double = 0.0,
+        val lastServiceMileage: Int? = null,
+        val nextServiceMileage: Int? = null,
         val version: Long = 0
 ) {
     init {

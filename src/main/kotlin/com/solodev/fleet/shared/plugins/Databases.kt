@@ -155,6 +155,7 @@ fun Application.configureDatabases() {
                     "V026__add_vehicle_type.sql",
                     "V027__add_sensor_fields_to_location_history.sql",
                     "V028__create_driver_shifts.sql",
+                    "V029__add_vehicle_service_mileage.sql",
             )
 
     log.info("Extracting ${migrationFiles.size} migrations to: ${migrationDir.absolutePath}...")

@@ -10,7 +10,9 @@ data class VehicleUpdateRequest(
         val year: Int? = null,
         val color: String? = null,
         val dailyRate: Double? = null,
-        val mileageKm: Int? = null
+        val mileageKm: Int? = null,
+        val lastServiceMileage: Int? = null,
+        val nextServiceMileage: Int? = null
 ) {
     init {
         dailyRate?.let { require(it >= 0.0) { "Daily rate cannot be negative" } }
@@ -25,5 +27,7 @@ data class VehicleUpdateRequest(
                     year != null ||
                     color != null ||
                     dailyRate != null ||
-                    mileageKm != null
+                    mileageKm != null ||
+                    lastServiceMileage != null ||
+                    nextServiceMileage != null
 }

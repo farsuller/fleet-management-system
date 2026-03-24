@@ -46,6 +46,8 @@ class VehicleRepositoryImpl(private val cacheManager: RedisCacheManager? = null)
                     lastLocation = this[VehiclesTable.lastLocation]?.toLocation(),
                     routeProgress = this[VehiclesTable.routeProgress],
                     bearing = this[VehiclesTable.bearing],
+                    lastServiceMileage = this[VehiclesTable.lastServiceMileage],
+                    nextServiceMileage = this[VehiclesTable.nextServiceMileage],
                     version = this[VehiclesTable.version]
             )
 
@@ -117,6 +119,8 @@ class VehicleRepositoryImpl(private val cacheManager: RedisCacheManager? = null)
                         it[lastLocation] = vehicle.lastLocation?.toPGgeometry()
                         it[routeProgress] = vehicle.routeProgress
                         it[bearing] = vehicle.bearing
+                        it[lastServiceMileage] = vehicle.lastServiceMileage
+                        it[nextServiceMileage] = vehicle.nextServiceMileage
                         it[updatedAt] = now
                         // version is incremented by DB trigger
                     }
@@ -146,6 +150,8 @@ class VehicleRepositoryImpl(private val cacheManager: RedisCacheManager? = null)
                 it[lastLocation] = vehicle.lastLocation?.toPGgeometry()
                 it[routeProgress] = vehicle.routeProgress
                 it[bearing] = vehicle.bearing
+                it[lastServiceMileage] = vehicle.lastServiceMileage
+                it[nextServiceMileage] = vehicle.nextServiceMileage
                 it[createdAt] = now
                 it[updatedAt] = now
                 it[version] = 0
