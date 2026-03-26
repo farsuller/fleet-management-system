@@ -1,6 +1,7 @@
 package com.solodev.fleet.modules.drivers.application.usecases
 
 import com.solodev.fleet.modules.drivers.application.dto.DriverRequest
+import com.solodev.fleet.modules.drivers.application.dto.UpdateDriverRequest
 import com.solodev.fleet.modules.drivers.domain.model.Driver
 import com.solodev.fleet.modules.drivers.domain.model.DriverId
 import com.solodev.fleet.modules.drivers.domain.model.DriverShift
@@ -85,5 +86,49 @@ class EndShiftUseCase(private val driverRepository: DriverRepository) {
 class GetActiveShiftUseCase(private val driverRepository: DriverRepository) {
     suspend fun execute(driverId: String): DriverShift? {
         return driverRepository.findActiveShift(driverId)
+    }
+}
+
+class UpdateDriverUseCase(private val driverRepository: DriverRepository) {
+    suspend fun execute(id: String, request: UpdateDriverRequest): Driver {
+        val existing = driverRepository.findById(DriverId(id))
+            ?: throw IllegalArgumentException("Driver not found: $id")
+
+        if (request.email != null && request.email != existing.email) {
+            require(driverRepository.findByEmail(request.email) == null) {
+                "Driver with email ${request.email} already exists"
+            }
+        }
+        if (request.licenseNumber != null && request.licenseNumber != existing.licenseNumber) {
+            require(driverRepository.findByLicenseNumber(request.licenseNumber) == null) {
+                "Driver with license number ${request.licenseNumber} already exists"
+            }
+        }
+
+        val licenseExpiry = request.licenseExpiry?.let {
+            try {
+                LocalDate.parse(it).atStartOfDay().toInstant(ZoneOffset.UTC)
+            } catch (e: Exception) {
+                throw IllegalArgumentException("Invalid license expiry date format. Expected YYYY-MM-DD")
+            }
+        }
+
+        val updated = existing.copy(
+            firstName = request.firstName ?: existing.firstName,
+            lastName = request.lastName ?: existing.lastName,
+            email = request.email ?: existing.email,
+            phone = request.phone ?: existing.phone,
+            licenseNumber = request.licenseNumber ?: existing.licenseNumber,
+            licenseExpiry = licenseExpiry ?: existing.licenseExpiry,
+            licenseClass = request.licenseClass ?: existing.licenseClass,
+            address = request.address ?: existing.address,
+            city = request.city ?: existing.city,
+            state = request.state ?: existing.state,
+            postalCode = request.postalCode ?: existing.postalCode,
+            country = request.country ?: existing.country,
+            isActive = request.isActive ?: existing.isActive
+        )
+
+        return driverRepository.save(updated)
     }
 }

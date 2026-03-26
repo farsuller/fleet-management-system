@@ -23,6 +23,7 @@ fun Route.driverRoutes(
     val getDriverUseCase       = GetDriverUseCase(driverRepository)
     val listDriversUseCase     = ListDriversUseCase(driverRepository)
     val deactivateDriverUseCase = DeactivateDriverUseCase(driverRepository)
+    val updateDriverUseCase    = UpdateDriverUseCase(driverRepository)
     val startShiftUseCase      = StartShiftUseCase(driverRepository)
     val endShiftUseCase        = EndShiftUseCase(driverRepository)
     val getActiveShiftUseCase  = GetActiveShiftUseCase(driverRepository)
@@ -102,6 +103,25 @@ fun Route.driverRoutes(
                         )
                     val assignment = driverRepository.findActiveAssignmentByDriver(driver.id)
                     call.respond(ApiResponse.success(DriverResponse.fromDomain(driver, assignment), call.requestId))
+                }
+
+                // Update driver
+                patch {
+                    val id = call.parameters["id"]
+                        ?: return@patch call.respond(
+                            HttpStatusCode.BadRequest,
+                            ApiResponse.error("MISSING_ID", "Driver ID required", call.requestId)
+                        )
+                    try {
+                        val request = call.receive<UpdateDriverRequest>()
+                        val driver  = updateDriverUseCase.execute(id, request)
+                        call.respond(ApiResponse.success(DriverResponse.fromDomain(driver), call.requestId))
+                    } catch (e: IllegalArgumentException) {
+                        call.respond(
+                            HttpStatusCode.UnprocessableEntity,
+                            ApiResponse.error("VALIDATION_ERROR", e.message ?: "Invalid data", call.requestId)
+                        )
+                    }
                 }
 
                 // Deactivate / reactivate
