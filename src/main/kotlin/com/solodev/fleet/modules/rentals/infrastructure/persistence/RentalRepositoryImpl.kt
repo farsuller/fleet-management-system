@@ -40,6 +40,26 @@ class RentalRepositoryImpl : RentalRepository {
                 .singleOrNull()
     }
 
+    override suspend fun findByIdWithDetails(id: RentalId): RentalWithDetails? = dbQuery {
+        RentalsTable
+            .join(VehiclesTable, JoinType.LEFT, RentalsTable.vehicleId, VehiclesTable.id)
+            .join(CustomersTable, JoinType.LEFT, RentalsTable.customerId, CustomersTable.id)
+            .selectAll()
+            .where { RentalsTable.id eq UUID.fromString(id.value) }
+            .map { row ->
+                RentalWithDetails(
+                    rental = row.toRental(),
+                    vehiclePlateNumber = row.getOrNull(VehiclesTable.plateNumber),
+                    vehicleMake = row.getOrNull(VehiclesTable.make),
+                    vehicleModel = row.getOrNull(VehiclesTable.model),
+                    customerName = row.getOrNull(CustomersTable.firstName)?.let { first -> 
+                        row.getOrNull(CustomersTable.lastName)?.let { last -> "$first $last" } ?: first
+                    }
+                )
+            }
+            .singleOrNull()
+    }
+
     override suspend fun findByRentalNumber(rentalNumber: String): Rental? = dbQuery {
         RentalsTable.selectAll()
                 .where { RentalsTable.rentalNumber eq rentalNumber }
@@ -54,10 +74,14 @@ class RentalRepositoryImpl : RentalRepository {
                         .count() > 0
         if (exists) {
             RentalsTable.update({ RentalsTable.id eq UUID.fromString(rental.id.value) }) {
+                it[customerId] = UUID.fromString(rental.customerId.value)
+                it[vehicleId] = UUID.fromString(rental.vehicleId.value)
                 it[status] = rental.status.name
+                it[startDate] = rental.startDate
                 it[endDate] = rental.endDate
                 it[actualStartDate] = rental.actualStartDate
                 it[actualEndDate] = rental.actualEndDate
+                it[dailyRate] = rental.dailyRateAmount
                 it[startOdometerKm] = rental.startOdometerKm
                 it[endOdometerKm] = rental.endOdometerKm
                 it[totalAmount] = rental.totalAmount
@@ -75,6 +99,7 @@ class RentalRepositoryImpl : RentalRepository {
                 it[endDate] = rental.endDate
                 it[dailyRate] = rental.dailyRateAmount
                 it[totalAmount] = rental.totalAmount
+                it[currencyCode] = rental.currencyCode
                 it[createdAt] = Instant.now()
                 it[updatedAt] = Instant.now()
             }

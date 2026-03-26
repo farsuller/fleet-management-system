@@ -2,6 +2,7 @@ package com.solodev.fleet.modules.rentals.application.usecases
 
 import com.solodev.fleet.modules.accounts.application.AccountingService
 import com.solodev.fleet.modules.rentals.domain.repository.RentalRepository
+import com.solodev.fleet.modules.rentals.domain.repository.RentalWithDetails
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 import com.solodev.fleet.modules.rentals.domain.model.Rental
 import com.solodev.fleet.modules.rentals.domain.model.RentalId
@@ -16,8 +17,9 @@ class ActivateRentalUseCase(
         private val vehicleRepository: VehicleRepository,
         private val accountingService: AccountingService
 ) {
-    suspend fun execute(id: String): Rental = newSuspendedTransaction(Dispatchers.IO) {
-        val rental = rentalRepository.findById(RentalId(id)) ?: throw IllegalArgumentException("Rental not found")
+    suspend fun execute(id: String): RentalWithDetails = newSuspendedTransaction(Dispatchers.IO) {
+        val rentalId = RentalId(id)
+        val rental = rentalRepository.findById(rentalId) ?: throw IllegalArgumentException("Rental not found")
 
         require(rental.status == RentalStatus.RESERVED) { "Can only activate reserved rentals" }
 
@@ -36,6 +38,6 @@ class ActivateRentalUseCase(
 
         accountingService.postRentalActivation(saved) // If this fails, the whole transaction rolls back
 
-        saved
+        rentalRepository.findByIdWithDetails(rentalId) ?: throw IllegalStateException("Failed to reload rental with details")
     }
 }

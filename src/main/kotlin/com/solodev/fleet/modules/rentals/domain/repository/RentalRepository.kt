@@ -21,6 +21,9 @@ interface RentalRepository {
     /** Find a rental by its unique identifier. */
     suspend fun findById(id: RentalId): Rental?
 
+    /** Find a rental by ID including enriched details. */
+    suspend fun findByIdWithDetails(id: RentalId): RentalWithDetails?
+
     /** Find a rental by its rental number. */
     suspend fun findByRentalNumber(rentalNumber: String): Rental?
 

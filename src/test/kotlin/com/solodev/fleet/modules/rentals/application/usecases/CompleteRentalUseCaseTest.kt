@@ -5,6 +5,7 @@ import com.solodev.fleet.modules.accounts.domain.model.*
 import com.solodev.fleet.modules.accounts.domain.repository.InvoiceRepository
 import com.solodev.fleet.modules.rentals.domain.model.*
 import com.solodev.fleet.modules.rentals.domain.repository.RentalRepository
+import com.solodev.fleet.modules.rentals.domain.repository.RentalWithDetails
 import com.solodev.fleet.modules.vehicles.domain.model.*
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 import io.mockk.*
@@ -40,19 +41,23 @@ class CompleteRentalUseCaseTest {
         val rental = sampleRental(status = RentalStatus.ACTIVE, startOdometerKm = 5000)
         val vehicle = sampleVehicle(mileageKm = 5000)
         val savedVehicle = slot<Vehicle>()
+        val savedRental = slot<Rental>()
         coEvery { rentalRepository.findById(RentalId(rentalId)) } returns rental
         coEvery { vehicleRepository.findById(VehicleId(vehicleId)) } returns vehicle
         coEvery { vehicleRepository.save(capture(savedVehicle)) } returnsArgument 0
-        coEvery { rentalRepository.save(any()) } returnsArgument 0
+        coEvery { rentalRepository.save(capture(savedRental)) } returnsArgument 0
         coEvery { invoiceRepository.findByRentalId(any()) } returns null
         coEvery { issueInvoiceUseCase.execute(any()) } returnsArgument 0
+        coEvery { rentalRepository.findByIdWithDetails(RentalId(rentalId)) } answers {
+            RentalWithDetails(savedRental.captured, "ABC-1234", "Toyota", "Corolla", "John Doe")
+        }
 
         // Act
         val result = useCase.execute(rentalId, finalMileage = 5150)
 
         // Assert
-        assertThat(result.status).isEqualTo(RentalStatus.COMPLETED)
-        assertThat(result.endOdometerKm).isEqualTo(5150)
+        assertThat(result.rental.status).isEqualTo(RentalStatus.COMPLETED)
+        assertThat(result.rental.endOdometerKm).isEqualTo(5150)
         assertThat(savedVehicle.captured.state).isEqualTo(VehicleState.AVAILABLE)
         coVerify(exactly = 1) { issueInvoiceUseCase.execute(any()) }
     }
@@ -62,12 +67,16 @@ class CompleteRentalUseCaseTest {
         // Arrange
         val rental = sampleRental(status = RentalStatus.ACTIVE)
         val vehicle = sampleVehicle()
+        val savedRental = slot<Rental>()
         coEvery { rentalRepository.findById(RentalId(rentalId)) } returns rental
         coEvery { vehicleRepository.findById(VehicleId(vehicleId)) } returns vehicle
         coEvery { vehicleRepository.save(any()) } returnsArgument 0
-        coEvery { rentalRepository.save(any()) } returnsArgument 0
+        coEvery { rentalRepository.save(capture(savedRental)) } returnsArgument 0
         coEvery { invoiceRepository.findByRentalId(any()) } returns null
         coEvery { issueInvoiceUseCase.execute(any()) } returnsArgument 0
+        coEvery { rentalRepository.findByIdWithDetails(RentalId(rentalId)) } answers {
+            RentalWithDetails(savedRental.captured, "ABC-1234", "Toyota", "Corolla", "John Doe")
+        }
 
         // Act
         useCase.execute(rentalId, finalMileage = 5100)
@@ -86,11 +95,15 @@ class CompleteRentalUseCaseTest {
         val rental = sampleRental(status = RentalStatus.ACTIVE)
         val vehicle = sampleVehicle()
         val existingInvoice = sampleInvoice()
+        val savedRental = slot<Rental>()
         coEvery { rentalRepository.findById(RentalId(rentalId)) } returns rental
         coEvery { vehicleRepository.findById(VehicleId(vehicleId)) } returns vehicle
         coEvery { vehicleRepository.save(any()) } returnsArgument 0
-        coEvery { rentalRepository.save(any()) } returnsArgument 0
+        coEvery { rentalRepository.save(capture(savedRental)) } returnsArgument 0
         coEvery { invoiceRepository.findByRentalId(any()) } returns existingInvoice
+        coEvery { rentalRepository.findByIdWithDetails(RentalId(rentalId)) } answers {
+            RentalWithDetails(savedRental.captured, "ABC-1234", "Toyota", "Corolla", "John Doe")
+        }
 
         // Act
         useCase.execute(rentalId, finalMileage = 5100)

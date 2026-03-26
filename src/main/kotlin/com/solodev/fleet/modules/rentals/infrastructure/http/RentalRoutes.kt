@@ -2,6 +2,7 @@ package com.solodev.fleet.modules.rentals.infrastructure.http
 
 import com.solodev.fleet.modules.accounts.application.AccountingService
 import com.solodev.fleet.modules.rentals.application.dto.RentalRequest
+import com.solodev.fleet.modules.rentals.application.dto.UpdateRentalRequest
 import com.solodev.fleet.modules.rentals.application.dto.RentalResponse
 import com.solodev.fleet.modules.rentals.application.usecases.*
 import com.solodev.fleet.modules.rentals.domain.repository.RentalRepository
@@ -37,6 +38,7 @@ fun Route.rentalRoutes(
     val cancelRentalUseCase = CancelRentalUseCase(rentalRepository)
     val deleteRentalUseCase = DeleteRentalUseCase(rentalRepository)
     val listRentalsUseCase = ListRentalsUseCase(rentalRepository)
+    val updateRentalUseCase = UpdateRentalUseCase(rentalRepository, vehicleRepository)
 
     authenticate("auth-jwt") {
         route("/v1/rentals") {
@@ -102,10 +104,10 @@ fun Route.rentalRoutes(
                                 )
                             )
 
-                    val rental = getRentalUseCase.execute(id)
-                    if (rental != null) {
+                    val rentalWithDetails = getRentalUseCase.execute(id)
+                    if (rentalWithDetails != null) {
                         call.respond(
-                            ApiResponse.success(RentalResponse.fromDomain(rental), call.requestId)
+                            ApiResponse.success(RentalResponse.fromDomain(rentalWithDetails), call.requestId)
                         )
                     } else {
                         call.respond(
@@ -128,10 +130,10 @@ fun Route.rentalRoutes(
                             )
 
                     try {
-                        val activated = activateRentalUseCase.execute(id)
+                        val activatedWithDetails = activateRentalUseCase.execute(id)
                         call.respond(
                             ApiResponse.success(
-                                RentalResponse.fromDomain(activated),
+                                RentalResponse.fromDomain(activatedWithDetails),
                                 call.requestId
                             )
                         )
@@ -177,10 +179,10 @@ fun Route.rentalRoutes(
                             }
                         val finalMileage = body["finalMileage"] ?: body["endOdometer"]
 
-                        val completed = completeRentalUseCase.execute(id, finalMileage)
+                        val completedWithDetails = completeRentalUseCase.execute(id, finalMileage)
                         call.respond(
                             ApiResponse.success(
-                                RentalResponse.fromDomain(completed),
+                                RentalResponse.fromDomain(completedWithDetails),
                                 call.requestId
                             )
                         )
@@ -218,10 +220,10 @@ fun Route.rentalRoutes(
                             )
 
                     try {
-                        val cancelled = cancelRentalUseCase.execute(id)
+                        val cancelledWithDetails = cancelRentalUseCase.execute(id)
                         call.respond(
                             ApiResponse.success(
-                                RentalResponse.fromDomain(cancelled),
+                                RentalResponse.fromDomain(cancelledWithDetails),
                                 call.requestId
                             )
                         )
@@ -233,6 +235,57 @@ fun Route.rentalRoutes(
                                 e.message ?: "Cannot cancel",
                                 call.requestId
                             )
+                        )
+                    }
+                }
+ 
+                patch {
+                    val id = call.parameters["id"] ?: return@patch call.respond(
+                        HttpStatusCode.BadRequest,
+                        ApiResponse.error("MISSING_ID", "Rental ID required", call.requestId)
+                    )
+
+                    try {
+                        val request = call.receive<UpdateRentalRequest>()
+                        val updatedWithDetails = updateRentalUseCase.execute(id, request)
+                        if (updatedWithDetails != null) {
+                            call.respond(ApiResponse.success(RentalResponse.fromDomain(updatedWithDetails), call.requestId))
+                        } else {
+                            call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse.error("NOT_FOUND", "Rental not found", call.requestId)
+                            )
+                        }
+                    } catch (e: IllegalArgumentException) {
+                        call.respond(
+                            HttpStatusCode.Conflict,
+                            ApiResponse.error("CONFLICT", e.message ?: "Update failed", call.requestId)
+                        )
+                    }
+                }
+
+                put {
+                    // Supporting PUT as an alias for partial update to improve compatibility
+                    val id = call.parameters["id"] ?: return@put call.respond(
+                        HttpStatusCode.BadRequest,
+                        ApiResponse.error("MISSING_ID", "Rental ID required", call.requestId)
+                    )
+
+                    try {
+                        val request = call.receive<UpdateRentalRequest>()
+                        val updatedWithDetails = updateRentalUseCase.execute(id, request)
+                        if (updatedWithDetails != null) {
+                            call.respond(ApiResponse.success(RentalResponse.fromDomain(updatedWithDetails), call.requestId))
+                        } else {
+                            call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse.error("NOT_FOUND", "Rental not found", call.requestId)
+                            )
+                        }
+                    } catch (e: IllegalArgumentException) {
+                        call.respond(
+                            HttpStatusCode.Conflict,
+                            ApiResponse.error("CONFLICT", e.message ?: "Update failed", call.requestId)
                         )
                     }
                 }

@@ -7,6 +7,7 @@ import com.solodev.fleet.modules.rentals.domain.model.Rental
 import com.solodev.fleet.modules.rentals.domain.model.RentalId
 import com.solodev.fleet.modules.rentals.domain.model.RentalStatus
 import com.solodev.fleet.modules.rentals.domain.repository.RentalRepository
+import com.solodev.fleet.modules.rentals.domain.repository.RentalWithDetails
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleState
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 import java.time.Instant
@@ -19,9 +20,10 @@ class CompleteRentalUseCase(
         private val issueInvoiceUseCase: IssueInvoiceUseCase,
         private val invoiceRepository: InvoiceRepository
 ) {
-    suspend fun execute(id: String, finalMileage: Int? = null): Rental {
+    suspend fun execute(id: String, finalMileage: Int? = null): RentalWithDetails {
+        val rentalId = RentalId(id)
         val rental =
-                rentalRepository.findById(RentalId(id))
+                rentalRepository.findById(rentalId)
                         ?: throw IllegalArgumentException("Rental not found")
 
         require(rental.status == RentalStatus.ACTIVE) { "Can only complete active rentals" }
@@ -58,6 +60,6 @@ class CompleteRentalUseCase(
             issueInvoiceUseCase.execute(invoiceRequest)
         }
 
-        return savedRental
+        return rentalRepository.findByIdWithDetails(rentalId) ?: throw IllegalStateException("Failed to reload rental with details")
     }
 }
