@@ -31,6 +31,7 @@ fun Route.customerRoutes(
     val deactivateCustomerUseCase = DeactivateCustomerUseCase(customerRepository)
     val getCustomerUseCase       = GetCustomerUseCase(customerRepository)
     val listCustomersUseCase     = ListCustomersUseCase(customerRepository)
+    val updateCustomerUseCase    = UpdateCustomerUseCase(customerRepository)
 
     // ── Public: mobile-app customer self-registration ─────────────────────────
     if (userRepository != null && tokenRepository != null) {
@@ -136,6 +137,28 @@ fun Route.customerRoutes(
                         CustomerDetailResponse.fromDomain(customer, assignedDriver, activeVehicle),
                         call.requestId
                     ))
+                }
+
+                patch {
+                    val id = call.parameters["id"]
+                        ?: return@patch call.respond(
+                            HttpStatusCode.BadRequest,
+                            ApiResponse.error("MISSING_ID", "Customer ID required", call.requestId)
+                        )
+                    try {
+                        val request = call.receive<UpdateCustomerRequest>()
+                        val updated = updateCustomerUseCase.execute(id, request)
+                            ?: return@patch call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse.error("NOT_FOUND", "Customer not found", call.requestId)
+                            )
+                        call.respond(ApiResponse.success(CustomerResponse.fromDomain(updated), call.requestId))
+                    } catch (e: IllegalArgumentException) {
+                        call.respond(
+                            HttpStatusCode.UnprocessableEntity,
+                            ApiResponse.error("VALIDATION_ERROR", e.message ?: "Invalid request", call.requestId)
+                        )
+                    }
                 }
 
                 patch("deactivate") {
