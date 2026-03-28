@@ -6,6 +6,10 @@ import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJobType
 import com.solodev.fleet.modules.maintenance.domain.model.MaintenancePart
 import com.solodev.fleet.modules.maintenance.domain.model.MaintenancePriority
 import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceStatus
+import com.solodev.fleet.modules.maintenance.domain.model.VehicleIncident
+import com.solodev.fleet.modules.maintenance.domain.model.IncidentId
+import com.solodev.fleet.modules.maintenance.domain.model.IncidentSeverity
+import com.solodev.fleet.modules.maintenance.domain.model.IncidentStatus
 import com.solodev.fleet.modules.maintenance.domain.repository.MaintenanceRepository
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import com.solodev.fleet.shared.helpers.dbQuery
@@ -53,6 +57,22 @@ class MaintenanceRepositoryImpl : MaintenanceRepository {
                     currencyCode = this[MaintenancePartsTable.currencyCode],
                     supplier = this[MaintenancePartsTable.supplier],
                     notes = this[MaintenancePartsTable.notes]
+            )
+
+    private fun ResultRow.toVehicleIncident() =
+            VehicleIncident(
+                    id = IncidentId(this[VehicleIncidentsTable.id].value),
+                    vehicleId = VehicleId(this[VehicleIncidentsTable.vehicleId].value.toString()),
+                    title = this[VehicleIncidentsTable.title],
+                    description = this[VehicleIncidentsTable.description],
+                    severity = IncidentSeverity.valueOf(this[VehicleIncidentsTable.severity]),
+                    status = IncidentStatus.valueOf(this[VehicleIncidentsTable.status]),
+                    reportedAt = this[VehicleIncidentsTable.reportedAt],
+                    reportedByUserId = this[VehicleIncidentsTable.reportedByUserId],
+                    maintenanceJobId = this[VehicleIncidentsTable.maintenanceJobId]?.let { MaintenanceJobId(it.value.toString()) },
+                    odometerKm = this[VehicleIncidentsTable.odometerKm],
+                    latitude = this[VehicleIncidentsTable.latitude],
+                    longitude = this[VehicleIncidentsTable.longitude]
             )
 
     override suspend fun findByJobNumber(jobNumber: String): MaintenanceJob? = dbQuery {
@@ -139,5 +159,70 @@ class MaintenanceRepositoryImpl : MaintenanceRepository {
                 .where { MaintenanceJobsTable.assignedToUserId eq userId }
                 .orderBy(MaintenanceJobsTable.scheduledDate to SortOrder.ASC)
                 .map { it.toMaintenanceJob() }
+    }
+
+    // ── Incident methods implementation ──────────────────────────────────────
+
+    override suspend fun findIncidentById(id: IncidentId): VehicleIncident? = dbQuery {
+        VehicleIncidentsTable.selectAll()
+                .where { VehicleIncidentsTable.id eq id.value }
+                .map { it.toVehicleIncident() }
+                .singleOrNull()
+    }
+
+    override suspend fun findActiveIncidentsByVehicleId(vehicleId: VehicleId): List<VehicleIncident> = dbQuery {
+        VehicleIncidentsTable.selectAll()
+                .where { 
+                    (VehicleIncidentsTable.vehicleId eq UUID.fromString(vehicleId.value)) and 
+                    (VehicleIncidentsTable.status eq IncidentStatus.REPORTED.name) 
+                }
+                .orderBy(VehicleIncidentsTable.reportedAt to SortOrder.DESC)
+                .map { it.toVehicleIncident() }
+    }
+
+    override suspend fun findIncidentsByVehicleId(vehicleId: VehicleId): List<VehicleIncident> = dbQuery {
+        VehicleIncidentsTable.selectAll()
+                .where { VehicleIncidentsTable.vehicleId eq UUID.fromString(vehicleId.value) }
+                .orderBy(VehicleIncidentsTable.reportedAt to SortOrder.DESC)
+                .map { it.toVehicleIncident() }
+    }
+
+    override suspend fun findIncidentsByJobId(jobId: MaintenanceJobId): List<VehicleIncident> = dbQuery {
+        VehicleIncidentsTable.selectAll()
+                .where { VehicleIncidentsTable.maintenanceJobId eq UUID.fromString(jobId.value) }
+                .orderBy(VehicleIncidentsTable.reportedAt to SortOrder.DESC)
+                .map { it.toVehicleIncident() }
+    }
+
+    override suspend fun saveIncident(incident: VehicleIncident): VehicleIncident = dbQuery {
+        val exists = VehicleIncidentsTable.selectAll()
+                .where { VehicleIncidentsTable.id eq incident.id.value }
+                .count() > 0
+
+        if (exists) {
+            VehicleIncidentsTable.update({ VehicleIncidentsTable.id eq incident.id.value }) {
+                it[status] = incident.status.name
+                it[maintenanceJobId] = incident.maintenanceJobId?.let { jid -> UUID.fromString(jid.value) }
+                it[updatedAt] = Instant.now()
+            }
+        } else {
+            VehicleIncidentsTable.insert {
+                it[id] = incident.id.value
+                it[vehicleId] = UUID.fromString(incident.vehicleId.value)
+                it[maintenanceJobId] = incident.maintenanceJobId?.let { jid -> UUID.fromString(jid.value) }
+                it[title] = incident.title
+                it[description] = incident.description
+                it[severity] = incident.severity.name
+                it[status] = incident.status.name
+                it[reportedAt] = incident.reportedAt
+                it[reportedByUserId] = incident.reportedByUserId
+                it[odometerKm] = incident.odometerKm
+                it[latitude] = incident.latitude
+                it[longitude] = incident.longitude
+                it[createdAt] = Instant.now()
+                it[updatedAt] = Instant.now()
+            }
+        }
+        incident
     }
 }

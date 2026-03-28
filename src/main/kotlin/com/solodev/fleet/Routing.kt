@@ -11,6 +11,7 @@ import com.solodev.fleet.modules.accounts.infrastructure.persistence.PaymentMeth
 import com.solodev.fleet.modules.accounts.infrastructure.persistence.PaymentRepositoryImpl
 import com.solodev.fleet.modules.drivers.infrastructure.http.driverRoutes
 import com.solodev.fleet.modules.drivers.infrastructure.persistence.DriverRepositoryImpl
+import com.solodev.fleet.modules.maintenance.infrastructure.http.incidentRoutes
 import com.solodev.fleet.modules.maintenance.infrastructure.http.maintenanceRoutes
 import com.solodev.fleet.modules.maintenance.infrastructure.persistence.MaintenanceRepositoryImpl
 import com.solodev.fleet.modules.rentals.infrastructure.http.customerRoutes
@@ -118,6 +119,7 @@ fun Application.configureRouting(
                     tokenRepository = tokenRepo,
             )
             maintenanceRoutes(maintenanceRepository = maintenanceRepo)
+            incidentRoutes(maintenanceRepository = maintenanceRepo, vehicleRepository = vehicleRepo)
             trackingRoutes(
                 updateVehicleLocation = updateVehicleLocation,
                 spatialAdapter = spatialAdapter,
