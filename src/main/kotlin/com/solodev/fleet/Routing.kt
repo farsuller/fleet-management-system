@@ -118,7 +118,7 @@ fun Application.configureRouting(
                     userRepository = userRepo,
                     tokenRepository = tokenRepo,
             )
-            maintenanceRoutes(maintenanceRepository = maintenanceRepo)
+            maintenanceRoutes(maintenanceRepository = maintenanceRepo, rentalRepository = rentalRepo)
             incidentRoutes(maintenanceRepository = maintenanceRepo, vehicleRepository = vehicleRepo)
             trackingRoutes(
                 updateVehicleLocation = updateVehicleLocation,

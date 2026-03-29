@@ -17,9 +17,11 @@ class ScheduleMaintenanceUseCaseTest {
 
     private val validRequest = MaintenanceRequest(
         vehicleId = "veh-001",
-        jobType = "ROUTINE",
+        type = MaintenanceJobType.PREVENTIVE,
+        priority = MaintenancePriority.NORMAL,
         description = "Regular oil change service",
-        scheduledDate = "2026-03-10T00:00:00Z"
+        scheduledDate = System.currentTimeMillis(),
+        estimatedCostPhp = 1000L
     )
 
     @Test
@@ -37,22 +39,8 @@ class ScheduleMaintenanceUseCaseTest {
         assertThat(savedJob.captured.vehicleId).isEqualTo(VehicleId("veh-001"))
     }
 
-    @Test
-    fun shouldThrowIllegalArgument_WhenJobTypeIsUnknown() {
-        // Act / Assert
-        assertThatThrownBy {
-            runBlocking {
-                useCase.execute(
-                    MaintenanceRequest(
-                        vehicleId = "veh-001",
-                        jobType = "UNKNOWN_TYPE",
-                        description = "Some maintenance description here",
-                        scheduledDate = "2026-03-10T00:00:00Z"
-                    )
-                )
-            }
-        }.isInstanceOf(IllegalArgumentException::class.java)
-    }
+    // Removed shouldThrowIllegalArgument_WhenJobTypeIsUnknown since type is now an Enum type.
+    // Serialization handles invalid enum strings.
 
     @Test
     fun shouldAutoGenerateJobNumber_WhenJobIsScheduled() = runBlocking {

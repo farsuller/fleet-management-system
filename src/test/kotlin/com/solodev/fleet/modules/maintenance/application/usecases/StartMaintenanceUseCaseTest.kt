@@ -69,7 +69,7 @@ class StartMaintenanceUseCaseTest {
         jobNumber = "MAINT-001",
         vehicleId = VehicleId("veh-001"),
         status = status,
-        jobType = MaintenanceJobType.ROUTINE,
+        jobType = MaintenanceJobType.PREVENTIVE,
         description = "Regular oil change",
         scheduledDate = Instant.now()
     )

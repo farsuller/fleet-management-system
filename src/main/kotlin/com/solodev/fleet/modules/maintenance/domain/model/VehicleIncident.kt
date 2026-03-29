@@ -36,6 +36,7 @@ data class VehicleIncident(
     val status: IncidentStatus,
     val reportedAt: Instant,
     val reportedByUserId: UUID?,
+    val vehiclePlate: String? = null,
     val maintenanceJobId: MaintenanceJobId? = null,
     val odometerKm: Int? = null,
     val latitude: Double? = null,

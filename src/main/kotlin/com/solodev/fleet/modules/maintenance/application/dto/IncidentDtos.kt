@@ -36,7 +36,7 @@ data class IncidentResponse(
         fun fromDomain(incident: VehicleIncident, vehiclePlate: String? = null) = IncidentResponse(
             id = incident.id.value.toString(),
             vehicleId = incident.vehicleId.value,
-            vehiclePlate = vehiclePlate,
+            vehiclePlate = incident.vehiclePlate ?: vehiclePlate,
             title = incident.title,
             description = incident.description,
             severity = incident.severity.name,

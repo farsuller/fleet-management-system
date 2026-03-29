@@ -22,11 +22,25 @@ enum class MaintenanceStatus {
 
 /** Maintenance job type. */
 enum class MaintenanceJobType {
-    ROUTINE,
-    REPAIR,
+    PREVENTIVE,
+    CORRECTIVE,
     INSPECTION,
-    RECALL,
-    EMERGENCY
+    EMERGENCY,
+    UNKNOWN;
+
+    companion object {
+        fun fromString(value: String): MaintenanceJobType {
+            return try {
+                valueOf(value)
+            } catch (e: IllegalArgumentException) {
+                when (value.uppercase()) {
+                    "ROUTINE" -> PREVENTIVE
+                    "REPAIR", "RECALL" -> CORRECTIVE
+                    else -> UNKNOWN
+                }
+            }
+        }
+    }
 }
 
 /** Maintenance priority. */
@@ -34,7 +48,18 @@ enum class MaintenancePriority {
     LOW,
     NORMAL,
     HIGH,
-    URGENT
+    URGENT,
+    UNKNOWN;
+
+    companion object {
+        fun fromString(value: String): MaintenancePriority {
+            return try {
+                valueOf(value)
+            } catch (e: IllegalArgumentException) {
+                UNKNOWN
+            }
+        }
+    }
 }
 
 /**
@@ -46,6 +71,9 @@ data class MaintenanceJob(
         val id: MaintenanceJobId,
         val jobNumber: String,
         val vehicleId: VehicleId,
+        val vehiclePlate: String? = null,
+        val vehicleMake: String? = null,
+        val vehicleModel: String? = null,
         val status: MaintenanceStatus,
         val jobType: MaintenanceJobType,
         val description: String,

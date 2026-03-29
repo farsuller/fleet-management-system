@@ -50,4 +50,7 @@ interface MaintenanceRepository {
 
     /** Save a new vehicle incident. */
     suspend fun saveIncident(incident: com.solodev.fleet.modules.maintenance.domain.model.VehicleIncident): com.solodev.fleet.modules.maintenance.domain.model.VehicleIncident
-}
+
+    /** Find all incidents globally, optionally filtered by status. */
+    suspend fun findAllIncidents(status: com.solodev.fleet.modules.maintenance.domain.model.IncidentStatus? = null): List<com.solodev.fleet.modules.maintenance.domain.model.VehicleIncident>
+}

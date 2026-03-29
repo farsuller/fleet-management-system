@@ -22,7 +22,7 @@ class ListAllMaintenanceUseCaseTest {
         jobNumber = "MNT-001",
         vehicleId = VehicleId("vehicle-1"),
         status = MaintenanceStatus.SCHEDULED,
-        jobType = MaintenanceJobType.ROUTINE,
+        jobType = MaintenanceJobType.PREVENTIVE,
         description = "Oil change",
         scheduledDate = Instant.parse("2026-04-01T00:00:00Z")
     )
@@ -31,7 +31,7 @@ class ListAllMaintenanceUseCaseTest {
         jobNumber = "MNT-002",
         vehicleId = VehicleId("vehicle-2"),
         status = MaintenanceStatus.IN_PROGRESS,
-        jobType = MaintenanceJobType.REPAIR,
+        jobType = MaintenanceJobType.CORRECTIVE,
         description = "Brake pad replacement",
         scheduledDate = Instant.parse("2026-03-15T08:00:00Z")
     )

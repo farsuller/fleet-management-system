@@ -12,9 +12,11 @@ import com.solodev.fleet.modules.maintenance.domain.model.IncidentSeverity
 import com.solodev.fleet.modules.maintenance.domain.model.IncidentStatus
 import com.solodev.fleet.modules.maintenance.domain.repository.MaintenanceRepository
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
+import com.solodev.fleet.modules.vehicles.infrastructure.persistence.VehiclesTable
 import com.solodev.fleet.shared.helpers.dbQuery
 import java.time.Instant
 import java.util.UUID
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
@@ -30,10 +32,13 @@ class MaintenanceRepositoryImpl : MaintenanceRepository {
                     id = MaintenanceJobId(this[MaintenanceJobsTable.id].value.toString()),
                     jobNumber = this[MaintenanceJobsTable.jobNumber],
                     vehicleId = VehicleId(this[MaintenanceJobsTable.vehicleId].value.toString()),
+                    vehiclePlate = this.getOrNull(VehiclesTable.plateNumber),
+                    vehicleMake = this.getOrNull(VehiclesTable.make),
+                    vehicleModel = this.getOrNull(VehiclesTable.model),
                     status = MaintenanceStatus.valueOf(this[MaintenanceJobsTable.status]),
-                    jobType = MaintenanceJobType.valueOf(this[MaintenanceJobsTable.jobType]),
+                    jobType = MaintenanceJobType.fromString(this[MaintenanceJobsTable.jobType]),
                     description = this[MaintenanceJobsTable.description],
-                    priority = MaintenancePriority.valueOf(this[MaintenanceJobsTable.priority]),
+                    priority = MaintenancePriority.fromString(this[MaintenanceJobsTable.priority]),
                     scheduledDate = this[MaintenanceJobsTable.scheduledDate],
                     startedAt = this[MaintenanceJobsTable.startedAt],
                     completedAt = this[MaintenanceJobsTable.completedAt],
@@ -59,24 +64,37 @@ class MaintenanceRepositoryImpl : MaintenanceRepository {
                     notes = this[MaintenancePartsTable.notes]
             )
 
-    private fun ResultRow.toVehicleIncident() =
-            VehicleIncident(
-                    id = IncidentId(this[VehicleIncidentsTable.id].value),
-                    vehicleId = VehicleId(this[VehicleIncidentsTable.vehicleId].value.toString()),
-                    title = this[VehicleIncidentsTable.title],
-                    description = this[VehicleIncidentsTable.description],
-                    severity = IncidentSeverity.valueOf(this[VehicleIncidentsTable.severity]),
-                    status = IncidentStatus.valueOf(this[VehicleIncidentsTable.status]),
-                    reportedAt = this[VehicleIncidentsTable.reportedAt],
-                    reportedByUserId = this[VehicleIncidentsTable.reportedByUserId],
-                    maintenanceJobId = this[VehicleIncidentsTable.maintenanceJobId]?.let { MaintenanceJobId(it.value.toString()) },
-                    odometerKm = this[VehicleIncidentsTable.odometerKm],
-                    latitude = this[VehicleIncidentsTable.latitude],
-                    longitude = this[VehicleIncidentsTable.longitude]
-            )
+    private fun ResultRow.toVehicleIncident(): VehicleIncident {
+        return VehicleIncident(
+                id = IncidentId(this[VehicleIncidentsTable.id].value),
+                vehicleId = VehicleId(this[VehicleIncidentsTable.vehicleId].value.toString()),
+                vehiclePlate = this.getOrNull(VehiclesTable.plateNumber),
+                title = this[VehicleIncidentsTable.title],
+                description = this[VehicleIncidentsTable.description],
+                severity = IncidentSeverity.valueOf(this[VehicleIncidentsTable.severity]),
+                status = IncidentStatus.valueOf(this[VehicleIncidentsTable.status]),
+                reportedAt = this[VehicleIncidentsTable.reportedAt],
+                reportedByUserId = this[VehicleIncidentsTable.reportedByUserId],
+                maintenanceJobId = this[VehicleIncidentsTable.maintenanceJobId]?.let { MaintenanceJobId(it.value.toString()) },
+                odometerKm = this[VehicleIncidentsTable.odometerKm],
+                latitude = this[VehicleIncidentsTable.latitude],
+                longitude = this[VehicleIncidentsTable.longitude]
+        )
+    }
+
+    override suspend fun findById(id: MaintenanceJobId): MaintenanceJob? = dbQuery {
+        MaintenanceJobsTable
+                .join(VehiclesTable, JoinType.LEFT, MaintenanceJobsTable.vehicleId, VehiclesTable.id)
+                .selectAll()
+                .where { MaintenanceJobsTable.id eq UUID.fromString(id.value) }
+                .map { it.toMaintenanceJob() }
+                .singleOrNull()
+    }
 
     override suspend fun findByJobNumber(jobNumber: String): MaintenanceJob? = dbQuery {
-        MaintenanceJobsTable.selectAll()
+        MaintenanceJobsTable
+                .join(VehiclesTable, JoinType.LEFT, MaintenanceJobsTable.vehicleId, VehiclesTable.id)
+                .selectAll()
                 .where { MaintenanceJobsTable.jobNumber eq jobNumber }
                 .map { it.toMaintenanceJob() }
                 .singleOrNull()
@@ -115,27 +133,27 @@ class MaintenanceRepositoryImpl : MaintenanceRepository {
         job
     }
 
-    override suspend fun findById(id: MaintenanceJobId): MaintenanceJob? = dbQuery {
-        MaintenanceJobsTable.selectAll()
-                .where { MaintenanceJobsTable.id eq UUID.fromString(id.value) }
-                .map { it.toMaintenanceJob() }
-                .singleOrNull()
-    }
-
     override suspend fun findAll(): List<MaintenanceJob> = dbQuery {
-        MaintenanceJobsTable.selectAll()
-                .orderBy(MaintenanceJobsTable.scheduledDate to SortOrder.ASC)
+        MaintenanceJobsTable
+                .join(VehiclesTable, JoinType.LEFT, MaintenanceJobsTable.vehicleId, VehiclesTable.id)
+                .selectAll()
+                .orderBy(MaintenanceJobsTable.scheduledDate to SortOrder.DESC)
                 .map { it.toMaintenanceJob() }
     }
 
     override suspend fun findByVehicleId(vehicleId: VehicleId): List<MaintenanceJob> = dbQuery {
-        MaintenanceJobsTable.selectAll()
+        MaintenanceJobsTable
+                .join(VehiclesTable, JoinType.LEFT, MaintenanceJobsTable.vehicleId, VehiclesTable.id)
+                .selectAll()
                 .where { MaintenanceJobsTable.vehicleId eq UUID.fromString(vehicleId.value) }
+                .orderBy(MaintenanceJobsTable.scheduledDate to SortOrder.DESC)
                 .map { it.toMaintenanceJob() }
     }
 
     override suspend fun findByStatus(status: MaintenanceStatus): List<MaintenanceJob> = dbQuery {
-        MaintenanceJobsTable.selectAll()
+        MaintenanceJobsTable
+                .join(VehiclesTable, JoinType.LEFT, MaintenanceJobsTable.vehicleId, VehiclesTable.id)
+                .selectAll()
                 .where { MaintenanceJobsTable.status eq status.name }
                 .orderBy(MaintenanceJobsTable.scheduledDate to SortOrder.ASC)
                 .map { it.toMaintenanceJob() }
@@ -145,7 +163,9 @@ class MaintenanceRepositoryImpl : MaintenanceRepository {
             startDate: Instant,
             endDate: Instant
     ): List<MaintenanceJob> = dbQuery {
-        MaintenanceJobsTable.selectAll()
+        MaintenanceJobsTable
+                .join(VehiclesTable, JoinType.LEFT, MaintenanceJobsTable.vehicleId, VehiclesTable.id)
+                .selectAll()
                 .where {
                     (MaintenanceJobsTable.scheduledDate greaterEq startDate) and
                             (MaintenanceJobsTable.scheduledDate lessEq endDate)
@@ -155,7 +175,9 @@ class MaintenanceRepositoryImpl : MaintenanceRepository {
     }
 
     override suspend fun findByAssignedUser(userId: UUID): List<MaintenanceJob> = dbQuery {
-        MaintenanceJobsTable.selectAll()
+        MaintenanceJobsTable
+                .join(VehiclesTable, JoinType.LEFT, MaintenanceJobsTable.vehicleId, VehiclesTable.id)
+                .selectAll()
                 .where { MaintenanceJobsTable.assignedToUserId eq userId }
                 .orderBy(MaintenanceJobsTable.scheduledDate to SortOrder.ASC)
                 .map { it.toMaintenanceJob() }
@@ -164,14 +186,16 @@ class MaintenanceRepositoryImpl : MaintenanceRepository {
     // ── Incident methods implementation ──────────────────────────────────────
 
     override suspend fun findIncidentById(id: IncidentId): VehicleIncident? = dbQuery {
-        VehicleIncidentsTable.selectAll()
+        (VehicleIncidentsTable leftJoin VehiclesTable)
+                .selectAll()
                 .where { VehicleIncidentsTable.id eq id.value }
                 .map { it.toVehicleIncident() }
                 .singleOrNull()
     }
 
     override suspend fun findActiveIncidentsByVehicleId(vehicleId: VehicleId): List<VehicleIncident> = dbQuery {
-        VehicleIncidentsTable.selectAll()
+        (VehicleIncidentsTable leftJoin VehiclesTable)
+                .selectAll()
                 .where { 
                     (VehicleIncidentsTable.vehicleId eq UUID.fromString(vehicleId.value)) and 
                     (VehicleIncidentsTable.status eq IncidentStatus.REPORTED.name) 
@@ -181,14 +205,16 @@ class MaintenanceRepositoryImpl : MaintenanceRepository {
     }
 
     override suspend fun findIncidentsByVehicleId(vehicleId: VehicleId): List<VehicleIncident> = dbQuery {
-        VehicleIncidentsTable.selectAll()
+        (VehicleIncidentsTable leftJoin VehiclesTable)
+                .selectAll()
                 .where { VehicleIncidentsTable.vehicleId eq UUID.fromString(vehicleId.value) }
                 .orderBy(VehicleIncidentsTable.reportedAt to SortOrder.DESC)
                 .map { it.toVehicleIncident() }
     }
 
     override suspend fun findIncidentsByJobId(jobId: MaintenanceJobId): List<VehicleIncident> = dbQuery {
-        VehicleIncidentsTable.selectAll()
+        (VehicleIncidentsTable leftJoin VehiclesTable)
+                .selectAll()
                 .where { VehicleIncidentsTable.maintenanceJobId eq UUID.fromString(jobId.value) }
                 .orderBy(VehicleIncidentsTable.reportedAt to SortOrder.DESC)
                 .map { it.toVehicleIncident() }
@@ -224,5 +250,14 @@ class MaintenanceRepositoryImpl : MaintenanceRepository {
             }
         }
         incident
+    }
+
+    override suspend fun findAllIncidents(status: IncidentStatus?): List<VehicleIncident> = dbQuery {
+        val query = (VehicleIncidentsTable leftJoin VehiclesTable).selectAll()
+        if (status != null) {
+            query.where { VehicleIncidentsTable.status eq status.name }
+        }
+        query.orderBy(VehicleIncidentsTable.reportedAt to SortOrder.DESC)
+            .map { it.toVehicleIncident() }
     }
 }

@@ -17,9 +17,12 @@ class ScheduleMaintenanceUseCase(private val repository: MaintenanceRepository) 
             jobNumber = "MAINT-${System.currentTimeMillis()}",
             vehicleId = VehicleId(request.vehicleId),
             status = MaintenanceStatus.SCHEDULED,
-            jobType = MaintenanceJobType.valueOf(request.jobType),
+            jobType = request.type,
+            priority = request.priority,
             description = request.description,
-            scheduledDate = Instant.parse(request.scheduledDate)
+            scheduledDate = Instant.ofEpochMilli(request.scheduledDate),
+            laborCost = request.estimatedCostPhp.toInt(), // Mapping estimated cost to labor cost for now
+            partsCost = 0
         )
         return repository.saveJob(job)
     }

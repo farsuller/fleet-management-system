@@ -24,7 +24,7 @@ class CompleteMaintenanceUseCaseTest {
         coEvery { repository.saveJob(capture(savedJob)) } returnsArgument 0
 
         // Act
-        val result = useCase.execute("maint-001", laborCost = 50.0, partsCost = 20.0)
+        val result = useCase.execute("maint-001", laborCost = 5000L, partsCost = 2000L)
 
         // Assert
         assertThat(result.status).isEqualTo(MaintenanceStatus.COMPLETED)
@@ -41,7 +41,7 @@ class CompleteMaintenanceUseCaseTest {
         coEvery { repository.findById(MaintenanceJobId("maint-001")) } returns job
 
         // Act / Assert
-        assertThatThrownBy { runBlocking { useCase.execute("maint-001", laborCost = 10.0, partsCost = 5.0) } }
+        assertThatThrownBy { runBlocking { useCase.execute("maint-001", laborCost = 1000L, partsCost = 500L) } }
             .isInstanceOf(IllegalArgumentException::class.java)
     }
 
@@ -51,7 +51,7 @@ class CompleteMaintenanceUseCaseTest {
         coEvery { repository.findById(MaintenanceJobId("unknown-id")) } returns null
 
         // Act / Assert
-        assertThatThrownBy { runBlocking { useCase.execute("unknown-id", laborCost = 10.0, partsCost = 5.0) } }
+        assertThatThrownBy { runBlocking { useCase.execute("unknown-id", laborCost = 1000L, partsCost = 500L) } }
             .isInstanceOf(IllegalArgumentException::class.java)
     }
 
@@ -59,7 +59,7 @@ class CompleteMaintenanceUseCaseTest {
         id = MaintenanceJobId("maint-001"),
         jobNumber = "MAINT-001",
         vehicleId = VehicleId("veh-001"),
-        jobType = MaintenanceJobType.ROUTINE,
+        jobType = MaintenanceJobType.PREVENTIVE,
         status = status,
         description = "Regular oil change",
         scheduledDate = Instant.now()

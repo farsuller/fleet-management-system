@@ -3,14 +3,17 @@ package com.solodev.fleet.modules.maintenance.infrastructure.http
 import com.solodev.fleet.modules.maintenance.application.dto.MaintenanceRequest
 import com.solodev.fleet.modules.maintenance.application.dto.MaintenanceResponse
 import com.solodev.fleet.modules.maintenance.application.dto.MaintenanceStatusUpdateRequest
+import com.solodev.fleet.modules.maintenance.application.dto.VehicleUsageHistoryDto
 import com.solodev.fleet.modules.maintenance.application.usecases.CancelMaintenanceUseCase
 import com.solodev.fleet.modules.maintenance.application.usecases.CompleteMaintenanceUseCase
+import com.solodev.fleet.modules.maintenance.application.usecases.GetMaintenanceJobUseCase
 import com.solodev.fleet.modules.maintenance.application.usecases.ListAllMaintenanceUseCase
 import com.solodev.fleet.modules.maintenance.application.usecases.ListVehicleMaintenanceUseCase
 import com.solodev.fleet.modules.maintenance.application.usecases.ScheduleMaintenanceUseCase
 import com.solodev.fleet.modules.maintenance.application.usecases.StartMaintenanceUseCase
 import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceStatus
 import com.solodev.fleet.modules.maintenance.domain.repository.MaintenanceRepository
+import com.solodev.fleet.modules.rentals.domain.repository.RentalRepository
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.requestId
 import io.ktor.http.*
@@ -19,16 +22,20 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-fun Route.maintenanceRoutes(maintenanceRepository: MaintenanceRepository) {
+fun Route.maintenanceRoutes(
+    maintenanceRepository: MaintenanceRepository,
+    rentalRepository: RentalRepository
+) {
     val scheduleMaintenanceUseCase = ScheduleMaintenanceUseCase(maintenanceRepository)
     val listAllMaintenanceUseCase = ListAllMaintenanceUseCase(maintenanceRepository)
     val listVehicleMaintenanceUseCase = ListVehicleMaintenanceUseCase(maintenanceRepository)
+    val getMaintenanceJobUseCase = GetMaintenanceJobUseCase(maintenanceRepository)
     val startMaintenanceUseCase = StartMaintenanceUseCase(maintenanceRepository)
     val completeMaintenanceUseCase = CompleteMaintenanceUseCase(maintenanceRepository)
     val cancelMaintenanceUseCase = CancelMaintenanceUseCase(maintenanceRepository)
 
     authenticate("auth-jwt") {
-        route("/v1/maintenance") {
+        route("/v1/maintenance/jobs") {
             // List all maintenance jobs (optional ?status= filter)
             get {
                 val statusParam = call.request.queryParameters["status"]
@@ -92,6 +99,40 @@ fun Route.maintenanceRoutes(maintenanceRepository: MaintenanceRepository) {
             }
 
             route("/{id}") {
+                get {
+                    val id = call.parameters["id"] ?: return@get call.respond(
+                        HttpStatusCode.BadRequest,
+                        ApiResponse.error("MISSING_ID", "Job ID required", call.requestId)
+                    )
+                    try {
+                        val job = getMaintenanceJobUseCase.execute(id)
+                        
+                        // Fetch vehicle history
+                        val histories = rentalRepository.findAllPaged(
+                            page = 1,
+                            limit = 50,
+                            vehicleId = job.vehicleId
+                        ).map { 
+                            VehicleUsageHistoryDto(
+                                rentalNumber = it.rental.rentalNumber,
+                                customerName = it.customerName ?: "Unknown",
+                                startDate = it.rental.startDate.toEpochMilli(),
+                                endDate = it.rental.endDate.toEpochMilli(),
+                                startOdometer = it.rental.startOdometerKm,
+                                endOdometer = it.rental.endOdometerKm,
+                                status = it.rental.status.name
+                            )
+                        }
+                        
+                        call.respond(ApiResponse.success(MaintenanceResponse.fromDomain(job, histories), call.requestId))
+                    } catch (e: Exception) {
+                        call.respond(
+                            HttpStatusCode.NotFound,
+                            ApiResponse.error("NOT_FOUND", e.message ?: "Job not found", call.requestId)
+                        )
+                    }
+                }
+
                 post("/start") {
                     val id =
                         call.parameters["id"]
@@ -99,7 +140,7 @@ fun Route.maintenanceRoutes(maintenanceRepository: MaintenanceRepository) {
                                 HttpStatusCode.BadRequest,
                                 ApiResponse.error(
                                     "MISSING_ID",
-                                    "Vehicle ID required",
+                                    "Job ID required",
                                     call.requestId
                                 )
                             )
@@ -127,13 +168,13 @@ fun Route.maintenanceRoutes(maintenanceRepository: MaintenanceRepository) {
                                 HttpStatusCode.BadRequest,
                                 ApiResponse.error(
                                     "MISSING_ID",
-                                    "Vehicle ID required",
+                                    "Job ID required",
                                     call.requestId
                                 )
                             )
                     try {
                         val request = call.receive<MaintenanceStatusUpdateRequest>()
-                        val job = completeMaintenanceUseCase.execute(id, request.laborCost, request.partsCost)
+                        val job = completeMaintenanceUseCase.execute(id, request.laborCostPhp, request.partsCostPhp)
                         call.respond(ApiResponse.success(MaintenanceResponse.fromDomain(job), call.requestId))
                     } catch (e: Exception) {
                         call.respond(
@@ -154,7 +195,7 @@ fun Route.maintenanceRoutes(maintenanceRepository: MaintenanceRepository) {
                                 HttpStatusCode.BadRequest,
                                 ApiResponse.error(
                                     "MISSING_ID",
-                                    "Vehicle ID required",
+                                    "Job ID required",
                                     call.requestId
                                 )
                             )

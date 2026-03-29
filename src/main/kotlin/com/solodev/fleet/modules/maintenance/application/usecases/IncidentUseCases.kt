@@ -64,4 +64,8 @@ class ListIncidentsUseCase(
     suspend fun getByJob(jobId: String): List<VehicleIncident> {
         return repository.findIncidentsByJobId(MaintenanceJobId(jobId))
     }
+
+    suspend fun getAll(status: IncidentStatus? = null): List<VehicleIncident> {
+        return repository.findAllIncidents(status)
+    }
 }

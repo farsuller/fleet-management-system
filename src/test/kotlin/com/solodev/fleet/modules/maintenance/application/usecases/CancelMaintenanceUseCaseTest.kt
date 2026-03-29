@@ -56,7 +56,7 @@ class CancelMaintenanceUseCaseTest {
         id = MaintenanceJobId("maint-001"),
         jobNumber = "MAINT-001",
         vehicleId = VehicleId("veh-001"),
-        jobType = MaintenanceJobType.ROUTINE,
+        jobType = MaintenanceJobType.PREVENTIVE,
         status = status,
         description = "Regular oil change",
         scheduledDate = Instant.now()

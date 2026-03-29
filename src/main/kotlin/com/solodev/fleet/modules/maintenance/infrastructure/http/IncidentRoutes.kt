@@ -6,6 +6,7 @@ import com.solodev.fleet.modules.maintenance.application.usecases.ListIncidentsU
 import com.solodev.fleet.modules.maintenance.application.usecases.ReportIncidentUseCase
 import com.solodev.fleet.modules.maintenance.domain.model.IncidentId
 import com.solodev.fleet.modules.maintenance.domain.model.IncidentSeverity
+import com.solodev.fleet.modules.maintenance.domain.model.IncidentStatus
 import com.solodev.fleet.modules.maintenance.domain.repository.MaintenanceRepository
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.requestId
@@ -79,5 +80,36 @@ fun Route.incidentRoutes(
                 call.respond(ApiResponse.success(incidents.map { IncidentResponse.fromDomain(it, plate) }, call.requestId))
             }
         }
+
+        // GET /v1/incidents — global list, optionally filtered by status
+        route("/v1/incidents") {
+            get {
+                val statusParam = call.request.queryParameters["status"]
+                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 50
+                val cursor = call.request.queryParameters["cursor"]
+
+                val status = statusParam?.let { s ->
+                    try { IncidentStatus.valueOf(s.uppercase()) }
+                    catch (e: IllegalArgumentException) {
+                        return@get call.respond(
+                            HttpStatusCode.BadRequest,
+                            ApiResponse.error("INVALID_STATUS", "Unknown status: $s", call.requestId)
+                        )
+                    }
+                }
+
+                val all = listIncidentsUseCase.getAll(status)
+                val startIndex = cursor?.toIntOrNull() ?: 0
+                val page = all.drop(startIndex).take(limit)
+
+                call.respond(
+                    ApiResponse.success(
+                        data = page.map { IncidentResponse.fromDomain(it) },
+                        requestId = call.requestId
+                    )
+                )
+            }
+        }
     }
 }
+
