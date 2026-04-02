@@ -11,7 +11,7 @@ class AssignRoleUseCase(private val repository: UserRepository) {
 
         if (user.roles.any { it.name == roleName }) return user
 
-        val updatedUser = user.copy(roles = user.roles + role)
+        val updatedUser = user.copy(roles = listOf(role))
         return repository.save(updatedUser)
     }
 }

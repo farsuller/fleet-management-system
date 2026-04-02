@@ -2,9 +2,12 @@ package com.solodev.fleet.modules.users.application.usecases
 
 import com.solodev.fleet.modules.users.application.dto.UserUpdateRequest
 import com.solodev.fleet.modules.users.application.dto.StaffProfileUpdateRequest
+import com.solodev.fleet.modules.users.domain.model.StaffProfile
 import com.solodev.fleet.modules.users.domain.model.User
 import com.solodev.fleet.modules.users.domain.model.UserId
 import com.solodev.fleet.modules.users.domain.repository.UserRepository
+import java.time.LocalDate
+import java.util.UUID
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
@@ -95,6 +98,36 @@ class UpdateUserUseCaseTest {
         assertThat(savedSlot.captured.staffProfile).isNotNull()
         assertThat(savedSlot.captured.staffProfile!!.department).isEqualTo("Fleet Ops")
         assertThat(savedSlot.captured.staffProfile!!.position).isEqualTo("Driver")
+    }
+
+    @Test
+    fun shouldUpdateExistingStaffProfile_WhenProfileExistsAndNewDataProvided() = runBlocking {
+        // Arrange
+        val existingProfile = StaffProfile(
+            id = UUID.randomUUID(),
+            userId = UserId("user-1"),
+            employeeId = "EMP-001",
+            department = "IT",
+            position = "Developer",
+            hireDate = LocalDate.now()
+        )
+        val userWithProfile = existingUser.copy(staffProfile = existingProfile)
+        val request = UserUpdateRequest(
+            staffProfile = StaffProfileUpdateRequest(department = "Engineering", position = "Senior Developer")
+        )
+        val savedSlot = slot<User>()
+        coEvery { repository.findById(UserId("user-1")) } returns userWithProfile
+        coEvery { repository.save(capture(savedSlot)) } returnsArgument 0
+
+        // Act
+        val result = useCase.execute("user-1", request)
+
+        // Assert
+        assertThat(result).isNotNull()
+        assertThat(savedSlot.captured.staffProfile).isNotNull()
+        assertThat(savedSlot.captured.staffProfile!!.department).isEqualTo("Engineering")
+        assertThat(savedSlot.captured.staffProfile!!.position).isEqualTo("Senior Developer")
+        assertThat(savedSlot.captured.staffProfile!!.employeeId).isEqualTo("EMP-001") // preserved
     }
 
     @Test

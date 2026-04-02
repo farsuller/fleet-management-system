@@ -14,9 +14,10 @@ class AssignRoleUseCaseTest {
     private val useCase = AssignRoleUseCase(userRepository)
 
     @Test
-    fun shouldAssignRole_WhenUserAndRoleExist() = runBlocking {
+    fun shouldReplaceRole_WhenUserAlreadyHasRoles() = runBlocking {
         // Arrange
-        val user = sampleUser(roles = emptyList())
+        val oldRole = Role(id = RoleId("role-user"), name = "USER")
+        val user = sampleUser(roles = listOf(oldRole))
         val adminRole = Role(id = RoleId("role-admin"), name = "ADMIN")
         val savedUser = slot<User>()
         coEvery { userRepository.findById(UserId("user-001")) } returns user
@@ -28,8 +29,28 @@ class AssignRoleUseCaseTest {
 
         // Assert
         assertThat(result).isNotNull()
-        assertThat(result!!.roles.first().name).isEqualTo("ADMIN")
-        assertThat(savedUser.captured.roles).anyMatch { it.name == "ADMIN" }
+        assertThat(result!!.roles).hasSize(1)
+        assertThat(result.roles.first().name).isEqualTo("ADMIN")
+        assertThat(savedUser.captured.roles).hasSize(1)
+        assertThat(savedUser.captured.roles.first().name).isEqualTo("ADMIN")
+    }
+
+    @Test
+    fun shouldReturnUserUnchanged_WhenRoleAlreadyAssigned() = runBlocking {
+        // Arrange
+        val adminRole = Role(id = RoleId("role-admin"), name = "ADMIN")
+        val user = sampleUser(roles = listOf(adminRole))
+        coEvery { userRepository.findById(UserId("user-001")) } returns user
+        coEvery { userRepository.findRoleByName("ADMIN") } returns adminRole
+
+        // Act
+        val result = useCase.execute("user-001", "ADMIN")
+
+        // Assert
+        assertThat(result).isNotNull()
+        assertThat(result!!.roles).hasSize(1)
+        assertThat(result.roles.first().name).isEqualTo("ADMIN")
+        coVerify(exactly = 0) { userRepository.save(any()) }
     }
 
     @Test
