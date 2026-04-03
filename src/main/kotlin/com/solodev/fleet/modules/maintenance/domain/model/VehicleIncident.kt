@@ -2,7 +2,7 @@ package com.solodev.fleet.modules.maintenance.domain.model
 
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 
 /** Unique identifier for a vehicle incident. */
 @JvmInline

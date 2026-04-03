@@ -1,10 +1,14 @@
 package com.solodev.fleet.modules.maintenance.application.usecases
 
-import com.solodev.fleet.modules.maintenance.domain.model.*
+import com.solodev.fleet.modules.maintenance.domain.model.IncidentId
+import com.solodev.fleet.modules.maintenance.domain.model.IncidentSeverity
+import com.solodev.fleet.modules.maintenance.domain.model.IncidentStatus
+import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJobId
+import com.solodev.fleet.modules.maintenance.domain.model.VehicleIncident
 import com.solodev.fleet.modules.maintenance.domain.repository.MaintenanceRepository
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 
 /**
  * Use case for reporting a new vehicle incident by a driver or operator.

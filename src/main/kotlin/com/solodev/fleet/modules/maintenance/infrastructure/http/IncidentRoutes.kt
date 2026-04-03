@@ -10,13 +10,18 @@ import com.solodev.fleet.modules.maintenance.domain.model.IncidentStatus
 import com.solodev.fleet.modules.maintenance.domain.repository.MaintenanceRepository
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.requestId
-import io.ktor.http.*
-import io.ktor.server.auth.*
-import io.ktor.server.auth.jwt.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
-import java.util.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.call
+import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.principal
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.route
+import java.util.UUID
 
 fun Route.incidentRoutes(
     maintenanceRepository: MaintenanceRepository,

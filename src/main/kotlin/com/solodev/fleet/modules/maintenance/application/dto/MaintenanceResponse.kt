@@ -34,6 +34,8 @@ data class MaintenanceResponse(
     val laborCostPhp: Long,
     val partsCostPhp: Long,
     val totalCostPhp: Long,
+    val startedAt: Long? = null,
+    val completedAt: Long? = null,
     val usageHistory: List<VehicleUsageHistoryDto> = emptyList()
 ) {
     companion object {
@@ -54,6 +56,8 @@ data class MaintenanceResponse(
                 laborCostPhp = j.laborCost.toLong(),
                 partsCostPhp = j.partsCost.toLong(),
                 totalCostPhp = j.totalCost.toLong(),
+                startedAt = j.startedAt?.toEpochMilli(),
+                completedAt = j.completedAt?.toEpochMilli(),
                 usageHistory = history
             )
     }

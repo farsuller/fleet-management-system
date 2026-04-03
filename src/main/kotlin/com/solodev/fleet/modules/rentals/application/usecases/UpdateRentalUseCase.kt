@@ -11,7 +11,7 @@ import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 import com.solodev.fleet.shared.helpers.dbQuery
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 
 class UpdateRentalUseCase(

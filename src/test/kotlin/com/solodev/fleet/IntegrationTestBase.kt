@@ -1,8 +1,8 @@
 package com.solodev.fleet
 
 import com.solodev.fleet.shared.utils.JwtService
-import io.ktor.server.config.*
-import io.ktor.server.testing.*
+import io.ktor.server.config.MapApplicationConfig
+import io.ktor.server.testing.ApplicationTestBuilder
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.TestInstance

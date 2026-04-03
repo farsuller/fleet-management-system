@@ -1,7 +1,17 @@
 package com.solodev.fleet.modules.vehicles.infrastructure.http
 
-import com.solodev.fleet.modules.vehicles.application.dto.*
-import com.solodev.fleet.modules.vehicles.application.usecases.*
+import com.solodev.fleet.modules.vehicles.application.dto.OdometerRequest
+import com.solodev.fleet.modules.vehicles.application.dto.VehicleRequest
+import com.solodev.fleet.modules.vehicles.application.dto.VehicleResponse
+import com.solodev.fleet.modules.vehicles.application.dto.VehicleStateRequest
+import com.solodev.fleet.modules.vehicles.application.dto.VehicleUpdateRequest
+import com.solodev.fleet.modules.vehicles.application.usecases.CreateVehicleUseCase
+import com.solodev.fleet.modules.vehicles.application.usecases.DeleteVehicleUseCase
+import com.solodev.fleet.modules.vehicles.application.usecases.GetVehicleUseCase
+import com.solodev.fleet.modules.vehicles.application.usecases.ListVehiclesUseCase
+import com.solodev.fleet.modules.vehicles.application.usecases.RecordOdometerUseCase
+import com.solodev.fleet.modules.vehicles.application.usecases.UpdateVehicleStateUseCase
+import com.solodev.fleet.modules.vehicles.application.usecases.UpdateVehicleUseCase
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.Idempotency
@@ -9,11 +19,18 @@ import com.solodev.fleet.shared.plugins.UserRole
 import com.solodev.fleet.shared.plugins.paginationParams
 import com.solodev.fleet.shared.plugins.requestId
 import com.solodev.fleet.shared.plugins.withRoles
-import io.ktor.http.*
-import io.ktor.server.auth.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.call
+import io.ktor.server.auth.authenticate
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.delete
+import io.ktor.server.routing.get
+import io.ktor.server.routing.patch
+import io.ktor.server.routing.post
+import io.ktor.server.routing.route
 
 fun Route.vehicleRoutes(repository: VehicleRepository) {
     val createVehicleUseCaseC = CreateVehicleUseCase(repository)

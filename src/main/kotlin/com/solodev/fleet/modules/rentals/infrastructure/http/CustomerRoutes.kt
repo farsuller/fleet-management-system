@@ -2,8 +2,19 @@ package com.solodev.fleet.modules.rentals.infrastructure.http
 
 import com.solodev.fleet.modules.drivers.domain.repository.DriverRepository
 import com.solodev.fleet.modules.drivers.domain.model.DriverId
-import com.solodev.fleet.modules.rentals.application.dto.*
-import com.solodev.fleet.modules.rentals.application.usecases.*
+import com.solodev.fleet.modules.rentals.application.dto.CustomerDetailResponse
+import com.solodev.fleet.modules.rentals.application.dto.CustomerDriverSummary
+import com.solodev.fleet.modules.rentals.application.dto.CustomerRegistrationRequest
+import com.solodev.fleet.modules.rentals.application.dto.CustomerRequest
+import com.solodev.fleet.modules.rentals.application.dto.CustomerResponse
+import com.solodev.fleet.modules.rentals.application.dto.UpdateCustomerRequest
+import com.solodev.fleet.modules.rentals.application.dto.CustomerVehicleSummary
+import com.solodev.fleet.modules.rentals.application.usecases.CreateCustomerUseCase
+import com.solodev.fleet.modules.rentals.application.usecases.DeactivateCustomerUseCase
+import com.solodev.fleet.modules.rentals.application.usecases.GetCustomerUseCase
+import com.solodev.fleet.modules.rentals.application.usecases.ListCustomersUseCase
+import com.solodev.fleet.modules.rentals.application.usecases.RegisterCustomerUseCase
+import com.solodev.fleet.modules.rentals.application.usecases.UpdateCustomerUseCase
 import com.solodev.fleet.modules.rentals.domain.model.CustomerId
 import com.solodev.fleet.modules.rentals.domain.model.RentalStatus
 import com.solodev.fleet.modules.rentals.domain.repository.CustomerRepository
@@ -13,11 +24,16 @@ import com.solodev.fleet.modules.users.domain.repository.VerificationTokenReposi
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.requestId
-import io.ktor.http.*
-import io.ktor.server.auth.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.call
+import io.ktor.server.auth.authenticate
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
+import io.ktor.server.routing.patch
+import io.ktor.server.routing.post
+import io.ktor.server.routing.route
 
 fun Route.customerRoutes(
     customerRepository: CustomerRepository,
