@@ -80,13 +80,18 @@ fun Application.configureDatabases() {
     if (jdbcUrl.startsWith("jdbc:h2:")) {
         try {
             dataSource.connection.use { conn ->
-                conn.createStatement()
-                        .execute(
-                                "CREATE ALIAS IF NOT EXISTS gen_random_uuid FOR \"java.util.UUID.randomUUID\""
-                        )
+                val rs = conn.prepareStatement(
+                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.FUNCTION_ALIASES WHERE ALIAS_NAME = 'GEN_RANDOM_UUID'"
+                ).executeQuery()
+                val exists = rs.next() && rs.getInt(1) > 0
+                if (!exists) {
+                    conn.createStatement().execute(
+                        "CREATE ALIAS gen_random_uuid FOR \"java.util.UUID.randomUUID\""
+                    )
+                }
             }
-        } catch (e: Exception) {
-            log.warn("Failed to create H2 alias for gen_random_uuid", e)
+        } catch (t: Throwable) {
+            log.warn("Non-fatal: H2 gen_random_uuid registration skipped: ${t.message}")
         }
     }
 
