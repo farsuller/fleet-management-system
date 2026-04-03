@@ -27,9 +27,22 @@ class UserRepositoryImplTest : IntegrationTestBase() {
     fun `should save and find user with roles and staff profile`() {
         // Arrange
         val userId = UUID.randomUUID()
-        val roleId = UUID.randomUUID()
         val profileId = UUID.randomUUID()
         
+        // Use existing role if seeded by Flyway
+        val roleId = transaction {
+            RolesTable.selectAll().where { RolesTable.name eq "ADMIN" }
+                .map { it[RolesTable.id].value }
+                .singleOrNull() ?: UUID.randomUUID().also { newId ->
+                    RolesTable.insert {
+                        it[id] = newId
+                        it[name] = "ADMIN"
+                        it[description] = "Administrator"
+                        it[createdAt] = Instant.now()
+                    }
+                }
+        }
+
         val role = Role(id = RoleId(roleId.toString()), name = "ADMIN", description = "Administrator")
         val staffProfile = StaffProfile(
             id = profileId,
@@ -50,16 +63,6 @@ class UserRepositoryImplTest : IntegrationTestBase() {
             staffProfile = staffProfile
         )
 
-        transaction {
-            // Seed the role first because of foreign key constraint
-            RolesTable.insert {
-                it[id] = roleId
-                it[name] = "ADMIN"
-                it[description] = "Administrator"
-                it[createdAt] = Instant.now()
-            }
-        }
-
         // Act
         val saved = runBlocking { repository.save(user) }
         val found = runBlocking { repository.findById(UserId(userId.toString())) }
@@ -78,16 +81,24 @@ class UserRepositoryImplTest : IntegrationTestBase() {
     fun `should enforce single-role assignment correctly via save`() {
         // Arrange
         val userId = UUID.randomUUID()
-        val roleAdminId = UUID.randomUUID()
-        val roleUserId = UUID.randomUUID()
+        
+        val roleAdminId = transaction {
+            RolesTable.selectAll().where { RolesTable.name eq "ADMIN" }
+                .map { it[RolesTable.id].value }
+                .singleOrNull() ?: UUID.randomUUID().also { newId ->
+                    RolesTable.insert { it[id] = newId; it[name] = "ADMIN"; it[createdAt] = Instant.now() }
+                }
+        }
+        val roleUserId = transaction {
+            RolesTable.selectAll().where { RolesTable.name eq "USER" }
+                .map { it[RolesTable.id].value }
+                .singleOrNull() ?: UUID.randomUUID().also { newId ->
+                    RolesTable.insert { it[id] = newId; it[name] = "USER"; it[createdAt] = Instant.now() }
+                }
+        }
         
         val adminRole = Role(id = RoleId(roleAdminId.toString()), name = "ADMIN")
         val userRole = Role(id = RoleId(roleUserId.toString()), name = "USER")
-        
-        transaction {
-            RolesTable.insert { it[id] = roleAdminId; it[name] = "ADMIN"; it[createdAt] = Instant.now() }
-            RolesTable.insert { it[id] = roleUserId; it[name] = "USER"; it[createdAt] = Instant.now() }
-        }
         
         val initialUser = User(
             id = UserId(userId.toString()),

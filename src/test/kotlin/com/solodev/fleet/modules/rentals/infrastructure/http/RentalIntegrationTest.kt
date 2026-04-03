@@ -92,7 +92,7 @@ class RentalIntegrationTest : IntegrationTestBase() {
                 it[rentalNumber] = "RN-" + UUID.randomUUID().toString().take(8)
                 it[customerId] = testCustomerId
                 it[vehicleId] = testVehicleId
-                it[status] = "PENDING"
+                it[status] = "RESERVED"
                 it[startDate] = Instant.now().plusSeconds(3600)
                 it[endDate] = Instant.now().plusSeconds(86400)
                 it[dailyRate] = 1500
@@ -131,7 +131,7 @@ class RentalIntegrationTest : IntegrationTestBase() {
             assertEquals(HttpStatusCode.Created, response.status)
             val apiResponse = response.body<ApiResponse<RentalResponse>>()
             assertTrue(apiResponse.success)
-            assertEquals("PENDING", apiResponse.data!!.status)
+            assertEquals("RESERVED", apiResponse.data!!.status)
         }
     }
 

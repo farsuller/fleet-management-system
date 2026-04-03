@@ -42,14 +42,15 @@ CREATE TABLE staff_profiles (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Insert default roles
+-- Insert default roles (Idempotent)
 INSERT INTO roles (id, name, description) VALUES
     (gen_random_uuid(), 'ADMIN', 'System administrator with full access'),
     (gen_random_uuid(), 'FLEET_MANAGER', 'Manages fleet operations and vehicles'),
     (gen_random_uuid(), 'RENTAL_AGENT', 'Handles rental reservations and customer service'),
     (gen_random_uuid(), 'MAINTENANCE_STAFF', 'Manages vehicle maintenance and repairs'),
     (gen_random_uuid(), 'ACCOUNTANT', 'Manages financial transactions and reporting'),
-    (gen_random_uuid(), 'CUSTOMER', 'Regular customer with rental privileges');
+    (gen_random_uuid(), 'CUSTOMER', 'Regular customer with rental privileges')
+ON CONFLICT (name) DO NOTHING;
 
 -- Indexes for performance
 CREATE INDEX idx_users_email ON users(email);
