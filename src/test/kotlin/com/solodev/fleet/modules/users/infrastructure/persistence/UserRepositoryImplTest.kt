@@ -21,9 +21,6 @@ class UserRepositoryImplTest : IntegrationTestBase() {
     @BeforeEach
     fun setUp() {
         cleanDatabase()
-        transaction {
-            SchemaUtils.create(UsersTable, RolesTable, UserRolesTable, StaffProfilesTable)
-        }
     }
 
     @Test

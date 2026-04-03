@@ -9,6 +9,7 @@ import org.junit.jupiter.api.TestInstance
 import org.testcontainers.DockerClientFactory
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
+import java.sql.ResultSet
 
 /**
  * Base class for HTTP-level integration tests.
@@ -56,6 +57,13 @@ abstract class IntegrationTestBase {
                 withUsername("fleet_user")
                 withPassword("test_password")
                 start()
+                
+                // Run Flyway migrations on the shared container once it starts
+                org.flywaydb.core.Flyway.configure()
+                    .dataSource(jdbcUrl, username, password)
+                    .locations("classpath:db/migration")
+                    .load()
+                    .migrate()
             }
         }
 
@@ -117,37 +125,36 @@ abstract class IntegrationTestBase {
      */
     fun cleanDatabase() {
         postgres.createConnection("").use { conn ->
-            conn.createStatement().execute(
+            val tables = mutableListOf<String>()
+            conn.createStatement().executeQuery(
                 """
-                TRUNCATE TABLE
-                    location_history,
-                    idempotency_keys,
-                    dlq_messages,
-                    inbox_processed_messages,
-                    outbox_events,
-                    payments,
-                    invoice_line_items,
-                    invoices,
-                    ledger_entry_lines,
-                    ledger_entries,
-                    maintenance_schedules,
-                    maintenance_parts,
-                    maintenance_jobs,
-                    rental_payments,
-                    rental_charges,
-                    rental_periods,
-                    rentals,
-                    customers,
-                    odometer_readings,
-                    vehicles,
-                    verification_tokens,
-                    staff_profiles,
-                    user_roles,
-                    users,
-                    driver_shifts
-                CASCADE
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_type = 'BASE TABLE'
                 """.trimIndent()
+            ).use { rs: ResultSet ->
+                while (rs.next()) {
+                    tables.add(rs.getString("table_name"))
+                }
+            }
+
+            val excludedTables = setOf(
+                "flyway_schema_history",
+                "spatial_ref_sys",
+                "roles",
+                "accounts",
+                "payment_methods",
+                "routes",
+                "geofences"
             )
+
+            val tablesToTruncate = tables.filter { it !in excludedTables }
+
+            if (tablesToTruncate.isNotEmpty()) {
+                val truncateQuery = "TRUNCATE TABLE ${tablesToTruncate.joinToString(", ")} RESTART IDENTITY CASCADE"
+                conn.createStatement().execute(truncateQuery)
+            }
         }
     }
 }
