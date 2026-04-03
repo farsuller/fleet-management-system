@@ -9,6 +9,7 @@ on:
 # Establish a least-privilege security baseline for the GITHUB_TOKEN
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   # Job 1: Build and Test
@@ -65,6 +66,16 @@ jobs:
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: test-secret-for-ci-min-64-chars-required-for-security-testing
         run: ./gradlew test --no-daemon
+      
+      - name: Measure coverage
+        id: jacoco
+        uses: madrapps/jacoco-report@v1.7.2
+        if: github.event_name == 'pull_request'
+        with:
+          paths: ${{ github.workspace }}/build/reports/jacoco/test/jacocoTestReport.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 40
+          min-coverage-changed-files: 60
       
       - name: Build Fat JAR
         run: ./gradlew buildFatJar --no-daemon

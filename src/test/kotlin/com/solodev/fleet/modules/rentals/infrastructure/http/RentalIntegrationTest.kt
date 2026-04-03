@@ -164,20 +164,15 @@ class RentalIntegrationTest : IntegrationTestBase() {
         application { module() }
         val rentalId = seedRental()
         
-        // Activate it first
-        transaction {
-            RentalsTable.insert { // Wait, I should use update here, but for simplicity in test setup I'll just seed as ACTIVE or use the endpoint
-                // Actually seed as ACTIVE to test completion
-            }
-        }
-        // Let's use the activate endpoint first
         val client = createClient {
             install(ContentNegotiation) {
                 json()
             }
         }
         val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
-        client.post("/v1/rentals/$rentalId/activate") { bearerAuth(token) }
+        client.post("/v1/rentals/$rentalId/activate") { 
+            bearerAuth(token)
+        }
 
         client.post("/v1/rentals/$rentalId/complete") {
             bearerAuth(token)

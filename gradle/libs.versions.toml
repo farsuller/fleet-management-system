@@ -6,6 +6,7 @@ exposed = "0.50.1"
 hikaricp = "6.2.0"
 postgresql = "42.7.4"
 flyway = "11.1.0"
+jacoco = "0.8.12"
 
 bcrypt = "0.10.2"
 jedis = "5.1.0"

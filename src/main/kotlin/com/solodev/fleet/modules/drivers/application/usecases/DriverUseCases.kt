@@ -6,6 +6,7 @@ import com.solodev.fleet.modules.drivers.domain.model.Driver
 import com.solodev.fleet.modules.drivers.domain.model.DriverId
 import com.solodev.fleet.modules.drivers.domain.model.DriverShift
 import com.solodev.fleet.modules.drivers.domain.repository.DriverRepository
+import com.solodev.fleet.shared.exceptions.NotFoundException
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -64,7 +65,7 @@ class DeactivateDriverUseCase(private val driverRepository: DriverRepository) {
 class StartShiftUseCase(private val driverRepository: DriverRepository) {
     suspend fun execute(driverId: String, vehicleId: String, notes: String?): DriverShift {
         // Validation: Verify driver exists
-        driverRepository.findById(DriverId(driverId)) ?: throw IllegalArgumentException("Driver not found: $driverId")
+        driverRepository.findById(DriverId(driverId)) ?: throw NotFoundException("Driver not found: $driverId")
         
         // Validation: Check if there's already an active shift
         val activeShift = driverRepository.findActiveShift(driverId)

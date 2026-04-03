@@ -1,6 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
+    id("jacoco")
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ktor)
     alias(libs.plugins.kotlin.serialization)
@@ -134,4 +135,26 @@ tasks.test {
             println("Total: $total  |  Passed: $pass  |  Failed: $fail  |  Skipped: $skip")
         }
     }))
+    
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+// JaCoCo Code Coverage Configuration
+jacoco {
+    toolVersion = libs.versions.jacoco.get()
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+}
+
+// Custom task for running coverage locally
+tasks.register("testCoverage") {
+    group = "verification"
+    description = "Runs all tests and generates a JaCoCo coverage report."
+    dependsOn(tasks.test, tasks.jacocoTestReport)
 }

@@ -33,7 +33,7 @@ class UserRepositoryImplTest : IntegrationTestBase() {
         val roleId = transaction {
             RolesTable.selectAll().where { RolesTable.name eq "ADMIN" }
                 .map { it[RolesTable.id].value }
-                .singleOrNull() ?: UUID.randomUUID().also { newId ->
+                .firstOrNull() ?: UUID.randomUUID().also { newId ->
                     RolesTable.insert {
                         it[id] = newId
                         it[name] = "ADMIN"
@@ -85,14 +85,14 @@ class UserRepositoryImplTest : IntegrationTestBase() {
         val roleAdminId = transaction {
             RolesTable.selectAll().where { RolesTable.name eq "ADMIN" }
                 .map { it[RolesTable.id].value }
-                .singleOrNull() ?: UUID.randomUUID().also { newId ->
+                .firstOrNull() ?: UUID.randomUUID().also { newId ->
                     RolesTable.insert { it[id] = newId; it[name] = "ADMIN"; it[createdAt] = Instant.now() }
                 }
         }
         val roleUserId = transaction {
             RolesTable.selectAll().where { RolesTable.name eq "USER" }
                 .map { it[RolesTable.id].value }
-                .singleOrNull() ?: UUID.randomUUID().also { newId ->
+                .firstOrNull() ?: UUID.randomUUID().also { newId ->
                     RolesTable.insert { it[id] = newId; it[name] = "USER"; it[createdAt] = Instant.now() }
                 }
         }

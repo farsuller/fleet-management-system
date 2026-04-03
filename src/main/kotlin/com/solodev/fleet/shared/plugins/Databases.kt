@@ -78,20 +78,16 @@ fun Application.configureDatabases() {
 
     // H2 Compatibility: Define gen_random_uuid() for tests
     if (jdbcUrl.startsWith("jdbc:h2:")) {
-        try {
-            dataSource.connection.use { conn ->
-                val rs = conn.prepareStatement(
-                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.FUNCTION_ALIASES WHERE ALIAS_NAME = 'GEN_RANDOM_UUID'"
-                ).executeQuery()
-                val exists = rs.next() && rs.getInt(1) > 0
-                if (!exists) {
+        synchronized(this) {
+            try {
+                dataSource.connection.use { conn ->
                     conn.createStatement().execute(
-                        "CREATE ALIAS gen_random_uuid FOR \"java.util.UUID.randomUUID\""
+                        "CREATE ALIAS IF NOT EXISTS gen_random_uuid FOR \"java.util.UUID.randomUUID\""
                     )
                 }
+            } catch (t: Throwable) {
+                log.warn("Non-fatal: H2 gen_random_uuid registration skipped: ${t.message}")
             }
-        } catch (t: Throwable) {
-            log.warn("Non-fatal: H2 gen_random_uuid registration skipped: ${t.message}")
         }
     }
 

@@ -25,10 +25,6 @@ class MaintenanceRepositoryImplTest : IntegrationTestBase() {
     @BeforeEach
     fun setUp() {
         cleanDatabase()
-        transaction {
-            // Ensure tables are created (Flyway should handle this but SchemaUtils is safer for unit tests)
-            SchemaUtils.create(VehiclesTable, MaintenanceJobsTable)
-        }
     }
 
     @Test

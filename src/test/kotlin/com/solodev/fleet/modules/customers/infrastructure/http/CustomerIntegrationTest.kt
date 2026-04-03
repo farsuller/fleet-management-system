@@ -1,8 +1,9 @@
-package com.solodev.fleet.modules.rentals.infrastructure.http
+package com.solodev.fleet.modules.customers.infrastructure.http
 
 import com.solodev.fleet.IntegrationTestBase
 import com.solodev.fleet.configurePostgres
 import com.solodev.fleet.module
+import com.solodev.fleet.modules.rentals.application.dto.CustomerDetailResponse
 import com.solodev.fleet.modules.rentals.application.dto.CustomerRequest
 import com.solodev.fleet.modules.rentals.application.dto.CustomerResponse
 import com.solodev.fleet.modules.rentals.application.dto.UpdateCustomerRequest
@@ -139,7 +140,7 @@ class CustomerIntegrationTest : IntegrationTestBase() {
             bearerAuth(token)
         }.let { response ->
             assertEquals(HttpStatusCode.OK, response.status)
-            val apiResponse = response.body<ApiResponse<CustomerResponse>>()
+            val apiResponse = response.body<ApiResponse<CustomerDetailResponse>>()
             assertEquals("get@customer.ph", apiResponse.data!!.email)
         }
     }
