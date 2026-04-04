@@ -73,7 +73,9 @@ jobs:
       run: |
         if [ "${{ matrix.language }}" == "java-kotlin" ]; then
           chmod +x gradlew
-          ./gradlew classes --no-daemon
+          ./gradlew classes --no-daemon \
+            -Dorg.gradle.jvmargs="-Xmx4g" \
+            -Dkotlin.daemon.jvmargs="-Xmx4g"
         else
           echo "No manual build steps defined for ${{ matrix.language }}"
           exit 1
