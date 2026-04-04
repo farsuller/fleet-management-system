@@ -200,7 +200,7 @@ jobs:
   build-docker:
     name: Build Docker Image
     runs-on: ubuntu-latest
-    needs: [build-and-test]
+    needs: [measure-coverage]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
