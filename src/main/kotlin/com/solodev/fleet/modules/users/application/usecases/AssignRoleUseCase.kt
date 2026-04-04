@@ -4,8 +4,13 @@ import com.solodev.fleet.modules.users.domain.model.User
 import com.solodev.fleet.modules.users.domain.model.UserId
 import com.solodev.fleet.modules.users.domain.repository.UserRepository
 
-class AssignRoleUseCase(private val repository: UserRepository) {
-    suspend fun execute(userId: String, roleName: String): User? {
+class AssignRoleUseCase(
+    private val repository: UserRepository,
+) {
+    suspend fun execute(
+        userId: String,
+        roleName: String,
+    ): User? {
         val user = repository.findById(UserId(userId)) ?: return null
         val role = repository.findRoleByName(roleName) ?: throw IllegalArgumentException("Role $roleName not found")
 

@@ -1,13 +1,13 @@
 package com.solodev.fleet.modules.accounts.domain.model
 
 import com.solodev.fleet.modules.rentals.domain.model.CustomerId
+import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.UUID
-import org.junit.jupiter.api.Test
-import kotlin.test.*
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class InvoiceTest {
-
     @Test
     fun `totalAmount is subtotal plus tax`() {
         val invoice = sampleInvoice(subtotal = 10000, tax = 1200)
@@ -49,7 +49,7 @@ class InvoiceTest {
     private fun sampleInvoice(
         subtotal: Int = 10000,
         tax: Int = 1200,
-        paidAmount: Int = 0
+        paidAmount: Int = 0,
     ) = Invoice(
         id = UUID.randomUUID(),
         invoiceNumber = "INV-2026-001",
@@ -59,6 +59,6 @@ class InvoiceTest {
         paidAmount = paidAmount,
         status = InvoiceStatus.ISSUED,
         issueDate = Instant.now(),
-        dueDate = Instant.parse("2026-12-31T23:59:59Z")
+        dueDate = Instant.parse("2026-12-31T23:59:59Z"),
     )
 }

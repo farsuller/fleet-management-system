@@ -5,8 +5,8 @@ import java.util.UUID
 /**
  * Extension methods for creating full and partial delta updates.
  */
-fun VehicleStateDelta.Companion.full(state: VehicleRouteState): VehicleStateDelta {
-    return VehicleStateDelta(
+fun VehicleStateDelta.Companion.full(state: VehicleRouteState): VehicleStateDelta =
+    VehicleStateDelta(
         vehicleId = UUID.fromString(state.vehicleId),
         routeProgress = state.progress,
         headingDeg = state.heading,
@@ -24,15 +24,14 @@ fun VehicleStateDelta.Companion.full(state: VehicleRouteState): VehicleStateDelt
         batteryLevel = state.batteryLevel,
         harshBrake = state.harshBrake,
         harshAccel = state.harshAccel,
-        sharpTurn = state.sharpTurn
+        sharpTurn = state.sharpTurn,
     )
-}
 
 fun VehicleStateDelta.Companion.diff(
     lastState: VehicleRouteState,
-    newState: VehicleRouteState
-): VehicleStateDelta {
-    return VehicleStateDelta(
+    newState: VehicleRouteState,
+): VehicleStateDelta =
+    VehicleStateDelta(
         vehicleId = UUID.fromString(newState.vehicleId),
         routeProgress = if (lastState.progress != newState.progress) newState.progress else null,
         headingDeg = if (lastState.heading != newState.heading) newState.heading else null,
@@ -51,6 +50,5 @@ fun VehicleStateDelta.Companion.diff(
         batteryLevel = if (lastState.batteryLevel != newState.batteryLevel) newState.batteryLevel else null,
         harshBrake = if (lastState.harshBrake != newState.harshBrake) newState.harshBrake else null,
         harshAccel = if (lastState.harshAccel != newState.harshAccel) newState.harshAccel else null,
-        sharpTurn = if (lastState.sharpTurn != newState.sharpTurn) newState.sharpTurn else null
+        sharpTurn = if (lastState.sharpTurn != newState.sharpTurn) newState.sharpTurn else null,
     )
-}

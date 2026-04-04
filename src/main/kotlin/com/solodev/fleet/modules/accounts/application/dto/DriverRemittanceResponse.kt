@@ -12,18 +12,19 @@ data class DriverRemittanceResponse(
     val totalAmount: Int,
     val status: String,
     val paymentIds: List<String>,
-    val notes: String?
+    val notes: String?,
 ) {
     companion object {
-        fun fromDomain(remittance: DriverRemittance) = DriverRemittanceResponse(
-            id = remittance.id.toString(),
-            remittanceNumber = remittance.remittanceNumber,
-            driverId = remittance.driverId.toString(),
-            remittanceDate = remittance.remittanceDate.toString(),
-            totalAmount = remittance.totalAmount,
-            status = remittance.status.name,
-            paymentIds = remittance.paymentIds.map { it.toString() },
-            notes = remittance.notes
-        )
+        fun fromDomain(remittance: DriverRemittance) =
+            DriverRemittanceResponse(
+                id = remittance.id.toString(),
+                remittanceNumber = remittance.remittanceNumber,
+                driverId = remittance.driverId.toString(),
+                remittanceDate = remittance.remittanceDate.toString(),
+                totalAmount = remittance.totalAmount,
+                status = remittance.status.name,
+                paymentIds = remittance.paymentIds.map { it.toString() },
+                notes = remittance.notes,
+            )
     }
 }

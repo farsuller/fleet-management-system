@@ -9,18 +9,20 @@ data class StaffProfileDTO(
     val employeeId: String,
     val department: String?,
     val position: String?,
-    val hireDate: String // ISO-8601
+    val hireDate: String,
 ) {
     init {
         require(employeeId.isNotBlank()) { "Employee ID cannot be blank" }
     }
+
     companion object {
-        fun fromDomain(p: StaffProfile) = StaffProfileDTO(
-            id = p.id.toString(),
-            employeeId = p.employeeId,
-            department = p.department,
-            position = p.position,
-            hireDate = p.hireDate.toString()
-        )
+        fun fromDomain(p: StaffProfile) =
+            StaffProfileDTO(
+                id = p.id.toString(),
+                employeeId = p.employeeId,
+                department = p.department,
+                position = p.position,
+                hireDate = p.hireDate.toString(),
+            )
     }
 }

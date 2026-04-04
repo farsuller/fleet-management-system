@@ -28,7 +28,7 @@ import io.ktor.server.routing.route
 
 fun Route.maintenanceRoutes(
     maintenanceRepository: MaintenanceRepository,
-    rentalRepository: RentalRepository
+    rentalRepository: RentalRepository,
 ) {
     val scheduleMaintenanceUseCase = ScheduleMaintenanceUseCase(maintenanceRepository)
     val listAllMaintenanceUseCase = ListAllMaintenanceUseCase(maintenanceRepository)
@@ -43,19 +43,21 @@ fun Route.maintenanceRoutes(
             // List all maintenance jobs (optional ?status= filter)
             get {
                 val statusParam = call.request.queryParameters["status"]
-                val jobs = if (statusParam != null) {
-                    val status = try {
-                        MaintenanceStatus.valueOf(statusParam)
-                    } catch (e: IllegalArgumentException) {
-                        return@get call.respond(
-                            HttpStatusCode.BadRequest,
-                            ApiResponse.error("INVALID_STATUS", "Unknown status: $statusParam", call.requestId)
-                        )
+                val jobs =
+                    if (statusParam != null) {
+                        val status =
+                            try {
+                                MaintenanceStatus.valueOf(statusParam)
+                            } catch (e: IllegalArgumentException) {
+                                return@get call.respond(
+                                    HttpStatusCode.BadRequest,
+                                    ApiResponse.error("INVALID_STATUS", "Unknown status: $statusParam", call.requestId),
+                                )
+                            }
+                        listAllMaintenanceUseCase.execute(status)
+                    } else {
+                        listAllMaintenanceUseCase.execute()
                     }
-                    listAllMaintenanceUseCase.execute(status)
-                } else {
-                    listAllMaintenanceUseCase.execute()
-                }
                 call.respond(ApiResponse.success(jobs.map { MaintenanceResponse.fromDomain(it) }, call.requestId))
             }
 
@@ -65,19 +67,24 @@ fun Route.maintenanceRoutes(
                     val job = scheduleMaintenanceUseCase.execute(request)
                     call.respond(
                         HttpStatusCode.Created,
-                        ApiResponse.success(MaintenanceResponse.fromDomain(job), call.requestId)
+                        ApiResponse.success(MaintenanceResponse.fromDomain(job), call.requestId),
                     )
+                } catch (e: com.solodev.fleet.shared.exceptions.NotFoundException) {
+                    throw e
                 } catch (e: Exception) {
                     val status =
-                        if (e is IllegalArgumentException) HttpStatusCode.UnprocessableEntity
-                        else HttpStatusCode.BadRequest
+                        if (e is IllegalArgumentException) {
+                            HttpStatusCode.UnprocessableEntity
+                        } else {
+                            HttpStatusCode.BadRequest
+                        }
                     call.respond(
                         status,
                         ApiResponse.error(
                             "MAINTENANCE_FAILED",
                             e.message ?: "Invalid request",
-                            call.requestId
-                        )
+                            call.requestId,
+                        ),
                     )
                 }
             }
@@ -90,49 +97,52 @@ fun Route.maintenanceRoutes(
                             ApiResponse.error(
                                 "MISSING_ID",
                                 "Vehicle ID required",
-                                call.requestId
-                            )
+                                call.requestId,
+                            ),
                         )
                 val jobs = listVehicleMaintenanceUseCase.execute(id)
                 call.respond(
                     ApiResponse.success(
                         jobs.map { MaintenanceResponse.fromDomain(it) },
-                        call.requestId
-                    )
+                        call.requestId,
+                    ),
                 )
             }
 
             route("/{id}") {
                 get {
-                    val id = call.parameters["id"] ?: return@get call.respond(
-                        HttpStatusCode.BadRequest,
-                        ApiResponse.error("MISSING_ID", "Job ID required", call.requestId)
-                    )
+                    val id =
+                        call.parameters["id"] ?: return@get call.respond(
+                            HttpStatusCode.BadRequest,
+                            ApiResponse.error("MISSING_ID", "Job ID required", call.requestId),
+                        )
                     try {
                         val job = getMaintenanceJobUseCase.execute(id)
-                        
+
                         // Fetch vehicle history
-                        val histories = rentalRepository.findAllPaged(
-                            page = 1,
-                            limit = 50,
-                            vehicleId = job.vehicleId
-                        ).map { 
-                            VehicleUsageHistoryDto(
-                                rentalNumber = it.rental.rentalNumber,
-                                customerName = it.customerName ?: "Unknown",
-                                startDate = it.rental.startDate.toEpochMilli(),
-                                endDate = it.rental.endDate.toEpochMilli(),
-                                startOdometer = it.rental.startOdometerKm,
-                                endOdometer = it.rental.endOdometerKm,
-                                status = it.rental.status.name
-                            )
-                        }
-                        
+                        val histories =
+                            rentalRepository
+                                .findAllPaged(
+                                    page = 1,
+                                    limit = 50,
+                                    vehicleId = job.vehicleId,
+                                ).map {
+                                    VehicleUsageHistoryDto(
+                                        rentalNumber = it.rental.rentalNumber,
+                                        customerName = it.customerName ?: "Unknown",
+                                        startDate = it.rental.startDate.toEpochMilli(),
+                                        endDate = it.rental.endDate.toEpochMilli(),
+                                        startOdometer = it.rental.startOdometerKm,
+                                        endOdometer = it.rental.endOdometerKm,
+                                        status = it.rental.status.name,
+                                    )
+                                }
+
                         call.respond(ApiResponse.success(MaintenanceResponse.fromDomain(job, histories), call.requestId))
                     } catch (e: Exception) {
                         call.respond(
                             HttpStatusCode.NotFound,
-                            ApiResponse.error("NOT_FOUND", e.message ?: "Job not found", call.requestId)
+                            ApiResponse.error("NOT_FOUND", e.message ?: "Job not found", call.requestId),
                         )
                     }
                 }
@@ -145,13 +155,13 @@ fun Route.maintenanceRoutes(
                                 ApiResponse.error(
                                     "MISSING_ID",
                                     "Job ID required",
-                                    call.requestId
-                                )
+                                    call.requestId,
+                                ),
                             )
                     try {
                         val job = startMaintenanceUseCase.execute(id)
                         call.respond(
-                            ApiResponse.success(MaintenanceResponse.fromDomain(job), call.requestId)
+                            ApiResponse.success(MaintenanceResponse.fromDomain(job), call.requestId),
                         )
                     } catch (e: Exception) {
                         call.respond(
@@ -159,8 +169,8 @@ fun Route.maintenanceRoutes(
                             ApiResponse.error(
                                 "INVALID_STATE",
                                 e.message ?: "Cannot start job",
-                                call.requestId
-                            )
+                                call.requestId,
+                            ),
                         )
                     }
                 }
@@ -173,8 +183,8 @@ fun Route.maintenanceRoutes(
                                 ApiResponse.error(
                                     "MISSING_ID",
                                     "Job ID required",
-                                    call.requestId
-                                )
+                                    call.requestId,
+                                ),
                             )
                     try {
                         val request = call.receive<MaintenanceStatusUpdateRequest>()
@@ -186,8 +196,8 @@ fun Route.maintenanceRoutes(
                             ApiResponse.error(
                                 "INVALID_STATE",
                                 e.message ?: "Cannot complete job",
-                                call.requestId
-                            )
+                                call.requestId,
+                            ),
                         )
                     }
                 }
@@ -200,13 +210,13 @@ fun Route.maintenanceRoutes(
                                 ApiResponse.error(
                                     "MISSING_ID",
                                     "Job ID required",
-                                    call.requestId
-                                )
+                                    call.requestId,
+                                ),
                             )
                     try {
                         val job = cancelMaintenanceUseCase.execute(id)
                         call.respond(
-                            ApiResponse.success(MaintenanceResponse.fromDomain(job), call.requestId)
+                            ApiResponse.success(MaintenanceResponse.fromDomain(job), call.requestId),
                         )
                     } catch (e: Exception) {
                         call.respond(
@@ -214,8 +224,8 @@ fun Route.maintenanceRoutes(
                             ApiResponse.error(
                                 "INVALID_STATE",
                                 e.message ?: "Cannot cancel job",
-                                call.requestId
-                            )
+                                call.requestId,
+                            ),
                         )
                     }
                 }

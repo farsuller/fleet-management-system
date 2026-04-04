@@ -2,10 +2,12 @@ package com.solodev.fleet.modules.drivers.domain.model
 
 import org.junit.jupiter.api.Test
 import java.time.Instant
-import kotlin.test.*
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class VehicleDriverAssignmentTest {
-
     @Test
     fun `assignment is active when releasedAt is null`() {
         val assignment = sampleAssignment(releasedAt = null)
@@ -50,11 +52,11 @@ class VehicleDriverAssignmentTest {
         releasedAt: Instant? = null,
         notes: String? = null,
     ) = VehicleDriverAssignment(
-        id         = "assign-001",
-        vehicleId  = "vehicle-001",
-        driverId   = "driver-001",
+        id = "assign-001",
+        vehicleId = "vehicle-001",
+        driverId = "driver-001",
         assignedAt = Instant.parse("2026-01-01T08:00:00Z"),
         releasedAt = releasedAt,
-        notes      = notes,
+        notes = notes,
     )
 }

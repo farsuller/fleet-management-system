@@ -1,12 +1,14 @@
 package com.solodev.fleet.modules.maintenance.domain.model
 
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
-import java.time.Instant
 import org.junit.jupiter.api.Test
-import kotlin.test.*
+import java.time.Instant
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class MaintenanceJobTest {
-
     // --- Invariants ---
 
     @Test
@@ -82,9 +84,10 @@ class MaintenanceJobTest {
 
     @Test
     fun `complete throws when job is SCHEDULED (not yet started)`() {
-        val ex = assertFailsWith<IllegalArgumentException> {
-            sampleJob(status = MaintenanceStatus.SCHEDULED).complete(labor = 1000, parts = 1000)
-        }
+        val ex =
+            assertFailsWith<IllegalArgumentException> {
+                sampleJob(status = MaintenanceStatus.SCHEDULED).complete(labor = 1000, parts = 1000)
+            }
         assertTrue(ex.message!!.contains("IN_PROGRESS", ignoreCase = true))
     }
 
@@ -121,7 +124,7 @@ class MaintenanceJobTest {
     private fun sampleJob(
         status: MaintenanceStatus = MaintenanceStatus.SCHEDULED,
         laborCost: Int = 0,
-        partsCost: Int = 0
+        partsCost: Int = 0,
     ) = MaintenanceJob(
         id = MaintenanceJobId("maint-001"),
         jobNumber = "MAINT-001",
@@ -133,6 +136,6 @@ class MaintenanceJobTest {
         laborCost = laborCost,
         partsCost = partsCost,
         startedAt = if (status != MaintenanceStatus.SCHEDULED) Instant.now() else null,
-        completedAt = if (status == MaintenanceStatus.COMPLETED) Instant.now() else null
+        completedAt = if (status == MaintenanceStatus.COMPLETED) Instant.now() else null,
     )
 }

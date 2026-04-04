@@ -1,26 +1,26 @@
 package com.solodev.fleet.modules.rentals.application.usecases
 
-import com.solodev.fleet.modules.rentals.application.dto.UpdateRentalRequest
-import com.solodev.fleet.modules.rentals.domain.model.*
-import com.solodev.fleet.modules.vehicles.domain.model.*
+import com.solodev.fleet.modules.rentals.domain.model.CustomerId
+import com.solodev.fleet.modules.rentals.domain.model.Rental
+import com.solodev.fleet.modules.rentals.domain.model.RentalId
+import com.solodev.fleet.modules.rentals.domain.model.RentalStatus
+import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.UUID
-import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 
 /**
  * UpdateRentalUseCase wraps execution in `dbQuery {}` (DB transaction), so calling
  * useCase.execute() in unit tests requires a live DB connection if testing the full flow.
  *
- * Following the project's testing pattern, these tests exercise the business rules 
+ * Following the project's testing pattern, these tests exercise the business rules
  * implemented inside the UseCase directly to ensure logical correctness.
  */
 class UpdateRentalUseCaseTest {
-
     private val startDate = Instant.parse("2026-03-10T00:00:00Z")
-    private val endDate   = Instant.parse("2026-03-17T00:00:00Z")
+    private val endDate = Instant.parse("2026-03-17T00:00:00Z")
 
     @Test
     fun shouldUpdateRentalValues_WhenInputIsValid() {
@@ -32,14 +32,20 @@ class UpdateRentalUseCaseTest {
         // Act - Simulate the logic inside UpdateRentalUseCase
         val updatedEndDate = Instant.parse(newEnd)
         val updatedDailyRate = newRate.toInt()
-        val days = java.time.Duration.between(existing.startDate, updatedEndDate).toDays().toInt().coerceAtLeast(1)
+        val days =
+            java.time.Duration
+                .between(existing.startDate, updatedEndDate)
+                .toDays()
+                .toInt()
+                .coerceAtLeast(1)
         val newTotalAmount = days * updatedDailyRate
 
-        val updated = existing.copy(
-            endDate = updatedEndDate,
-            dailyRateAmount = updatedDailyRate,
-            totalAmount = newTotalAmount
-        )
+        val updated =
+            existing.copy(
+                endDate = updatedEndDate,
+                dailyRateAmount = updatedDailyRate,
+                totalAmount = newTotalAmount,
+            )
 
         // Assert
         assertThat(updated.endDate).isEqualTo(updatedEndDate)
@@ -55,7 +61,11 @@ class UpdateRentalUseCaseTest {
 
         // Act - Change end date to 10 days later
         val newEnd = startDate.plus(10, ChronoUnit.DAYS)
-        val days = java.time.Duration.between(startDate, newEnd).toDays().toInt()
+        val days =
+            java.time.Duration
+                .between(startDate, newEnd)
+                .toDays()
+                .toInt()
         val updated = existing.copy(endDate = newEnd, totalAmount = days * existing.dailyRateAmount)
 
         // Assert
@@ -78,10 +88,10 @@ class UpdateRentalUseCaseTest {
                 startDate = startDate,
                 endDate = Instant.parse(invalidEnd),
                 dailyRateAmount = 1000,
-                totalAmount = 7000
+                totalAmount = 7000,
             )
         }.isInstanceOf(IllegalArgumentException::class.java)
-         .hasMessageContaining("End date must be after start date")
+            .hasMessageContaining("End date must be after start date")
     }
 
     @Test
@@ -89,7 +99,7 @@ class UpdateRentalUseCaseTest {
         // Arrange
         val existingRentalId = RentalId("rental-001")
         val otherRental = sampleRental(id = "rental-002", rentalNum = "RNT-002")
-        
+
         // Act - Logic from UpdateRentalUseCase conflict check
         val conflicts = listOf(otherRental) // Mocked background conflict
         val filteredConflicts = conflicts.filter { it.id != existingRentalId }
@@ -106,16 +116,16 @@ class UpdateRentalUseCaseTest {
         // Act
         val startStr = "2026-03-25T10:00:00Z"
         val start = Instant.parse(startStr)
-        
+
         // Assert
         assertThat(start.toString()).isEqualTo(startStr)
     }
 
     private fun sampleRental(
-        id: String = "rental-001", 
+        id: String = "rental-001",
         rentalNum: String = "RNT-001",
         status: RentalStatus = RentalStatus.RESERVED,
-        dailyRate: Int = 1000
+        dailyRate: Int = 1000,
     ) = Rental(
         id = RentalId(id),
         rentalNumber = rentalNum,
@@ -125,6 +135,6 @@ class UpdateRentalUseCaseTest {
         startDate = startDate,
         endDate = endDate,
         dailyRateAmount = dailyRate,
-        totalAmount = dailyRate * 7
+        totalAmount = dailyRate * 7,
     )
 }

@@ -1,8 +1,8 @@
 package com.solodev.fleet.modules.tracking.infrastructure.resilience
 
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.BeforeEach
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
@@ -11,7 +11,6 @@ import kotlin.test.assertFailsWith
  * Tests retry logic with exponential backoff.
  */
 class RetryPolicyTest {
-
     private lateinit var retryPolicy: RetryPolicy
 
     @BeforeEach
@@ -24,10 +23,11 @@ class RetryPolicyTest {
         runBlocking {
             var attempts = 0
 
-            val result = retryPolicy.execute("TestOperation") {
-                attempts++
-                "success"
-            }
+            val result =
+                retryPolicy.execute("TestOperation") {
+                    attempts++
+                    "success"
+                }
 
             assertEquals("success", result)
             assertEquals(1, attempts)
@@ -39,13 +39,14 @@ class RetryPolicyTest {
         runBlocking {
             var attempts = 0
 
-            val result = retryPolicy.execute("TestOperation") {
-                attempts++
-                if (attempts < 3) {
-                    throw java.net.SocketTimeoutException("Timeout")
+            val result =
+                retryPolicy.execute("TestOperation") {
+                    attempts++
+                    if (attempts < 3) {
+                        throw java.net.SocketTimeoutException("Timeout")
+                    }
+                    "success"
                 }
-                "success"
-            }
 
             assertEquals("success", result)
             assertEquals(3, attempts)
@@ -89,17 +90,17 @@ class RetryPolicyTest {
         runBlocking {
             var attempts = 0
 
-            val result = retryPolicy.execute("TestOperation") {
-                attempts++
-                if (attempts < 2) {
-                    throw java.net.ConnectException("Connection refused")
+            val result =
+                retryPolicy.execute("TestOperation") {
+                    attempts++
+                    if (attempts < 2) {
+                        throw java.net.ConnectException("Connection refused")
+                    }
+                    "success"
                 }
-                "success"
-            }
 
             assertEquals("success", result)
             assertEquals(2, attempts)
         }
     }
 }
-

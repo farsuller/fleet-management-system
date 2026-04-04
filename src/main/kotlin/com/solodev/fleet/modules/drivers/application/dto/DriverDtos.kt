@@ -12,7 +12,7 @@ data class DriverRequest(
     val lastName: String,
     val phone: String,
     val licenseNumber: String,
-    val licenseExpiry: String,         // YYYY-MM-DD
+    val licenseExpiry: String, // YYYY-MM-DD
     val licenseClass: String? = null,
     val address: String? = null,
     val city: String? = null,
@@ -39,7 +39,7 @@ data class DriverRegistrationRequest(
     val lastName: String,
     val phone: String,
     val licenseNumber: String,
-    val licenseExpiry: String,         // YYYY-MM-DD
+    val licenseExpiry: String, // YYYY-MM-DD
     val licenseClass: String? = null,
     val address: String? = null,
     val city: String? = null,
@@ -75,15 +75,16 @@ data class AssignmentResponse(
     val notes: String?,
 ) {
     companion object {
-        fun fromDomain(a: VehicleDriverAssignment) = AssignmentResponse(
-            id         = a.id,
-            vehicleId  = a.vehicleId,
-            driverId   = a.driverId,
-            assignedAt = a.assignedAt.toEpochMilli(),
-            releasedAt = a.releasedAt?.toEpochMilli(),
-            isActive   = a.isActive,
-            notes      = a.notes,
-        )
+        fun fromDomain(a: VehicleDriverAssignment) =
+            AssignmentResponse(
+                id = a.id,
+                vehicleId = a.vehicleId,
+                driverId = a.driverId,
+                assignedAt = a.assignedAt.toEpochMilli(),
+                releasedAt = a.releasedAt?.toEpochMilli(),
+                isActive = a.isActive,
+                notes = a.notes,
+            )
     }
 }
 
@@ -109,26 +110,28 @@ data class DriverResponse(
     val currentAssignment: AssignmentResponse?,
 ) {
     companion object {
-        fun fromDomain(d: Driver, currentAssignment: VehicleDriverAssignment? = null) =
-            DriverResponse(
-                id              = d.id.value,
-                userId          = d.userId?.toString(),
-                firstName       = d.firstName,
-                lastName        = d.lastName,
-                email           = d.email,
-                phone           = d.phone,
-                licenseNumber   = d.licenseNumber,
-                licenseExpiryMs = d.licenseExpiry.toEpochMilli(),
-                licenseClass    = d.licenseClass,
-                address         = d.address,
-                city            = d.city,
-                state           = d.state,
-                postalCode      = d.postalCode,
-                country         = d.country,
-                isActive        = d.isActive,
-                createdAt       = d.createdAt.toEpochMilli(),
-                currentAssignment = currentAssignment?.let { AssignmentResponse.fromDomain(it) },
-            )
+        fun fromDomain(
+            d: Driver,
+            currentAssignment: VehicleDriverAssignment? = null,
+        ) = DriverResponse(
+            id = d.id.value,
+            userId = d.userId?.toString(),
+            firstName = d.firstName,
+            lastName = d.lastName,
+            email = d.email,
+            phone = d.phone,
+            licenseNumber = d.licenseNumber,
+            licenseExpiryMs = d.licenseExpiry.toEpochMilli(),
+            licenseClass = d.licenseClass,
+            address = d.address,
+            city = d.city,
+            state = d.state,
+            postalCode = d.postalCode,
+            country = d.country,
+            isActive = d.isActive,
+            createdAt = d.createdAt.toEpochMilli(),
+            currentAssignment = currentAssignment?.let { AssignmentResponse.fromDomain(it) },
+        )
     }
 }
 

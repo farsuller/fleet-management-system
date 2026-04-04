@@ -9,10 +9,10 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
  * starts a new one. Critical for atomic operations across multiple repositories.
  */
 suspend fun <T> dbQuery(block: suspend () -> T): T =
-        if (TransactionManager.currentOrNull() != null) {
-            // Participate in existing transaction
-            block()
-        } else {
-            // Start new transaction
-            newSuspendedTransaction(Dispatchers.IO) { block() }
-        }
+    if (TransactionManager.currentOrNull() != null) {
+        // Participate in existing transaction
+        block()
+    } else {
+        // Start new transaction
+        newSuspendedTransaction(Dispatchers.IO) { block() }
+    }

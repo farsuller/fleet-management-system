@@ -10,7 +10,6 @@ import java.util.UUID
  * Tests request deduplication and idempotency key caching.
  */
 class IdempotencyKeyManagerTest {
-
     private lateinit var manager: IdempotencyKeyManager
 
     @BeforeEach
@@ -286,4 +285,3 @@ class IdempotencyKeyManagerTest {
         assertThat(cached).isNotNull()
     }
 }
-

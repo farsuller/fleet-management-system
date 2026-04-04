@@ -11,7 +11,7 @@ data class CustomerRegistrationRequest(
     val lastName: String,
     val phone: String,
     val driversLicense: String,
-    val driverLicenseExpiry: String,   // YYYY-MM-DD
+    val driverLicenseExpiry: String, // YYYY-MM-DD
     val address: String? = null,
     val city: String? = null,
     val state: String? = null,

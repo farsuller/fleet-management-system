@@ -22,8 +22,8 @@ import com.solodev.fleet.modules.tracking.application.usecases.CoordinateRecepti
 import com.solodev.fleet.modules.tracking.application.usecases.UpdateVehicleLocationUseCase
 import com.solodev.fleet.modules.tracking.infrastructure.http.trackingRoutes
 import com.solodev.fleet.modules.tracking.infrastructure.metrics.SpatialMetrics
-import com.solodev.fleet.modules.tracking.infrastructure.persistence.PostGISAdapter
 import com.solodev.fleet.modules.tracking.infrastructure.persistence.LocationHistoryRepository
+import com.solodev.fleet.modules.tracking.infrastructure.persistence.PostGisAdapter
 import com.solodev.fleet.modules.tracking.infrastructure.websocket.RedisDeltaBroadcaster
 import com.solodev.fleet.modules.users.infrastructure.http.userRoutes
 import com.solodev.fleet.modules.users.infrastructure.persistence.UserRepositoryImpl
@@ -34,12 +34,14 @@ import com.solodev.fleet.shared.infrastructure.cache.RedisCacheManager
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.requestId
 import com.solodev.fleet.shared.utils.JwtService
-import io.ktor.server.application.*
-import io.ktor.server.auth.*
-import io.ktor.server.plugins.ratelimit.*
-import io.ktor.server.plugins.swagger.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.server.application.Application
+import io.ktor.server.auth.authenticate
+import io.ktor.server.plugins.ratelimit.RateLimitName
+import io.ktor.server.plugins.ratelimit.rateLimit
+import io.ktor.server.plugins.swagger.swaggerUI
+import io.ktor.server.response.respond
+import io.ktor.server.routing.get
+import io.ktor.server.routing.routing
 import io.micrometer.core.instrument.MeterRegistry
 import redis.clients.jedis.JedisPool
 
@@ -48,9 +50,8 @@ fun Application.configureRouting(
     jwtService: JwtService,
     vehicleRepo: VehicleRepositoryImpl,
     jedisPool: JedisPool?,
-    registry: MeterRegistry
+    registry: MeterRegistry,
 ) {
-
     // Initialize other repositories
     val rentalRepo = RentalRepositoryImpl()
     val userRepo = UserRepositoryImpl()
@@ -66,32 +67,34 @@ fun Application.configureRouting(
     val remittanceRepo = DriverRemittanceRepositoryImpl()
 
     val accountingService = AccountingService(accountRepo = accountRepo, ledgerRepo = ledgerRepo)
-    val issueInvoiceUseCase = com.solodev.fleet.modules.accounts.application.usecases.IssueInvoiceUseCase(
-        invoiceRepo = invoiceRepo,
-        accountRepo = accountRepo,
-        ledgerRepo = ledgerRepo
-    )
+    val issueInvoiceUseCase =
+        com.solodev.fleet.modules.accounts.application.usecases.IssueInvoiceUseCase(
+            invoiceRepo = invoiceRepo,
+            accountRepo = accountRepo,
+            ledgerRepo = ledgerRepo,
+        )
     val reconciliationService =
-            ReconciliationService(
-                    invoiceRepo = invoiceRepo,
-                    accountRepo = accountRepo,
-                    ledgerRepo = ledgerRepo
-            )
+        ReconciliationService(
+            invoiceRepo = invoiceRepo,
+            accountRepo = accountRepo,
+            ledgerRepo = ledgerRepo,
+        )
 
     // Phase 7: Tracking & Live Broadcasting
-    val spatialAdapter = PostGISAdapter()
+    val spatialAdapter = PostGisAdapter()
     val redisCache = RedisCacheManager(jedisPool)
     val spatialMetrics = SpatialMetrics(registry) // Micrometer registry from observability
     val deltaBroadcaster = RedisDeltaBroadcaster(redisCache, vehicleRepo, jedisPool)
-    val locationHistoryRepository = LocationHistoryRepository()  // Persist tracking records
+    val locationHistoryRepository = LocationHistoryRepository() // Persist tracking records
     val coordinateReceptionService = CoordinateReceptionService(redisCache)
-    val updateVehicleLocation = UpdateVehicleLocationUseCase(
-        postGISAdapter = spatialAdapter,
-        broadcaster = deltaBroadcaster,
-        metrics = spatialMetrics,
-        historyRepository = locationHistoryRepository,
-        receptionService = coordinateReceptionService
-    )
+    val updateVehicleLocation =
+        UpdateVehicleLocationUseCase(
+            postGISAdapter = spatialAdapter,
+            broadcaster = deltaBroadcaster,
+            metrics = spatialMetrics,
+            historyRepository = locationHistoryRepository,
+            receptionService = coordinateReceptionService,
+        )
     routing {
         // Interactive API Documentation
         swaggerUI(path = "swagger", swaggerFile = "openapi.yaml")
@@ -99,24 +102,24 @@ fun Application.configureRouting(
         rateLimit(RateLimitName("public_api")) {
             vehicleRoutes(vehicleRepo)
             rentalRoutes(
-                    rentalRepository = rentalRepo,
-                    vehicleRepository = vehicleRepo,
-                    accountingService = accountingService,
-                    issueInvoiceUseCase = issueInvoiceUseCase,
-                    invoiceRepository = invoiceRepo
+                rentalRepository = rentalRepo,
+                vehicleRepository = vehicleRepo,
+                accountingService = accountingService,
+                issueInvoiceUseCase = issueInvoiceUseCase,
+                invoiceRepository = invoiceRepo,
             )
             customerRoutes(
-                    customerRepository = customerRepo,
-                    rentalRepository = rentalRepo,
-                    vehicleRepository = vehicleRepo,
-                    driverRepository = driverRepo,
-                    userRepository = userRepo,
-                    tokenRepository = tokenRepo,
+                customerRepository = customerRepo,
+                rentalRepository = rentalRepo,
+                vehicleRepository = vehicleRepo,
+                driverRepository = driverRepo,
+                userRepository = userRepo,
+                tokenRepository = tokenRepo,
             )
             driverRoutes(
-                    driverRepository = driverRepo,
-                    userRepository = userRepo,
-                    tokenRepository = tokenRepo,
+                driverRepository = driverRepo,
+                userRepository = userRepo,
+                tokenRepository = tokenRepo,
             )
             maintenanceRoutes(maintenanceRepository = maintenanceRepo, rentalRepository = rentalRepo)
             incidentRoutes(maintenanceRepository = maintenanceRepo, vehicleRepository = vehicleRepo)
@@ -126,29 +129,29 @@ fun Application.configureRouting(
                 deltaBroadcaster = deltaBroadcaster,
                 vehicleRepository = vehicleRepo,
                 historyRepository = locationHistoryRepository,
-                receptionService = coordinateReceptionService
+                receptionService = coordinateReceptionService,
             )
         }
 
         rateLimit(RateLimitName("auth_strict")) {
             userRoutes(
-                    userRepository = userRepo,
-                    tokenRepository = tokenRepo,
-                    jwtService = jwtService
+                userRepository = userRepo,
+                tokenRepository = tokenRepo,
+                jwtService = jwtService,
             )
         }
 
         authenticate("auth-jwt") {
             rateLimit(RateLimitName("authenticated_api")) {
                 accountingRoutes(
-                        invoiceRepository = invoiceRepo,
-                        paymentRepository = paymentRepo,
-                        accountRepository = accountRepo,
-                        ledgerRepository = ledgerRepo,
-                        paymentMethodRepository = paymentMethodRepo,
-                        customerRepository = customerRepo,
-                        remittanceRepository = remittanceRepo,
-                        reconciliationService = reconciliationService
+                    invoiceRepository = invoiceRepo,
+                    paymentRepository = paymentRepo,
+                    accountRepository = accountRepo,
+                    ledgerRepository = ledgerRepo,
+                    paymentMethodRepository = paymentMethodRepo,
+                    customerRepository = customerRepo,
+                    remittanceRepository = remittanceRepo,
+                    reconciliationService = reconciliationService,
                 )
             }
         }
@@ -156,17 +159,17 @@ fun Application.configureRouting(
         rateLimit {
             get("/") {
                 call.respond(
-                        ApiResponse.success(
-                                mapOf("message" to "Fleet Management API v1"),
-                                call.requestId
-                        )
+                    ApiResponse.success(
+                        mapOf("message" to "Fleet Management API v1"),
+                        call.requestId,
+                    ),
                 )
             }
         }
 
         get("/health") {
             call.respond(
-                    ApiResponse.success(data = mapOf("status" to "OK"), requestId = call.requestId)
+                ApiResponse.success(data = mapOf("status" to "OK"), requestId = call.requestId),
             )
         }
     }

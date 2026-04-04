@@ -7,8 +7,8 @@ import com.solodev.fleet.modules.tracking.application.dto.full
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 import com.solodev.fleet.shared.infrastructure.cache.RedisCacheManager
 import com.solodev.fleet.shared.models.PaginationParams
-import io.ktor.server.websocket.*
-import io.ktor.websocket.*
+import io.ktor.server.websocket.DefaultWebSocketServerSession
+import io.ktor.websocket.Frame
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -17,7 +17,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPubSub
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap
 open class RedisDeltaBroadcaster(
     private val redisCache: RedisCacheManager,
     private val vehicleRepository: VehicleRepository,
-    private val jedisPool: JedisPool? = null
+    private val jedisPool: JedisPool? = null,
 ) {
     private val sessions = ConcurrentHashMap<String, DefaultWebSocketServerSession>()
     private val supervisorJob = SupervisorJob()
@@ -52,15 +52,19 @@ open class RedisDeltaBroadcaster(
         }
     }
 
-    suspend fun broadcastIfChanged(vehicleId: UUID, newState: VehicleRouteState) {
+    suspend fun broadcastIfChanged(
+        vehicleId: UUID,
+        newState: VehicleRouteState,
+    ) {
         val redisKey = "vehicle_state:$vehicleId"
         val lastState = redisCache.getOrSet<VehicleRouteState?>(redisKey, 3600) { null }
 
-        val delta = if (lastState == null) {
-            VehicleStateDelta.full(newState)
-        } else {
-            VehicleStateDelta.diff(lastState, newState)
-        }
+        val delta =
+            if (lastState == null) {
+                VehicleStateDelta.full(newState)
+            } else {
+                VehicleStateDelta.diff(lastState, newState)
+            }
 
         if (delta.hasChanges()) {
             val message = Json.encodeToString(delta)
@@ -82,7 +86,10 @@ open class RedisDeltaBroadcaster(
         }
     }
 
-    suspend fun addSession(sessionId: String, session: DefaultWebSocketServerSession) {
+    suspend fun addSession(
+        sessionId: String,
+        session: DefaultWebSocketServerSession,
+    ) {
         sessions[sessionId] = session
         sendInitialState(session)
     }
@@ -132,24 +139,33 @@ open class RedisDeltaBroadcaster(
                 val subscriberConn = jedisPool?.resource
                 if (subscriberConn != null) {
                     try {
-                        subscriberConn.subscribe(object : JedisPubSub() {
-                            override fun onMessage(channel: String, message: String) {
-                                // Broadcast message from another node to local sessions
-                                scope.launch {
-                                    sessions.values.forEach { session ->
-                                        try {
-                                            session.send(Frame.Text(message))
-                                        } catch (e: Exception) {
-                                            // Session closed, ignore
+                        subscriberConn.subscribe(
+                            object : JedisPubSub() {
+                                override fun onMessage(
+                                    channel: String,
+                                    message: String,
+                                ) {
+                                    // Broadcast message from another node to local sessions
+                                    scope.launch {
+                                        sessions.values.forEach { session ->
+                                            try {
+                                                session.send(Frame.Text(message))
+                                            } catch (e: Exception) {
+                                                // Session closed, ignore
+                                            }
                                         }
                                     }
                                 }
-                            }
 
-                            override fun onSubscribe(channel: String, subscribedChannels: Int) {
-                                println("Redis Pub/Sub subscribed to channel: $channel")
-                            }
-                        }, REDIS_CHANNEL)
+                                override fun onSubscribe(
+                                    channel: String,
+                                    subscribedChannels: Int,
+                                ) {
+                                    println("Redis Pub/Sub subscribed to channel: $channel")
+                                }
+                            },
+                            REDIS_CHANNEL,
+                        )
                     } finally {
                         subscriberConn.close()
                     }

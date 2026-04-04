@@ -5,9 +5,7 @@ import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 
 class GetVehicleUseCase(
-    private val repository: VehicleRepository
+    private val repository: VehicleRepository,
 ) {
-    suspend fun execute(id: String): Vehicle? {
-        return repository.findById(VehicleId(id))
-    }
+    suspend fun execute(id: String): Vehicle? = repository.findById(VehicleId(id))
 }

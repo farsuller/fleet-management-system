@@ -2,7 +2,6 @@ package com.solodev.fleet.modules.tracking.infrastructure.ratelimit
 
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.math.min
 
 /**
  * Per-vehicle rate limiter using sliding window algorithm.
@@ -18,7 +17,7 @@ import kotlin.math.min
  */
 class LocationUpdateRateLimiter(
     private val maxUpdatesPerMinute: Int = 60,
-    private val windowSizeSeconds: Int = 60
+    private val windowSizeSeconds: Int = 60,
 ) {
     private val vehicleTimestamps = ConcurrentHashMap<String, MutableList<Instant>>()
 
@@ -78,7 +77,9 @@ class LocationUpdateRateLimiter(
         // Find oldest timestamp in window and calculate wait time
         val oldestInWindow = recentTimestamps.minOrNull() ?: return 0
         val windowExpireTime = oldestInWindow.plusSeconds(windowSizeSeconds.toLong())
-        val waitSeconds = java.time.temporal.ChronoUnit.SECONDS.between(now, windowExpireTime)
+        val waitSeconds =
+            java.time.temporal.ChronoUnit.SECONDS
+                .between(now, windowExpireTime)
 
         return maxOf(0, waitSeconds)
     }
@@ -106,7 +107,7 @@ class LocationUpdateRateLimiter(
             maxUpdatesAllowed = maxUpdatesPerMinute,
             remainingQuota = maxOf(0, maxUpdatesPerMinute - recentCount),
             isRateLimited = recentCount >= maxUpdatesPerMinute,
-            waitTimeSeconds = getWaitTimeSeconds(vehicleId)
+            waitTimeSeconds = getWaitTimeSeconds(vehicleId),
         )
     }
 
@@ -135,6 +136,5 @@ data class RateLimitStats(
     val maxUpdatesAllowed: Int,
     val remainingQuota: Int,
     val isRateLimited: Boolean,
-    val waitTimeSeconds: Long
+    val waitTimeSeconds: Long,
 )
-

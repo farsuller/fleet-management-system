@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class MaintenanceStatusUpdateRequest(
     val laborCostPhp: Long = 0,
-    val partsCostPhp: Long = 0
+    val partsCostPhp: Long = 0,
 ) {
     init {
         require(laborCostPhp >= 0) { "Labor cost cannot be negative" }

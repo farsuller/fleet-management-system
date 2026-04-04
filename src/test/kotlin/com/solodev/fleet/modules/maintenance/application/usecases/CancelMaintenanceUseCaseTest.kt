@@ -1,35 +1,40 @@
 package com.solodev.fleet.modules.maintenance.application.usecases
 
-import com.solodev.fleet.modules.maintenance.domain.model.*
+import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJob
+import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJobId
+import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJobType
+import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceStatus
 import com.solodev.fleet.modules.maintenance.domain.repository.MaintenanceRepository
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.runBlocking
-import java.time.Instant
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import java.time.Instant
 
 class CancelMaintenanceUseCaseTest {
-
     private val repository = mockk<MaintenanceRepository>()
     private val useCase = CancelMaintenanceUseCase(repository)
 
     @Test
-    fun shouldCancelMaintenanceJob_WhenStatusIsScheduled() = runBlocking {
-        // Arrange
-        val job = sampleJob(status = MaintenanceStatus.SCHEDULED)
-        val savedJob = slot<MaintenanceJob>()
-        coEvery { repository.findById(MaintenanceJobId("maint-001")) } returns job
-        coEvery { repository.saveJob(capture(savedJob)) } returnsArgument 0
+    fun shouldCancelMaintenanceJob_WhenStatusIsScheduled(): Unit =
+        runBlocking {
+            // Arrange
+            val job = sampleJob(status = MaintenanceStatus.SCHEDULED)
+            val savedJob = slot<MaintenanceJob>()
+            coEvery { repository.findById(MaintenanceJobId("maint-001")) } returns job
+            coEvery { repository.saveJob(capture(savedJob)) } returnsArgument 0
 
-        // Act
-        val result = useCase.execute("maint-001")
+            // Act
+            val result = useCase.execute("maint-001")
 
-        // Assert
-        assertThat(result.status).isEqualTo(MaintenanceStatus.CANCELLED)
-        assertThat(savedJob.captured.status).isEqualTo(MaintenanceStatus.CANCELLED)
-    }
+            // Assert
+            assertThat(result.status).isEqualTo(MaintenanceStatus.CANCELLED)
+            assertThat(savedJob.captured.status).isEqualTo(MaintenanceStatus.CANCELLED)
+        }
 
     @Test
     fun shouldThrowIllegalArgument_WhenJobIsInProgress() {
@@ -52,13 +57,14 @@ class CancelMaintenanceUseCaseTest {
             .isInstanceOf(IllegalArgumentException::class.java)
     }
 
-    private fun sampleJob(status: MaintenanceStatus) = MaintenanceJob(
-        id = MaintenanceJobId("maint-001"),
-        jobNumber = "MAINT-001",
-        vehicleId = VehicleId("veh-001"),
-        jobType = MaintenanceJobType.PREVENTIVE,
-        status = status,
-        description = "Regular oil change",
-        scheduledDate = Instant.now()
-    )
+    private fun sampleJob(status: MaintenanceStatus) =
+        MaintenanceJob(
+            id = MaintenanceJobId("maint-001"),
+            jobNumber = "MAINT-001",
+            vehicleId = VehicleId("veh-001"),
+            jobType = MaintenanceJobType.PREVENTIVE,
+            status = status,
+            description = "Regular oil change",
+            scheduledDate = Instant.now(),
+        )
 }

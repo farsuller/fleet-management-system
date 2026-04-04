@@ -1,16 +1,17 @@
 package com.solodev.fleet.modules.users.application.usecases
 
 import com.solodev.fleet.modules.users.application.dto.LoginRequest
-import com.solodev.fleet.modules.users.domain.model.*
+import com.solodev.fleet.modules.users.domain.model.User
+import com.solodev.fleet.modules.users.domain.model.UserId
 import com.solodev.fleet.modules.users.domain.repository.UserRepository
 import com.solodev.fleet.shared.utils.JwtService
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 
 class LoginUserUseCaseTest {
-
     private val userRepository = mockk<UserRepository>()
     private val jwtService = mockk<JwtService>()
     private val useCase = LoginUserUseCase(userRepository, jwtService)
@@ -38,14 +39,15 @@ class LoginUserUseCaseTest {
             .isInstanceOf(IllegalArgumentException::class.java)
     }
 
-    private fun sampleUser(isVerified: Boolean) = User(
-        id = UserId("user-001"),
-        email = "juan@fleet.ph",
-        firstName = "Juan",
-        lastName = "dela Cruz",
-        passwordHash = "not-checked",
-        phone = "+63912345678",
-        isVerified = isVerified,
-        roles = emptyList()
-    )
+    private fun sampleUser(isVerified: Boolean) =
+        User(
+            id = UserId("user-001"),
+            email = "juan@fleet.ph",
+            firstName = "Juan",
+            lastName = "dela Cruz",
+            passwordHash = "not-checked",
+            phone = "+63912345678",
+            isVerified = isVerified,
+            roles = emptyList(),
+        )
 }

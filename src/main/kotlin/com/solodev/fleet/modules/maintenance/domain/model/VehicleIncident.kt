@@ -6,14 +6,16 @@ import java.util.UUID
 
 /** Unique identifier for a vehicle incident. */
 @JvmInline
-value class IncidentId(val value: UUID)
+value class IncidentId(
+    val value: UUID,
+)
 
 /** Severity of the reported incident. */
 enum class IncidentSeverity {
     LOW,
     MEDIUM,
     HIGH,
-    CRITICAL
+    CRITICAL,
 }
 
 /** Status of the incident resolution. */
@@ -21,7 +23,7 @@ enum class IncidentStatus {
     REPORTED,
     IN_MAINTENANCE,
     RESOLVED,
-    DISMISSED
+    DISMISSED,
 }
 
 /**
@@ -40,5 +42,5 @@ data class VehicleIncident(
     val maintenanceJobId: MaintenanceJobId? = null,
     val odometerKm: Int? = null,
     val latitude: Double? = null,
-    val longitude: Double? = null
+    val longitude: Double? = null,
 )

@@ -5,7 +5,9 @@ import java.time.Instant
 
 /** Value object representing a unique rental identifier. */
 @JvmInline
-value class RentalId(val value: String) {
+value class RentalId(
+    val value: String,
+) {
     init {
         require(value.isNotBlank()) { "Rental ID cannot be blank" }
     }
@@ -13,7 +15,9 @@ value class RentalId(val value: String) {
 
 /** Value object representing a unique customer identifier. */
 @JvmInline
-value class CustomerId(val value: String) {
+value class CustomerId(
+    val value: String,
+) {
     init {
         require(value.isNotBlank()) { "Customer ID cannot be blank" }
     }
@@ -24,7 +28,7 @@ enum class RentalStatus {
     RESERVED,
     ACTIVE,
     COMPLETED,
-    CANCELLED
+    CANCELLED,
 }
 
 /** Payment method enumeration. */
@@ -32,7 +36,7 @@ enum class PaymentMethod {
     CREDIT_CARD,
     DEBIT_CARD,
     CASH,
-    BANK_TRANSFER
+    BANK_TRANSFER,
 }
 
 /** Payment status enumeration. */
@@ -40,7 +44,7 @@ enum class PaymentStatus {
     PENDING,
     COMPLETED,
     FAILED,
-    REFUNDED
+    REFUNDED,
 }
 
 /**
@@ -64,28 +68,34 @@ data class Rental(
     val startOdometerKm: Int? = null,
     val endOdometerKm: Int? = null,
     /** UUID of the invoice auto-generated when this rental was completed. Null until completed. */
-    val invoiceId: java.util.UUID? = null
+    val invoiceId: java.util.UUID? = null,
 ) {
     init {
         require(endDate.isAfter(startDate)) { "End date must be after start date" }
         require(totalAmount >= 0) { "Total amount cannot be negative" }
     }
 
-    fun activate(actualStart: Instant, startOdo: Int): Rental {
+    fun activate(
+        actualStart: Instant,
+        startOdo: Int,
+    ): Rental {
         require(status == RentalStatus.RESERVED) { "Rental must be RESERVED" }
         return copy(
-                status = RentalStatus.ACTIVE,
-                actualStartDate = actualStart,
-                startOdometerKm = startOdo
+            status = RentalStatus.ACTIVE,
+            actualStartDate = actualStart,
+            startOdometerKm = startOdo,
         )
     }
 
-    fun complete(actualEnd: Instant, endOdo: Int): Rental {
+    fun complete(
+        actualEnd: Instant,
+        endOdo: Int,
+    ): Rental {
         require(status == RentalStatus.ACTIVE) { "Rental must be ACTIVE" }
         return copy(
-                status = RentalStatus.COMPLETED,
-                actualEndDate = actualEnd,
-                endOdometerKm = endOdo
+            status = RentalStatus.COMPLETED,
+            actualEndDate = actualEnd,
+            endOdometerKm = endOdo,
         )
     }
 
@@ -94,7 +104,12 @@ data class Rental(
     /** Number of days the rental actually ran. Minimum 1; uses booked dates if actual dates missing. */
     fun durationDays(): Int {
         val start = actualStartDate ?: startDate
-        val end   = actualEndDate   ?: endDate
-        return (java.time.Duration.between(start, end).toDays().toInt()).coerceAtLeast(1)
+        val end = actualEndDate ?: endDate
+        return (
+            java.time.Duration
+                .between(start, end)
+                .toDays()
+                .toInt()
+        ).coerceAtLeast(1)
     }
 }

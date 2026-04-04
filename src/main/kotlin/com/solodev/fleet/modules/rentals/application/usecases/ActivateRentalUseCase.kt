@@ -1,43 +1,44 @@
 package com.solodev.fleet.modules.rentals.application.usecases
 
 import com.solodev.fleet.modules.accounts.application.AccountingService
-import com.solodev.fleet.modules.rentals.domain.repository.RentalRepository
-import com.solodev.fleet.modules.rentals.domain.repository.RentalWithDetails
-import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
-import com.solodev.fleet.modules.rentals.domain.model.Rental
 import com.solodev.fleet.modules.rentals.domain.model.RentalId
 import com.solodev.fleet.modules.rentals.domain.model.RentalStatus
+import com.solodev.fleet.modules.rentals.domain.repository.RentalRepository
+import com.solodev.fleet.modules.rentals.domain.repository.RentalWithDetails
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleState
+import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.time.Instant
 
 class ActivateRentalUseCase(
-        private val rentalRepository: RentalRepository,
-        private val vehicleRepository: VehicleRepository,
-        private val accountingService: AccountingService
+    private val rentalRepository: RentalRepository,
+    private val vehicleRepository: VehicleRepository,
+    private val accountingService: AccountingService,
 ) {
-    suspend fun execute(id: String): RentalWithDetails = newSuspendedTransaction(Dispatchers.IO) {
-        val rentalId = RentalId(id)
-        val rental = rentalRepository.findById(rentalId) ?: throw IllegalArgumentException("Rental not found")
+    suspend fun execute(id: String): RentalWithDetails =
+        newSuspendedTransaction(Dispatchers.IO) {
+            val rentalId = RentalId(id)
+            val rental = rentalRepository.findById(rentalId) ?: throw IllegalArgumentException("Rental not found")
 
-        require(rental.status == RentalStatus.RESERVED) { "Can only activate reserved rentals" }
+            require(rental.status == RentalStatus.RESERVED) { "Can only activate reserved rentals" }
 
-        // Get vehicle to capture current mileage
-        val vehicle = vehicleRepository.findById(rental.vehicleId) ?: throw IllegalStateException("Vehicle not found")
+            // Get vehicle to capture current mileage
+            val vehicle = vehicleRepository.findById(rental.vehicleId) ?: throw IllegalStateException("Vehicle not found")
 
-        val activated = rental.activate(
-            actualStart = Instant.now(),
-            startOdo = vehicle.mileageKm // Capture current vehicle mileage
-        )
+            val activated =
+                rental.activate(
+                    actualStart = Instant.now(),
+                    startOdo = vehicle.mileageKm, // Capture current vehicle mileage
+                )
 
-        // Update vehicle state
-        vehicleRepository.save(vehicle.copy(state = VehicleState.RENTED))
+            // Update vehicle state
+            vehicleRepository.save(vehicle.copy(state = VehicleState.RENTED))
 
-        val saved = rentalRepository.save(activated)
+            val saved = rentalRepository.save(activated)
 
-        accountingService.postRentalActivation(saved) // If this fails, the whole transaction rolls back
+            accountingService.postRentalActivation(saved) // If this fails, the whole transaction rolls back
 
-        rentalRepository.findByIdWithDetails(rentalId) ?: throw IllegalStateException("Failed to reload rental with details")
-    }
+            rentalRepository.findByIdWithDetails(rentalId) ?: throw IllegalStateException("Failed to reload rental with details")
+        }
 }

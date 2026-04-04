@@ -2,11 +2,13 @@ package com.solodev.fleet.modules.maintenance.domain.model
 
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 
 /** Value object representing a unique maintenance job identifier. */
 @JvmInline
-value class MaintenanceJobId(val value: String) {
+value class MaintenanceJobId(
+    val value: String,
+) {
     init {
         require(value.isNotBlank()) { "Maintenance job ID cannot be blank" }
     }
@@ -17,7 +19,7 @@ enum class MaintenanceStatus {
     SCHEDULED,
     IN_PROGRESS,
     COMPLETED,
-    CANCELLED
+    CANCELLED,
 }
 
 /** Maintenance job type. */
@@ -26,11 +28,12 @@ enum class MaintenanceJobType {
     CORRECTIVE,
     INSPECTION,
     EMERGENCY,
-    UNKNOWN;
+    UNKNOWN,
+    ;
 
     companion object {
-        fun fromString(value: String): MaintenanceJobType {
-            return try {
+        fun fromString(value: String): MaintenanceJobType =
+            try {
                 valueOf(value)
             } catch (e: IllegalArgumentException) {
                 when (value.uppercase()) {
@@ -39,7 +42,6 @@ enum class MaintenanceJobType {
                     else -> UNKNOWN
                 }
             }
-        }
     }
 }
 
@@ -49,16 +51,16 @@ enum class MaintenancePriority {
     NORMAL,
     HIGH,
     URGENT,
-    UNKNOWN;
+    UNKNOWN,
+    ;
 
     companion object {
-        fun fromString(value: String): MaintenancePriority {
-            return try {
+        fun fromString(value: String): MaintenancePriority =
+            try {
                 valueOf(value)
             } catch (e: IllegalArgumentException) {
                 UNKNOWN
             }
-        }
     }
 }
 
@@ -68,26 +70,26 @@ enum class MaintenancePriority {
  * Represents a maintenance job for a vehicle.
  */
 data class MaintenanceJob(
-        val id: MaintenanceJobId,
-        val jobNumber: String,
-        val vehicleId: VehicleId,
-        val vehiclePlate: String? = null,
-        val vehicleMake: String? = null,
-        val vehicleModel: String? = null,
-        val status: MaintenanceStatus,
-        val jobType: MaintenanceJobType,
-        val description: String,
-        val priority: MaintenancePriority = MaintenancePriority.NORMAL,
-        val scheduledDate: Instant,
-        val startedAt: Instant? = null,
-        val completedAt: Instant? = null,
-        val odometerKm: Int? = null,
-        val laborCost: Int = 0,
-        val partsCost: Int = 0,
-        val currencyCode: String = "PHP",
-        val assignedToUserId: UUID? = null,
-        val completedByUserId: UUID? = null,
-        val notes: String? = null,
+    val id: MaintenanceJobId,
+    val jobNumber: String,
+    val vehicleId: VehicleId,
+    val vehiclePlate: String? = null,
+    val vehicleMake: String? = null,
+    val vehicleModel: String? = null,
+    val status: MaintenanceStatus,
+    val jobType: MaintenanceJobType,
+    val description: String,
+    val priority: MaintenancePriority = MaintenancePriority.NORMAL,
+    val scheduledDate: Instant,
+    val startedAt: Instant? = null,
+    val completedAt: Instant? = null,
+    val odometerKm: Int? = null,
+    val laborCost: Int = 0,
+    val partsCost: Int = 0,
+    val currencyCode: String = "PHP",
+    val assignedToUserId: UUID? = null,
+    val completedByUserId: UUID? = null,
+    val notes: String? = null,
 ) {
     init {
         require(laborCost >= 0) { "Labor cost cannot be negative" }
@@ -102,15 +104,19 @@ data class MaintenanceJob(
         return copy(status = MaintenanceStatus.IN_PROGRESS, startedAt = timestamp)
     }
 
-    fun complete(labor: Int, parts: Int, timestamp: Instant = Instant.now()): MaintenanceJob {
+    fun complete(
+        labor: Int,
+        parts: Int,
+        timestamp: Instant = Instant.now(),
+    ): MaintenanceJob {
         require(status == MaintenanceStatus.IN_PROGRESS) {
             "Only IN_PROGRESS jobs can be completed."
         }
         return copy(
-                status = MaintenanceStatus.COMPLETED,
-                completedAt = timestamp,
-                laborCost = labor,
-                partsCost = parts
+            status = MaintenanceStatus.COMPLETED,
+            completedAt = timestamp,
+            laborCost = labor,
+            partsCost = parts,
         )
     }
 
@@ -124,15 +130,15 @@ data class MaintenanceJob(
 
 /** Maintenance part used in a job. */
 data class MaintenancePart(
-        val id: UUID,
-        val jobId: MaintenanceJobId,
-        val partNumber: String,
-        val partName: String,
-        val quantity: Int,
-        val unitCost: Int,
-        val currencyCode: String = "PHP",
-        val supplier: String? = null,
-        val notes: String? = null
+    val id: UUID,
+    val jobId: MaintenanceJobId,
+    val partNumber: String,
+    val partName: String,
+    val quantity: Int,
+    val unitCost: Int,
+    val currencyCode: String = "PHP",
+    val supplier: String? = null,
+    val notes: String? = null,
 ) {
     init {
         require(partNumber.isNotBlank()) { "Part number cannot be blank" }

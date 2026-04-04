@@ -5,7 +5,9 @@ import kotlinx.serialization.Serializable
 
 @JvmInline
 @Serializable
-value class VehicleId(val value: String) {
+value class VehicleId(
+    val value: String,
+) {
     init {
         require(value.isNotBlank()) { "Vehicle ID cannot be blank" }
     }
@@ -21,7 +23,7 @@ enum class VehicleType {
     BUS,
     MOTORCYCLE,
     AMBULANCE,
-    OTHER
+    OTHER,
 }
 
 /** Vehicle state in the fleet lifecycle. */
@@ -30,7 +32,7 @@ enum class VehicleState {
     AVAILABLE,
     RENTED,
     MAINTENANCE,
-    RETIRED
+    RETIRED,
 }
 
 /**
@@ -41,25 +43,25 @@ enum class VehicleState {
  */
 @Serializable
 data class Vehicle(
-        val id: VehicleId,
-        val vin: String? = null,
-        val licensePlate: String,
-        val make: String,
-        val model: String,
-        val year: Int,
-        val color: String? = null,
-        val vehicleType: VehicleType = VehicleType.OTHER,
-        val state: VehicleState = VehicleState.AVAILABLE,
-        val mileageKm: Int = 0,
-        val dailyRateAmount: Int? = null,
-        val currencyCode: String = "PHP",
-        val passengerCapacity: Int? = null,
-        val lastLocation: Location? = null,
-        val routeProgress: Double = 0.0,
-        val bearing: Double = 0.0,
-        val lastServiceMileage: Int? = null,
-        val nextServiceMileage: Int? = null,
-        val version: Long = 0
+    val id: VehicleId,
+    val vin: String? = null,
+    val licensePlate: String,
+    val make: String,
+    val model: String,
+    val year: Int,
+    val color: String? = null,
+    val vehicleType: VehicleType = VehicleType.OTHER,
+    val state: VehicleState = VehicleState.AVAILABLE,
+    val mileageKm: Int = 0,
+    val dailyRateAmount: Int? = null,
+    val currencyCode: String = "PHP",
+    val passengerCapacity: Int? = null,
+    val lastLocation: Location? = null,
+    val routeProgress: Double = 0.0,
+    val bearing: Double = 0.0,
+    val lastServiceMileage: Int? = null,
+    val nextServiceMileage: Int? = null,
+    val version: Long = 0,
 ) {
     init {
         vin?.let {

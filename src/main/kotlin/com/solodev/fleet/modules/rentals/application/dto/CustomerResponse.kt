@@ -49,53 +49,53 @@ data class CustomerDetailResponse(
             assignedDriver: CustomerDriverSummary? = null,
             activeVehicle: CustomerVehicleSummary? = null,
         ) = CustomerDetailResponse(
-            id                  = c.id.value,
-            userId              = c.userId?.toString(),
-            firstName           = c.firstName,
-            lastName            = c.lastName,
-            email               = c.email,
-            phone               = c.phone,
+            id = c.id.value,
+            userId = c.userId?.toString(),
+            firstName = c.firstName,
+            lastName = c.lastName,
+            email = c.email,
+            phone = c.phone,
             driverLicenseNumber = c.driverLicenseNumber,
-            licenseExpiryMs     = c.driverLicenseExpiry.toEpochMilli(),
-            address             = c.address,
-            city                = c.city,
-            state               = c.state,
-            postalCode          = c.postalCode,
-            country             = c.country,
-            isActive            = c.isActive,
-            createdAt           = c.createdAt.toEpochMilli(),
-            assignedDriver      = assignedDriver,
-            activeVehicle       = activeVehicle,
+            licenseExpiryMs = c.driverLicenseExpiry.toEpochMilli(),
+            address = c.address,
+            city = c.city,
+            state = c.state,
+            postalCode = c.postalCode,
+            country = c.country,
+            isActive = c.isActive,
+            createdAt = c.createdAt.toEpochMilli(),
+            assignedDriver = assignedDriver,
+            activeVehicle = activeVehicle,
         )
     }
 }
 
 @Serializable
 data class CustomerResponse(
-        val id: String,
-        val userId: String?,
-        val firstName: String,
-        val lastName: String,
-        val email: String,
-        val phone: String,
-        val driverLicenseNumber: String,
-        val licenseExpiryMs: Long,
-        val isActive: Boolean,
-        val createdAt: Long,
+    val id: String,
+    val userId: String?,
+    val firstName: String,
+    val lastName: String,
+    val email: String,
+    val phone: String,
+    val driverLicenseNumber: String,
+    val licenseExpiryMs: Long,
+    val isActive: Boolean,
+    val createdAt: Long,
 ) {
-        companion object {
-                fun fromDomain(c: Customer) =
-                        CustomerResponse(
-                                id = c.id.value,
-                                userId = c.userId?.toString(),
-                                firstName = c.firstName,
-                                lastName = c.lastName,
-                                email = c.email,
-                                phone = c.phone,
-                                driverLicenseNumber = c.driverLicenseNumber,
-                                licenseExpiryMs = c.driverLicenseExpiry.toEpochMilli(),
-                                isActive = c.isActive,
-                                createdAt = c.createdAt.toEpochMilli(),
-                        )
-        }
+    companion object {
+        fun fromDomain(c: Customer) =
+            CustomerResponse(
+                id = c.id.value,
+                userId = c.userId?.toString(),
+                firstName = c.firstName,
+                lastName = c.lastName,
+                email = c.email,
+                phone = c.phone,
+                driverLicenseNumber = c.driverLicenseNumber,
+                licenseExpiryMs = c.driverLicenseExpiry.toEpochMilli(),
+                isActive = c.isActive,
+                createdAt = c.createdAt.toEpochMilli(),
+            )
+    }
 }

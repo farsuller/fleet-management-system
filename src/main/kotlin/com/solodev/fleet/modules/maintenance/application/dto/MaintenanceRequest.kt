@@ -1,9 +1,8 @@
 package com.solodev.fleet.modules.maintenance.application.dto
 
-import kotlinx.serialization.Serializable
 import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJobType
 import com.solodev.fleet.modules.maintenance.domain.model.MaintenancePriority
-
+import kotlinx.serialization.Serializable
 
 @Serializable
 data class MaintenanceRequest(
@@ -11,8 +10,8 @@ data class MaintenanceRequest(
     val type: MaintenanceJobType,
     val priority: MaintenancePriority,
     val description: String,
-    val scheduledDate: Long, // Epoch ms
-    val estimatedCostPhp: Long // Amount in sub-units (e.g., cents)
+    val scheduledDate: Long,
+    val estimatedCostPhp: Long,
 ) {
     init {
         require(vehicleId.isNotBlank()) { "Vehicle ID required" }

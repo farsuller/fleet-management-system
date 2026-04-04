@@ -1,11 +1,11 @@
 package com.solodev.fleet.modules.maintenance.domain.model
 
-import java.util.UUID
 import org.junit.jupiter.api.Test
-import kotlin.test.*
+import java.util.UUID
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class MaintenancePartTest {
-
     private val jobId = MaintenanceJobId("job-001")
 
     @Test
@@ -17,7 +17,7 @@ class MaintenancePartTest {
                 partNumber = "",
                 partName = "Oil Filter",
                 quantity = 1,
-                unitCost = 50000
+                unitCost = 50000,
             )
         }
     }
@@ -31,7 +31,7 @@ class MaintenancePartTest {
                 partNumber = "PRT-001",
                 partName = "",
                 quantity = 1,
-                unitCost = 50000
+                unitCost = 50000,
             )
         }
     }
@@ -45,7 +45,7 @@ class MaintenancePartTest {
                 partNumber = "PRT-001",
                 partName = "Oil Filter",
                 quantity = 0,
-                unitCost = 50000
+                unitCost = 50000,
             )
         }
     }
@@ -59,21 +59,22 @@ class MaintenancePartTest {
                 partNumber = "PRT-001",
                 partName = "Oil Filter",
                 quantity = 1,
-                unitCost = -100
+                unitCost = -100,
             )
         }
     }
 
     @Test
     fun `totalCost is quantity times unitCost`() {
-        val part = MaintenancePart(
-            id = UUID.randomUUID(),
-            jobId = jobId,
-            partNumber = "PRT-001",
-            partName = "Oil Filter",
-            quantity = 3,
-            unitCost = 50000
-        )
+        val part =
+            MaintenancePart(
+                id = UUID.randomUUID(),
+                jobId = jobId,
+                partNumber = "PRT-001",
+                partName = "Oil Filter",
+                quantity = 3,
+                unitCost = 50000,
+            )
         assertEquals(150000, part.totalCost)
     }
 }

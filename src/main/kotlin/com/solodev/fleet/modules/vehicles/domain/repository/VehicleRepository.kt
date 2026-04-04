@@ -48,7 +48,10 @@ interface VehicleRepository {
     suspend fun deleteById(id: VehicleId): Boolean
 
     /** Record an odometer reading for a vehicle. */
-    suspend fun recordOdometerReading(vehicleId: VehicleId, readingKm: Int): String
+    suspend fun recordOdometerReading(
+        vehicleId: VehicleId,
+        readingKm: Int,
+    ): String
 
     /** Get odometer history for a vehicle. */
     suspend fun getOdometerHistory(vehicleId: VehicleId): List<Any>

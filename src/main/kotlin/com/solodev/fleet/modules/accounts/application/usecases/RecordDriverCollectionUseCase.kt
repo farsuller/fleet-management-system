@@ -18,11 +18,12 @@ import java.util.UUID
  */
 class RecordDriverCollectionUseCase(
     private val invoiceRepository: InvoiceRepository,
-    private val paymentRepository: PaymentRepository
+    private val paymentRepository: PaymentRepository,
 ) {
     suspend fun execute(request: DriverCollectionRequest): Payment {
-        val invoice = invoiceRepository.findById(UUID.fromString(request.invoiceId))
-            ?: throw IllegalArgumentException("Invoice not found: ${request.invoiceId}")
+        val invoice =
+            invoiceRepository.findById(UUID.fromString(request.invoiceId))
+                ?: throw IllegalArgumentException("Invoice not found: ${request.invoiceId}")
 
         require(invoice.customerId.value == request.customerId) {
             "Invoice does not belong to customer ${request.customerId}"
@@ -35,20 +36,21 @@ class RecordDriverCollectionUseCase(
             "Collection amount (${request.amount}) exceeds outstanding invoice balance (${invoice.balance})"
         }
 
-        val payment = Payment(
-            id = UUID.randomUUID(),
-            paymentNumber = "PAY-DRV-${System.currentTimeMillis()}",
-            customerId = invoice.customerId,
-            invoiceId = invoice.id,
-            driverId = UUID.fromString(request.driverId),
-            amount = request.amount,
-            paymentMethod = request.paymentMethod,
-            transactionReference = request.transactionReference,
-            status = PaymentStatus.PENDING,
-            paymentDate = Instant.parse(request.collectedAt),
-            collectionType = PaymentCollectionType.DRIVER_COLLECTED,
-            notes = "Collected by driver ${request.driverId} — awaiting remittance"
-        )
+        val payment =
+            Payment(
+                id = UUID.randomUUID(),
+                paymentNumber = "PAY-DRV-${System.currentTimeMillis()}",
+                customerId = invoice.customerId,
+                invoiceId = invoice.id,
+                driverId = UUID.fromString(request.driverId),
+                amount = request.amount,
+                paymentMethod = request.paymentMethod,
+                transactionReference = request.transactionReference,
+                status = PaymentStatus.PENDING,
+                paymentDate = Instant.parse(request.collectedAt),
+                collectionType = PaymentCollectionType.DRIVER_COLLECTED,
+                notes = "Collected by driver ${request.driverId} — awaiting remittance",
+            )
 
         return paymentRepository.save(payment)
     }

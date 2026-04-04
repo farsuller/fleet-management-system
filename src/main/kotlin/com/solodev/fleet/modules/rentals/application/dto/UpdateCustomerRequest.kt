@@ -14,5 +14,5 @@ data class UpdateCustomerRequest(
     val city: String? = null,
     val state: String? = null,
     val postalCode: String? = null,
-    val country: String? = null
+    val country: String? = null,
 )

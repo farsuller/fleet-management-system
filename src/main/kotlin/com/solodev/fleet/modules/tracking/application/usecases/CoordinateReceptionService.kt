@@ -9,7 +9,7 @@ import java.time.Instant
  * Uses Redis to ensure the state is synchronized across all backend nodes.
  */
 open class CoordinateReceptionService(
-    private val redisCache: RedisCacheManager
+    private val redisCache: RedisCacheManager,
 ) {
     companion object {
         private const val KEY_ENABLED = "fleet:tracking:coordinate_reception_enabled"
@@ -21,14 +21,15 @@ open class CoordinateReceptionService(
      * Checks if coordinate reception is globally enabled.
      * Defaults to true if not set.
      */
-    open suspend fun isReceptionEnabled(): Boolean {
-        return redisCache.getOrSet(KEY_ENABLED, 0) { true } ?: true
-    }
+    open suspend fun isReceptionEnabled(): Boolean = redisCache.getOrSet(KEY_ENABLED, 0) { true } ?: true
 
     /**
      * Sets the global coordinate reception status with audit trailing.
      */
-    open suspend fun setReceptionEnabled(enabled: Boolean, updatedBy: String): CoordinateReceptionStatus {
+    open suspend fun setReceptionEnabled(
+        enabled: Boolean,
+        updatedBy: String,
+    ): CoordinateReceptionStatus {
         val now = Instant.now()
         redisCache.set(KEY_ENABLED, enabled, 0)
         redisCache.set(KEY_UPDATED_AT, now.toString(), 0)
@@ -43,11 +44,11 @@ open class CoordinateReceptionService(
         val enabled = isReceptionEnabled()
         val updatedAtStr = redisCache.getOrSet(KEY_UPDATED_AT, 0) { Instant.EPOCH.toString() } ?: Instant.EPOCH.toString()
         val updatedBy = redisCache.getOrSet(KEY_UPDATED_BY, 0) { "system" } ?: "system"
-        
+
         return CoordinateReceptionStatus(
             enabled = enabled,
             updatedAt = Instant.parse(updatedAtStr),
-            updatedBy = updatedBy
+            updatedBy = updatedBy,
         )
     }
 }

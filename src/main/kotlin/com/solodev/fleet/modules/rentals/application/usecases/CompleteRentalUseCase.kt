@@ -3,7 +3,6 @@ package com.solodev.fleet.modules.rentals.application.usecases
 import com.solodev.fleet.modules.accounts.application.dto.InvoiceRequest
 import com.solodev.fleet.modules.accounts.application.usecases.IssueInvoiceUseCase
 import com.solodev.fleet.modules.accounts.domain.repository.InvoiceRepository
-import com.solodev.fleet.modules.rentals.domain.model.Rental
 import com.solodev.fleet.modules.rentals.domain.model.RentalId
 import com.solodev.fleet.modules.rentals.domain.model.RentalStatus
 import com.solodev.fleet.modules.rentals.domain.repository.RentalRepository
@@ -15,22 +14,25 @@ import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 class CompleteRentalUseCase(
-        private val rentalRepository: RentalRepository,
-        private val vehicleRepository: VehicleRepository,
-        private val issueInvoiceUseCase: IssueInvoiceUseCase,
-        private val invoiceRepository: InvoiceRepository
+    private val rentalRepository: RentalRepository,
+    private val vehicleRepository: VehicleRepository,
+    private val issueInvoiceUseCase: IssueInvoiceUseCase,
+    private val invoiceRepository: InvoiceRepository,
 ) {
-    suspend fun execute(id: String, finalMileage: Int? = null): RentalWithDetails {
+    suspend fun execute(
+        id: String,
+        finalMileage: Int? = null,
+    ): RentalWithDetails {
         val rentalId = RentalId(id)
         val rental =
-                rentalRepository.findById(rentalId)
-                        ?: throw IllegalArgumentException("Rental not found")
+            rentalRepository.findById(rentalId)
+                ?: throw IllegalArgumentException("Rental not found")
 
         require(rental.status == RentalStatus.ACTIVE) { "Can only complete active rentals" }
 
         val vehicle =
-                vehicleRepository.findById(rental.vehicleId)
-                        ?: throw IllegalStateException("Vehicle not found")
+            vehicleRepository.findById(rental.vehicleId)
+                ?: throw IllegalStateException("Vehicle not found")
 
         val actualEndOdo = finalMileage ?: vehicle.mileageKm
 
@@ -50,13 +52,14 @@ class CompleteRentalUseCase(
         // Auto-generate invoice if one does not already exist for this rental (idempotency guard)
         val rentalUUID = UUID.fromString(id)
         if (invoiceRepository.findByRentalId(rentalUUID) == null) {
-            val invoiceRequest = InvoiceRequest(
-                customerId = savedRental.customerId.value,
-                rentalId   = id,
-                subtotal   = savedRental.totalAmount,
-                tax        = 0,
-                dueDate    = Instant.now().plus(30, ChronoUnit.DAYS).toString()
-            )
+            val invoiceRequest =
+                InvoiceRequest(
+                    customerId = savedRental.customerId.value,
+                    rentalId = id,
+                    subtotal = savedRental.totalAmount,
+                    tax = 0,
+                    dueDate = Instant.now().plus(30, ChronoUnit.DAYS).toString(),
+                )
             issueInvoiceUseCase.execute(invoiceRequest)
         }
 

@@ -7,79 +7,85 @@ import com.solodev.fleet.modules.users.domain.model.Role
 import com.solodev.fleet.modules.users.domain.model.RoleId
 import com.solodev.fleet.modules.users.domain.repository.UserRepository
 import com.solodev.fleet.modules.users.domain.repository.VerificationTokenRepository
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 
 class RegisterCustomerUseCaseTest {
-
     private val customerRepository = mockk<CustomerRepository>()
-    private val userRepository     = mockk<UserRepository>()
-    private val tokenRepository    = mockk<VerificationTokenRepository>()
+    private val userRepository = mockk<UserRepository>()
+    private val tokenRepository = mockk<VerificationTokenRepository>()
     private val useCase = RegisterCustomerUseCase(customerRepository, userRepository, tokenRepository)
 
     private val customerRole = Role(id = RoleId("role-customer"), name = "CUSTOMER")
 
-    private val validRequest = CustomerRegistrationRequest(
-        email               = "customer@fleet.ph",
-        passwordRaw         = "secure-pass",
-        firstName           = "Ana",
-        lastName            = "Lim",
-        phone               = "+63917000003",
-        driversLicense      = "DL-CUST-001",
-        driverLicenseExpiry = "2030-06-30",
-    )
+    private val validRequest =
+        CustomerRegistrationRequest(
+            email = "customer@fleet.ph",
+            passwordRaw = "secure-pass",
+            firstName = "Ana",
+            lastName = "Lim",
+            phone = "+63917000003",
+            driversLicense = "DL-CUST-001",
+            driverLicenseExpiry = "2030-06-30",
+        )
 
     @Test
-    fun shouldRegisterCustomer_WhenAllDataIsUnique() = runBlocking {
-        val savedCustomer = slot<Customer>()
-        coEvery { customerRepository.findByEmail("customer@fleet.ph") } returns null
-        coEvery { customerRepository.findByDriverLicense("DL-CUST-001") } returns null
-        coEvery { userRepository.findByEmail("customer@fleet.ph") } returns null
-        coEvery { userRepository.findRoleByName("CUSTOMER") } returns customerRole
-        coEvery { userRepository.save(any()) } returnsArgument 0
-        coEvery { tokenRepository.save(any()) } returnsArgument 0
-        coEvery { customerRepository.save(capture(savedCustomer)) } returnsArgument 0
+    fun shouldRegisterCustomer_WhenAllDataIsUnique(): Unit =
+        runBlocking {
+            val savedCustomer = slot<Customer>()
+            coEvery { customerRepository.findByEmail("customer@fleet.ph") } returns null
+            coEvery { customerRepository.findByDriverLicense("DL-CUST-001") } returns null
+            coEvery { userRepository.findByEmail("customer@fleet.ph") } returns null
+            coEvery { userRepository.findRoleByName("CUSTOMER") } returns customerRole
+            coEvery { userRepository.save(any()) } returnsArgument 0
+            coEvery { tokenRepository.save(any()) } returnsArgument 0
+            coEvery { customerRepository.save(capture(savedCustomer)) } returnsArgument 0
 
-        val result = useCase.execute(validRequest)
+            val result = useCase.execute(validRequest)
 
-        assertThat(result.email).isEqualTo("customer@fleet.ph")
-        assertThat(result.firstName).isEqualTo("Ana")
-        assertThat(savedCustomer.captured.userId).isNotNull()
-    }
-
-    @Test
-    fun shouldLinkCustomerToUser_WhenRegistrationSucceeds() = runBlocking {
-        val savedCustomer = slot<Customer>()
-        coEvery { customerRepository.findByEmail("customer@fleet.ph") } returns null
-        coEvery { customerRepository.findByDriverLicense("DL-CUST-001") } returns null
-        coEvery { userRepository.findByEmail("customer@fleet.ph") } returns null
-        coEvery { userRepository.findRoleByName("CUSTOMER") } returns customerRole
-        coEvery { userRepository.save(any()) } returnsArgument 0
-        coEvery { tokenRepository.save(any()) } returnsArgument 0
-        coEvery { customerRepository.save(capture(savedCustomer)) } returnsArgument 0
-
-        useCase.execute(validRequest)
-
-        assertThat(savedCustomer.captured.userId).isNotNull()
-    }
+            assertThat(result.email).isEqualTo("customer@fleet.ph")
+            assertThat(result.firstName).isEqualTo("Ana")
+            assertThat(savedCustomer.captured.userId).isNotNull()
+        }
 
     @Test
-    fun shouldIssueVerificationToken_WhenRegistrationSucceeds() = runBlocking {
-        coEvery { customerRepository.findByEmail("customer@fleet.ph") } returns null
-        coEvery { customerRepository.findByDriverLicense("DL-CUST-001") } returns null
-        coEvery { userRepository.findByEmail("customer@fleet.ph") } returns null
-        coEvery { userRepository.findRoleByName("CUSTOMER") } returns customerRole
-        coEvery { userRepository.save(any()) } returnsArgument 0
-        coEvery { tokenRepository.save(any()) } returnsArgument 0
-        coEvery { customerRepository.save(any()) } returnsArgument 0
+    fun shouldLinkCustomerToUser_WhenRegistrationSucceeds(): Unit =
+        runBlocking {
+            val savedCustomer = slot<Customer>()
+            coEvery { customerRepository.findByEmail("customer@fleet.ph") } returns null
+            coEvery { customerRepository.findByDriverLicense("DL-CUST-001") } returns null
+            coEvery { userRepository.findByEmail("customer@fleet.ph") } returns null
+            coEvery { userRepository.findRoleByName("CUSTOMER") } returns customerRole
+            coEvery { userRepository.save(any()) } returnsArgument 0
+            coEvery { tokenRepository.save(any()) } returnsArgument 0
+            coEvery { customerRepository.save(capture(savedCustomer)) } returnsArgument 0
 
-        useCase.execute(validRequest)
+            useCase.execute(validRequest)
 
-        coVerify(exactly = 1) { tokenRepository.save(any()) }
-    }
+            assertThat(savedCustomer.captured.userId).isNotNull()
+        }
+
+    @Test
+    fun shouldIssueVerificationToken_WhenRegistrationSucceeds(): Unit =
+        runBlocking {
+            coEvery { customerRepository.findByEmail("customer@fleet.ph") } returns null
+            coEvery { customerRepository.findByDriverLicense("DL-CUST-001") } returns null
+            coEvery { userRepository.findByEmail("customer@fleet.ph") } returns null
+            coEvery { userRepository.findRoleByName("CUSTOMER") } returns customerRole
+            coEvery { userRepository.save(any()) } returnsArgument 0
+            coEvery { tokenRepository.save(any()) } returnsArgument 0
+            coEvery { customerRepository.save(any()) } returnsArgument 0
+
+            useCase.execute(validRequest)
+
+            coVerify(exactly = 1) { tokenRepository.save(any()) }
+        }
 
     @Test
     fun shouldThrowIllegalArgument_WhenCustomerEmailAlreadyExists() {

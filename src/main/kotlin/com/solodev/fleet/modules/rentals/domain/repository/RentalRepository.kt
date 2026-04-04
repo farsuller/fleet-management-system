@@ -13,7 +13,7 @@ data class RentalWithDetails(
     val vehiclePlateNumber: String?,
     val vehicleMake: String?,
     val vehicleModel: String?,
-    val customerName: String?
+    val customerName: String?,
 )
 
 /** Repository interface for Rental persistence. */
@@ -43,7 +43,7 @@ interface RentalRepository {
     suspend fun findConflictingRentals(
         vehicleId: VehicleId,
         startDate: Instant,
-        endDate: Instant
+        endDate: Instant,
     ): List<Rental>
 
     /** Find all rentals with a specific status. */
@@ -61,13 +61,13 @@ interface RentalRepository {
         limit: Int = 10,
         status: RentalStatus? = null,
         vehicleId: VehicleId? = null,
-        customerId: CustomerId? = null
+        customerId: CustomerId? = null,
     ): List<RentalWithDetails>
 
     /** Count total rentals matching the filters. */
     suspend fun count(
         status: RentalStatus? = null,
         vehicleId: VehicleId? = null,
-        customerId: CustomerId? = null
+        customerId: CustomerId? = null,
     ): Long
 }

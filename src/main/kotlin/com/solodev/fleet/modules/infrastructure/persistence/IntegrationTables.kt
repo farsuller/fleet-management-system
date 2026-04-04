@@ -1,7 +1,6 @@
 package com.solodev.fleet.modules.infrastructure.persistence
 
 import org.jetbrains.exposed.dao.id.UUIDTable
-import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.javatime.timestamp
 
 /** Exposed table definition for outbox events (transactional outbox pattern). */
@@ -11,14 +10,14 @@ object OutboxEventsTable : UUIDTable("outbox_events") {
     val eventType = varchar("event_type", 100)
     val payload = text("payload") // JSONB stored as text
     val metadata = text("metadata").nullable() // JSONB stored as text
-    
+
     // Publishing tracking
     val publishedAt = timestamp("published_at").nullable()
     val publishedToTopic = varchar("published_to_topic", 255).nullable()
     val publishAttempts = integer("publish_attempts").default(0)
     val lastPublishAttemptAt = timestamp("last_publish_attempt_at").nullable()
     val lastPublishError = text("last_publish_error").nullable()
-    
+
     // Metadata
     val occurredAt = timestamp("occurred_at")
     val createdAt = timestamp("created_at")

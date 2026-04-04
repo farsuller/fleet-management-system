@@ -33,7 +33,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class MaintenanceIntegrationTest : IntegrationTestBase() {
-
     private val adminId = UUID.randomUUID()
     private val adminEmail = "admin@fleet.ph"
     private lateinit var testVehicleId: UUID
@@ -81,137 +80,154 @@ class MaintenanceIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should schedule a maintenance job`() = testApplication {
-        configurePostgres()
-        application { module() }
+    fun `should schedule a maintenance job`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
 
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
-        val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
-        val request = MaintenanceRequest(
-            vehicleId = testVehicleId.toString(),
-            type = MaintenanceJobType.PREVENTIVE,
-            priority = MaintenancePriority.NORMAL,
-            description = "Test maintenance job description",
-            scheduledDate = Instant.now().plusSeconds(86400).toEpochMilli(),
-            estimatedCostPhp = 500000 // 5000.00
-        )
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
+            val request =
+                MaintenanceRequest(
+                    vehicleId = testVehicleId.toString(),
+                    type = MaintenanceJobType.PREVENTIVE,
+                    priority = MaintenancePriority.NORMAL,
+                    description = "Test maintenance job description",
+                    scheduledDate = Instant.now().plusSeconds(86400).toEpochMilli(),
+                    estimatedCostPhp = 500000, // 5000.00
+                )
 
-        client.post("/v1/maintenance/jobs") {
-            bearerAuth(token)
-            contentType(ContentType.Application.Json)
-            setBody(request)
-        }.let { response ->
-            assertEquals(HttpStatusCode.Created, response.status)
-            val apiResponse = response.body<ApiResponse<MaintenanceResponse>>()
-            assertTrue(apiResponse.success)
-            assertEquals("SCHEDULED", apiResponse.data!!.status.name)
+            client
+                .post("/v1/maintenance/jobs") {
+                    bearerAuth(token)
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.Created, response.status)
+                    val apiResponse = response.body<ApiResponse<MaintenanceResponse>>()
+                    assertTrue(apiResponse.success)
+                    assertEquals("SCHEDULED", apiResponse.data!!.status.name)
+                }
         }
-    }
 
     @Test
-    fun `should start a maintenance job`() = testApplication {
-        configurePostgres()
-        application { module() }
-        val jobId = seedMaintenanceJob()
+    fun `should start a maintenance job`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
+            val jobId = seedMaintenanceJob()
 
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
-        val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
 
-        client.post("/v1/maintenance/jobs/$jobId/start") {
-            bearerAuth(token)
-        }.let { response ->
-            assertEquals(HttpStatusCode.OK, response.status)
-            val apiResponse = response.body<ApiResponse<MaintenanceResponse>>()
-            assertEquals("IN_PROGRESS", apiResponse.data!!.status.name)
-            assertNotNull(apiResponse.data!!.startedAt)
+            client
+                .post("/v1/maintenance/jobs/$jobId/start") {
+                    bearerAuth(token)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.OK, response.status)
+                    val apiResponse = response.body<ApiResponse<MaintenanceResponse>>()
+                    assertEquals("IN_PROGRESS", apiResponse.data!!.status.name)
+                    assertNotNull(apiResponse.data!!.startedAt)
+                }
         }
-    }
 
     @Test
-    fun `should complete a maintenance job`() = testApplication {
-        configurePostgres()
-        application { module() }
-        val jobId = seedMaintenanceJob()
+    fun `should complete a maintenance job`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
+            val jobId = seedMaintenanceJob()
 
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
+
+            // Start it first
+            client.post("/v1/maintenance/jobs/$jobId/start") { bearerAuth(token) }
+
+            val completeRequest =
+                MaintenanceStatusUpdateRequest(
+                    laborCostPhp = 200000,
+                    partsCostPhp = 300000,
+                )
+
+            client
+                .post("/v1/maintenance/jobs/$jobId/complete") {
+                    bearerAuth(token)
+                    contentType(ContentType.Application.Json)
+                    setBody(completeRequest)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.OK, response.status)
+                    val apiResponse = response.body<ApiResponse<MaintenanceResponse>>()
+                    assertEquals("COMPLETED", apiResponse.data!!.status.name)
+                    assertNotNull(apiResponse.data!!.completedAt)
+                    assertEquals(500000L, apiResponse.data!!.totalCostPhp)
+                }
         }
-        val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
-
-        // Start it first
-        client.post("/v1/maintenance/jobs/$jobId/start") { bearerAuth(token) }
-
-        val completeRequest = MaintenanceStatusUpdateRequest(
-            laborCostPhp = 200000,
-            partsCostPhp = 300000
-        )
-
-        client.post("/v1/maintenance/jobs/$jobId/complete") {
-            bearerAuth(token)
-            contentType(ContentType.Application.Json)
-            setBody(completeRequest)
-        }.let { response ->
-            assertEquals(HttpStatusCode.OK, response.status)
-            val apiResponse = response.body<ApiResponse<MaintenanceResponse>>()
-            assertEquals("COMPLETED", apiResponse.data!!.status.name)
-            assertNotNull(apiResponse.data!!.completedAt)
-            assertEquals(500000L, apiResponse.data!!.totalCostPhp)
-        }
-    }
 
     @Test
-    fun `should cancel a maintenance job`() = testApplication {
-        configurePostgres()
-        application { module() }
-        val jobId = seedMaintenanceJob()
+    fun `should cancel a maintenance job`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
+            val jobId = seedMaintenanceJob()
 
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
-        val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
 
-        client.post("/v1/maintenance/jobs/$jobId/cancel") {
-            bearerAuth(token)
-        }.let { response ->
-            assertEquals(HttpStatusCode.OK, response.status)
-            val apiResponse = response.body<ApiResponse<MaintenanceResponse>>()
-            assertEquals("CANCELLED", apiResponse.data!!.status.name)
+            client
+                .post("/v1/maintenance/jobs/$jobId/cancel") {
+                    bearerAuth(token)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.OK, response.status)
+                    val apiResponse = response.body<ApiResponse<MaintenanceResponse>>()
+                    assertEquals("CANCELLED", apiResponse.data!!.status.name)
+                }
         }
-    }
 
     @Test
-    fun `should list all maintenance jobs`() = testApplication {
-        configurePostgres()
-        application { module() }
-        seedMaintenanceJob()
-        seedMaintenanceJob()
+    fun `should list all maintenance jobs`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
+            seedMaintenanceJob()
+            seedMaintenanceJob()
 
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
-        val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
 
-        client.get("/v1/maintenance/jobs") {
-            bearerAuth(token)
-        }.let { response ->
-            assertEquals(HttpStatusCode.OK, response.status)
-            val apiResponse = response.body<ApiResponse<List<MaintenanceResponse>>>()
-            assertTrue(apiResponse.success)
-            assertTrue(apiResponse.data!!.size >= 2)
+            client
+                .get("/v1/maintenance/jobs") {
+                    bearerAuth(token)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.OK, response.status)
+                    val apiResponse = response.body<ApiResponse<List<MaintenanceResponse>>>()
+                    assertTrue(apiResponse.success)
+                    assertTrue(apiResponse.data!!.size >= 2)
+                }
         }
-    }
 }

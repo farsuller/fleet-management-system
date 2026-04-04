@@ -1,42 +1,43 @@
 package com.solodev.fleet
 
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.server.config.*
-import io.ktor.server.testing.*
+import io.ktor.client.request.get
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.config.MapApplicationConfig
+import io.ktor.server.testing.ApplicationTestBuilder
+import io.ktor.server.testing.testApplication
 import org.junit.jupiter.api.Test
-import kotlin.test.*
+import kotlin.test.assertEquals
 
 class MigrationTest {
     private fun ApplicationTestBuilder.configureH2() {
         environment {
             config =
-                    MapApplicationConfig(
-                            "storage.jdbcUrl" to
-                                    "jdbc:h2:mem:test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
-                            "storage.username" to "sa",
-                            "storage.password" to "",
-                            "storage.driverClassName" to "org.h2.Driver",
-                            "storage.maximumPoolSize" to "2",
-                            "jwt.secret" to
-                                    "test-secret-at-least-64-bytes-long-for-hmac-sha256-security-1234567890",
-                            "jwt.issuer" to "test-issuer",
-                            "jwt.audience" to "test-audience",
-                            "jwt.realm" to "test-realm",
-                            "jwt.expiresIn" to "3600000",
-                            "redis.enabled" to "false"
-                    )
+                MapApplicationConfig(
+                    "storage.jdbcUrl" to
+                        "jdbc:h2:mem:test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
+                    "storage.username" to "sa",
+                    "storage.password" to "",
+                    "storage.driverClassName" to "org.h2.Driver",
+                    "storage.maximumPoolSize" to "2",
+                    "jwt.secret" to
+                        "test-secret-at-least-64-bytes-long-for-hmac-sha256-security-1234567890",
+                    "jwt.issuer" to "test-issuer",
+                    "jwt.audience" to "test-audience",
+                    "jwt.realm" to "test-realm",
+                    "jwt.expiresIn" to "3600000",
+                    "redis.enabled" to "false",
+                )
         }
     }
 
     @Test
-    fun testMigrationsRun() = testApplication {
-        configureH2()
-        application { module() }
+    fun testMigrationsRun() =
+        testApplication {
+            configureH2()
+            application { module() }
 
-        // If the application starts, migrations ran successfully
-        val response = client.get("/health")
-        assertEquals(HttpStatusCode.OK, response.status)
-    }
+            // If the application starts, migrations ran successfully
+            val response = client.get("/health")
+            assertEquals(HttpStatusCode.OK, response.status)
+        }
 }

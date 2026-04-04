@@ -4,8 +4,14 @@ import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJob
 import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJobId
 import com.solodev.fleet.modules.maintenance.domain.repository.MaintenanceRepository
 
-class CompleteMaintenanceUseCase(private val repository: MaintenanceRepository) {
-    suspend fun execute(jobId: String, laborCost: Long, partsCost: Long): MaintenanceJob {
+class CompleteMaintenanceUseCase(
+    private val repository: MaintenanceRepository,
+) {
+    suspend fun execute(
+        jobId: String,
+        laborCost: Long,
+        partsCost: Long,
+    ): MaintenanceJob {
         val job =
             repository.findById(MaintenanceJobId(jobId))
                 ?: throw IllegalArgumentException("Job not found")

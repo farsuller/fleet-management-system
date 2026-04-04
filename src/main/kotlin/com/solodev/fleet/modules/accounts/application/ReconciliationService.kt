@@ -1,21 +1,23 @@
 package com.solodev.fleet.modules.accounts.application
 
 import com.solodev.fleet.modules.accounts.domain.model.AccountType
-import com.solodev.fleet.modules.accounts.domain.repository.*
+import com.solodev.fleet.modules.accounts.domain.repository.AccountRepository
+import com.solodev.fleet.modules.accounts.domain.repository.InvoiceRepository
+import com.solodev.fleet.modules.accounts.domain.repository.LedgerRepository
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class DataMismatch(
-        val entityId: String,
-        val operationalValue: Long,
-        val ledgerValue: Long,
-        val type: String
+    val entityId: String,
+    val operationalValue: Long,
+    val ledgerValue: Long,
+    val type: String,
 )
 
 class ReconciliationService(
-        private val invoiceRepo: InvoiceRepository,
-        private val accountRepo: AccountRepository,
-        private val ledgerRepo: LedgerRepository
+    private val invoiceRepo: InvoiceRepository,
+    private val accountRepo: AccountRepository,
+    private val ledgerRepo: LedgerRepository,
 ) {
     /** Compares Invoice balances against specific Ledger Entry lines. */
     suspend fun verifyInvoices(): List<DataMismatch> {
@@ -26,18 +28,18 @@ class ReconciliationService(
         invoices.forEach { invoice ->
             // Use logical prefix to aggregate all partial payments for this invoice
             val ledgerPaid =
-                    ledgerRepo.calculateSumForPartialReference(
-                            "invoice-${invoice.id}-payment",
-                            arAccount.id
-                    )
+                ledgerRepo.calculateSumForPartialReference(
+                    "invoice-${invoice.id}-payment",
+                    arAccount.id,
+                )
             if (invoice.paidAmount.toLong() != ledgerPaid) {
                 mismatches.add(
-                        DataMismatch(
-                                invoice.id.toString(),
-                                invoice.paidAmount.toLong(),
-                                ledgerPaid,
-                                "INVOICE_LEDGER_MISMATCH"
-                        )
+                    DataMismatch(
+                        invoice.id.toString(),
+                        invoice.paidAmount.toLong(),
+                        ledgerPaid,
+                        "INVOICE_LEDGER_MISMATCH",
+                    ),
                 )
             }
         }

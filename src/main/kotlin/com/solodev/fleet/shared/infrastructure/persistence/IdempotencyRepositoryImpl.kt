@@ -1,13 +1,16 @@
 package com.solodev.fleet.shared.infrastructure.persistence
 
 import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.javatime.timestamp
 import org.jetbrains.exposed.sql.json.jsonb
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 
 class IdempotencyRepositoryImpl {
     /** Map to the 'idempotency_keys' table created in V006 migration */
@@ -23,18 +26,26 @@ class IdempotencyRepositoryImpl {
     }
 
     /** Lookup an existing key to see if this request was already processed */
-    fun find(key: String) = transaction {
-        IdempotencyKeys.selectAll().where { IdempotencyKeys.idempotencyKey eq key }
-            .map {
-                StoredResponse(
-                    it[IdempotencyKeys.responseStatus],
-                    it[IdempotencyKeys.responseBody]
-                )
-            }.singleOrNull()
-    }
+    fun find(key: String) =
+        transaction {
+            IdempotencyKeys
+                .selectAll()
+                .where { IdempotencyKeys.idempotencyKey eq key }
+                .map {
+                    StoredResponse(
+                        it[IdempotencyKeys.responseStatus],
+                        it[IdempotencyKeys.responseBody],
+                    )
+                }.singleOrNull()
+        }
 
     /** Claim a key to prevent other concurrent requests with the same key */
-    fun create(key: String, path: String, method: String, ttlMinutes: Long = 60) = transaction {
+    fun create(
+        key: String,
+        path: String,
+        method: String,
+        ttlMinutes: Long = 60,
+    ) = transaction {
         IdempotencyKeys.insert {
             it[id] = UUID.randomUUID()
             it[idempotencyKey] = key
@@ -45,7 +56,11 @@ class IdempotencyRepositoryImpl {
     }
 
     /** Store the final successful or failed response for future retries */
-    fun updateResponse(key: String, status: Int, body: String) = transaction {
+    fun updateResponse(
+        key: String,
+        status: Int,
+        body: String,
+    ) = transaction {
         IdempotencyKeys.update({ IdempotencyKeys.idempotencyKey eq key }) {
             it[responseStatus] = status
             it[responseBody] = body
@@ -53,4 +68,7 @@ class IdempotencyRepositoryImpl {
     }
 }
 
-data class StoredResponse(val status: Int?, val body: String?)
+data class StoredResponse(
+    val status: Int?,
+    val body: String?,
+)

@@ -1,11 +1,14 @@
 package com.solodev.fleet.modules.rentals.domain.model
 
-import java.time.Instant
 import org.junit.jupiter.api.Test
-import kotlin.test.*
+import java.time.Instant
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class CustomerTest {
-
     @Test
     fun `CustomerId rejects blank value`() {
         assertFailsWith<IllegalArgumentException> {
@@ -92,4 +95,3 @@ class CustomerTest {
         createdAt = createdAt,
     )
 }
-

@@ -128,12 +128,16 @@ The system provides a comprehensive REST API documented via Swagger/OpenAPI.
 
 ## 🚀 Getting Started
 
-### Prerequisites
-- **JDK 17/21**
-- **Docker Desktop** (Required for local DB & Redis)
-- **Git**
+### Quick Start Commands
 
-### Local Setup
+| Action | Command |
+| :--- | :--- |
+| **Format Code** | `./gradlew spotlessApply` |
+| **Run Tests** | `./gradlew test` |
+| **Build Project** | `./gradlew build` |
+| **Run App** | `./gradlew run` |
+
+### Detailed Local Setup
 1. **Clone the repository**:
    ```bash
    git clone https://github.com/farsuller/fleet-management-system.git
@@ -147,9 +151,11 @@ The system provides a comprehensive REST API documented via Swagger/OpenAPI.
    ```bash
    docker-compose up -d
    ```
-4. **Run Application**:
+4. **Prepare & Run**:
    ```bash
-   ./gradlew run
+   ./gradlew spotlessApply  # Standardize formatting
+   ./gradlew build          # Compile and verify
+   ./gradlew run            # Launch application
    ```
 
 ---

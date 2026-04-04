@@ -29,11 +29,9 @@ import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class CustomerIntegrationTest : IntegrationTestBase() {
-
     private val adminId = UUID.randomUUID()
     private val adminEmail = "admin@fleet.ph"
 
@@ -62,137 +60,154 @@ class CustomerIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should create a customer`() = testApplication {
-        configurePostgres()
-        application { module() }
+    fun `should create a customer`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
 
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+
+            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
+            val request =
+                CustomerRequest(
+                    firstName = "John",
+                    lastName = "Doe",
+                    email = "john@example.com",
+                    phone = "+639000000000",
+                    driversLicense = "DL-12345",
+                    driverLicenseExpiry = LocalDate.now().plusYears(1).toString(),
+                    address = "123 Street",
+                    city = "Manila",
+                    state = "NCR",
+                    postalCode = "1000",
+                    country = "Philippines",
+                )
+
+            client
+                .post("/v1/customers") {
+                    bearerAuth(token)
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.Created, response.status)
+                    val apiResponse = response.body<ApiResponse<CustomerResponse>>()
+                    assertTrue(apiResponse.success)
+                    assertEquals("john@example.com", apiResponse.data!!.email)
+                }
         }
-
-        val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
-        val request = CustomerRequest(
-            firstName = "John",
-            lastName = "Doe",
-            email = "john@example.com",
-            phone = "+639000000000",
-            driversLicense = "DL-12345",
-            driverLicenseExpiry = LocalDate.now().plusYears(1).toString(),
-            address = "123 Street",
-            city = "Manila",
-            state = "NCR",
-            postalCode = "1000",
-            country = "Philippines"
-        )
-
-        client.post("/v1/customers") {
-            bearerAuth(token)
-            contentType(ContentType.Application.Json)
-            setBody(request)
-        }.let { response ->
-            assertEquals(HttpStatusCode.Created, response.status)
-            val apiResponse = response.body<ApiResponse<CustomerResponse>>()
-            assertTrue(apiResponse.success)
-            assertEquals("john@example.com", apiResponse.data!!.email)
-        }
-    }
 
     @Test
-    fun `should list customers`() = testApplication {
-        configurePostgres()
-        application { module() }
-        seedCustomer("cust1@example.com")
-        seedCustomer("cust2@example.com")
+    fun `should list customers`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
+            seedCustomer("cust1@example.com")
+            seedCustomer("cust2@example.com")
 
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
-        val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
 
-        client.get("/v1/customers") {
-            bearerAuth(token)
-        }.let { response ->
-            assertEquals(HttpStatusCode.OK, response.status)
-            val apiResponse = response.body<ApiResponse<List<CustomerResponse>>>()
-            assertTrue(apiResponse.success)
-            assertEquals(2, apiResponse.data!!.size)
+            client
+                .get("/v1/customers") {
+                    bearerAuth(token)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.OK, response.status)
+                    val apiResponse = response.body<ApiResponse<List<CustomerResponse>>>()
+                    assertTrue(apiResponse.success)
+                    assertEquals(2, apiResponse.data!!.size)
+                }
         }
-    }
 
     @Test
-    fun `should get customer by id`() = testApplication {
-        configurePostgres()
-        application { module() }
-        val id = seedCustomer("get@customer.ph")
+    fun `should get customer by id`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
+            val id = seedCustomer("get@customer.ph")
 
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
-        val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
 
-        client.get("/v1/customers/$id") {
-            bearerAuth(token)
-        }.let { response ->
-            assertEquals(HttpStatusCode.OK, response.status)
-            val apiResponse = response.body<ApiResponse<CustomerDetailResponse>>()
-            assertEquals("get@customer.ph", apiResponse.data!!.email)
+            client
+                .get("/v1/customers/$id") {
+                    bearerAuth(token)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.OK, response.status)
+                    val apiResponse = response.body<ApiResponse<CustomerDetailResponse>>()
+                    assertEquals("get@customer.ph", apiResponse.data!!.email)
+                }
         }
-    }
 
     @Test
-    fun `should update customer`() = testApplication {
-        configurePostgres()
-        application { module() }
-        val id = seedCustomer("old@customer.ph")
+    fun `should update customer`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
+            val id = seedCustomer("old@customer.ph")
 
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
-        val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
-        val updateRequest = UpdateCustomerRequest(
-            firstName = "Updated",
-            lastName = "Name"
-        )
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
+            val updateRequest =
+                UpdateCustomerRequest(
+                    firstName = "Updated",
+                    lastName = "Name",
+                )
 
-        client.patch("/v1/customers/$id") {
-            bearerAuth(token)
-            contentType(ContentType.Application.Json)
-            setBody(updateRequest)
-        }.let { response ->
-            assertEquals(HttpStatusCode.OK, response.status)
-            val apiResponse = response.body<ApiResponse<CustomerResponse>>()
-            assertEquals("Updated", apiResponse.data!!.firstName)
-            assertEquals("Name", apiResponse.data!!.lastName)
+            client
+                .patch("/v1/customers/$id") {
+                    bearerAuth(token)
+                    contentType(ContentType.Application.Json)
+                    setBody(updateRequest)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.OK, response.status)
+                    val apiResponse = response.body<ApiResponse<CustomerResponse>>()
+                    assertEquals("Updated", apiResponse.data!!.firstName)
+                    assertEquals("Name", apiResponse.data!!.lastName)
+                }
         }
-    }
 
     @Test
-    fun `should deactivate customer`() = testApplication {
-        configurePostgres()
-        application { module() }
-        val id = seedCustomer("active@customer.ph")
+    fun `should deactivate customer`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
+            val id = seedCustomer("active@customer.ph")
 
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
-        val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
 
-        client.patch("/v1/customers/$id/deactivate") {
-            bearerAuth(token)
-        }.let { response ->
-            assertEquals(HttpStatusCode.OK, response.status)
-            val apiResponse = response.body<ApiResponse<CustomerResponse>>()
-            assertTrue(!apiResponse.data!!.isActive)
+            client
+                .patch("/v1/customers/$id/deactivate") {
+                    bearerAuth(token)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.OK, response.status)
+                    val apiResponse = response.body<ApiResponse<CustomerResponse>>()
+                    assertTrue(!apiResponse.data!!.isActive)
+                }
         }
-    }
 }

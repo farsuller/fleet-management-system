@@ -6,9 +6,12 @@ import com.solodev.fleet.modules.vehicles.domain.model.VehicleState
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 
 class UpdateVehicleStateUseCase(
-    private val repository: VehicleRepository
+    private val repository: VehicleRepository,
 ) {
-    suspend fun execute(id: String, newState: String): Vehicle? {
+    suspend fun execute(
+        id: String,
+        newState: String,
+    ): Vehicle? {
         val vehicle = repository.findById(VehicleId(id)) ?: return null
         val state = VehicleState.valueOf(newState)
 

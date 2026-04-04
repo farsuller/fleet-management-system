@@ -5,75 +5,82 @@ import com.solodev.fleet.modules.accounts.domain.model.Account
 import com.solodev.fleet.modules.accounts.domain.model.AccountId
 import com.solodev.fleet.modules.accounts.domain.model.AccountType
 import com.solodev.fleet.modules.accounts.domain.repository.AccountRepository
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 
 class ManageAccountUseCaseTest {
-
     private val repository = mockk<AccountRepository>()
     private val useCase = ManageAccountUseCase(repository)
 
-    private val existingAccount = Account(
-        id = AccountId("account-1"),
-        accountCode = "1100",
-        accountName = "Accounts Receivable",
-        accountType = AccountType.ASSET,
-        isActive = true
-    )
-
-    @Test
-    fun shouldCreateAccount_WhenRequestIsValid() = runBlocking {
-        // Arrange
-        val request = AccountRequest(
-            accountCode = "5000",
-            accountName = "Operating Expenses",
-            accountType = "EXPENSE"
-        )
-        val savedSlot = slot<Account>()
-        coEvery { repository.save(capture(savedSlot)) } returnsArgument 0
-
-        // Act
-        val result = useCase.create(request)
-
-        // Assert
-        assertThat(result.accountCode).isEqualTo("5000")
-        assertThat(result.accountName).isEqualTo("Operating Expenses")
-        assertThat(result.accountType).isEqualTo(AccountType.EXPENSE)
-        assertThat(savedSlot.captured.isActive).isTrue()
-    }
-
-    @Test
-    fun shouldUpdateAccount_WhenAccountExists() = runBlocking {
-        // Arrange
-        val request = AccountRequest(
+    private val existingAccount =
+        Account(
+            id = AccountId("account-1"),
             accountCode = "1100",
-            accountName = "Trade Receivables",
-            accountType = "ASSET"
+            accountName = "Accounts Receivable",
+            accountType = AccountType.ASSET,
+            isActive = true,
         )
-        val savedSlot = slot<Account>()
-        coEvery { repository.findById(AccountId("account-1")) } returns existingAccount
-        coEvery { repository.save(capture(savedSlot)) } returnsArgument 0
 
-        // Act
-        val result = useCase.update("account-1", request)
+    @Test
+    fun shouldCreateAccount_WhenRequestIsValid(): Unit =
+        runBlocking {
+            // Arrange
+            val request =
+                AccountRequest(
+                    accountCode = "5000",
+                    accountName = "Operating Expenses",
+                    accountType = "EXPENSE",
+                )
+            val savedSlot = slot<Account>()
+            coEvery { repository.save(capture(savedSlot)) } returnsArgument 0
 
-        // Assert
-        assertThat(result.accountName).isEqualTo("Trade Receivables")
-        assertThat(savedSlot.captured.accountName).isEqualTo("Trade Receivables")
-        assertThat(savedSlot.captured.accountCode).isEqualTo("1100") // unchanged
-    }
+            // Act
+            val result = useCase.create(request)
+
+            // Assert
+            assertThat(result.accountCode).isEqualTo("5000")
+            assertThat(result.accountName).isEqualTo("Operating Expenses")
+            assertThat(result.accountType).isEqualTo(AccountType.EXPENSE)
+            assertThat(savedSlot.captured.isActive).isTrue()
+        }
+
+    @Test
+    fun shouldUpdateAccount_WhenAccountExists(): Unit =
+        runBlocking {
+            // Arrange
+            val request =
+                AccountRequest(
+                    accountCode = "1100",
+                    accountName = "Trade Receivables",
+                    accountType = "ASSET",
+                )
+            val savedSlot = slot<Account>()
+            coEvery { repository.findById(AccountId("account-1")) } returns existingAccount
+            coEvery { repository.save(capture(savedSlot)) } returnsArgument 0
+
+            // Act
+            val result = useCase.update("account-1", request)
+
+            // Assert
+            assertThat(result.accountName).isEqualTo("Trade Receivables")
+            assertThat(savedSlot.captured.accountName).isEqualTo("Trade Receivables")
+            assertThat(savedSlot.captured.accountCode).isEqualTo("1100") // unchanged
+        }
 
     @Test
     fun shouldThrowNoSuchElement_WhenUpdatingNonExistentAccount() {
         // Arrange
-        val request = AccountRequest(
-            accountCode = "9999",
-            accountName = "Ghost Account",
-            accountType = "ASSET"
-        )
+        val request =
+            AccountRequest(
+                accountCode = "9999",
+                accountName = "Ghost Account",
+                accountType = "ASSET",
+            )
         coEvery { repository.findById(AccountId("unknown")) } returns null
 
         // Act + Assert
@@ -83,26 +90,28 @@ class ManageAccountUseCaseTest {
     }
 
     @Test
-    fun shouldReturnTrue_WhenDeletingExistingAccount() = runBlocking {
-        // Arrange
-        coEvery { repository.delete(AccountId("account-1")) } returns true
+    fun shouldReturnTrue_WhenDeletingExistingAccount(): Unit =
+        runBlocking {
+            // Arrange
+            coEvery { repository.delete(AccountId("account-1")) } returns true
 
-        // Act
-        val result = useCase.delete("account-1")
+            // Act
+            val result = useCase.delete("account-1")
 
-        // Assert
-        assertThat(result).isTrue()
-    }
+            // Assert
+            assertThat(result).isTrue()
+        }
 
     @Test
-    fun shouldReturnFalse_WhenDeletingNonExistentAccount() = runBlocking {
-        // Arrange
-        coEvery { repository.delete(AccountId("unknown")) } returns false
+    fun shouldReturnFalse_WhenDeletingNonExistentAccount(): Unit =
+        runBlocking {
+            // Arrange
+            coEvery { repository.delete(AccountId("unknown")) } returns false
 
-        // Act
-        val result = useCase.delete("unknown")
+            // Act
+            val result = useCase.delete("unknown")
 
-        // Assert
-        assertThat(result).isFalse()
-    }
+            // Assert
+            assertThat(result).isFalse()
+        }
 }

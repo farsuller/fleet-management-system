@@ -1,15 +1,15 @@
 package com.solodev.fleet
 
-import com.solodev.fleet.modules.tracking.infrastructure.persistence.PostGISAdapter
+import com.solodev.fleet.modules.tracking.infrastructure.persistence.PostGisAdapter
 import com.solodev.fleet.modules.tracking.infrastructure.persistence.RoutesTable
 import com.solodev.fleet.shared.domain.model.Location
-import java.util.*
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.postgis.PGgeometry
+import java.util.UUID
 
 /**
  * PostGIS Adapter Integration Tests
@@ -18,8 +18,7 @@ import org.postgis.PGgeometry
  * automatically on each test run.
  */
 class PostGISAdapterTest : BaseSpatialTest() {
-
-    private val adapter = PostGISAdapter()
+    private val adapter = PostGisAdapter()
 
     @Test
     fun `should snap location to route`() {
@@ -55,9 +54,9 @@ class PostGISAdapterTest : BaseSpatialTest() {
                 it[name] = "Test Depot"
                 it[type] = "DEPOT"
                 it[boundary] =
-                        PGgeometry(
-                                "SRID=4326;POLYGON((121.100 14.700, 121.110 14.700, 121.110 14.710, 121.100 14.710, 121.100 14.700))"
-                        )
+                    PGgeometry(
+                        "SRID=4326;POLYGON((121.100 14.700, 121.110 14.700, 121.110 14.710, 121.100 14.710, 121.100 14.700))",
+                    )
             }
         }
 

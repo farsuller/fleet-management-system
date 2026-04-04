@@ -4,10 +4,10 @@ import com.solodev.fleet.modules.drivers.application.dto.DriverRegistrationReque
 import com.solodev.fleet.modules.drivers.domain.model.Driver
 import com.solodev.fleet.modules.drivers.domain.model.DriverId
 import com.solodev.fleet.modules.drivers.domain.repository.DriverRepository
+import com.solodev.fleet.modules.users.domain.model.TokenType
 import com.solodev.fleet.modules.users.domain.model.User
 import com.solodev.fleet.modules.users.domain.model.UserId
 import com.solodev.fleet.modules.users.domain.model.VerificationToken
-import com.solodev.fleet.modules.users.domain.model.TokenType
 import com.solodev.fleet.modules.users.domain.repository.UserRepository
 import com.solodev.fleet.modules.users.domain.repository.VerificationTokenRepository
 import com.solodev.fleet.shared.utils.PasswordHasher
@@ -40,58 +40,62 @@ class RegisterDriverUseCase(
             "An account with email ${request.email} already exists"
         }
 
-        val licenseExpiry = try {
-            LocalDate.parse(request.licenseExpiry).atStartOfDay().toInstant(ZoneOffset.UTC)
-        } catch (e: Exception) {
-            throw IllegalArgumentException("Invalid license expiry date format. Expected YYYY-MM-DD")
-        }
+        val licenseExpiry =
+            try {
+                LocalDate.parse(request.licenseExpiry).atStartOfDay().toInstant(ZoneOffset.UTC)
+            } catch (e: Exception) {
+                throw IllegalArgumentException("Invalid license expiry date format. Expected YYYY-MM-DD")
+            }
         require(licenseExpiry.isAfter(Instant.now())) { "Driver license is expired" }
 
-        val driverRole = userRepository.findRoleByName("DRIVER")
-            ?: throw IllegalStateException("DRIVER role not found in database")
+        val driverRole =
+            userRepository.findRoleByName("DRIVER")
+                ?: throw IllegalStateException("DRIVER role not found in database")
 
         val userId = UserId(UUID.randomUUID().toString())
-        val user = User(
-            id           = userId,
-            email        = request.email,
-            passwordHash = PasswordHasher.hash(request.passwordRaw),
-            firstName    = request.firstName,
-            lastName     = request.lastName,
-            phone        = request.phone,
-            isVerified   = false,
-            roles        = listOf(driverRole),
-        )
+        val user =
+            User(
+                id = userId,
+                email = request.email,
+                passwordHash = PasswordHasher.hash(request.passwordRaw),
+                firstName = request.firstName,
+                lastName = request.lastName,
+                phone = request.phone,
+                isVerified = false,
+                roles = listOf(driverRole),
+            )
         val savedUser = userRepository.save(user)
 
         val token = UUID.randomUUID().toString()
         tokenRepository.save(
             VerificationToken(
-                userId    = savedUser.id,
-                token     = token,
-                type      = TokenType.EMAIL_VERIFICATION,
+                userId = savedUser.id,
+                token = token,
+                type = TokenType.EMAIL_VERIFICATION,
                 expiresAt = Instant.now().plus(24, ChronoUnit.HOURS),
-            )
+            ),
         )
         println("----------------------------------------------------------------")
         println("DRIVER VERIFICATION LINK: http://localhost:8080/v1/auth/verify?token=$token")
         println("----------------------------------------------------------------")
 
-        val driver = Driver(
-            id             = DriverId(UUID.randomUUID().toString()),
-            userId         = UUID.fromString(savedUser.id.value),
-            firstName      = request.firstName,
-            lastName       = request.lastName,
-            email          = request.email,
-            phone          = request.phone ?: "",
-            licenseNumber  = request.licenseNumber,
-            licenseExpiry  = licenseExpiry,
-            licenseClass   = request.licenseClass,
-            address        = request.address,
-            city           = request.city,
-            state          = request.state,
-            postalCode     = request.postalCode,
-            country        = request.country,
-        )
+        val driver =
+            Driver(
+                id = DriverId(UUID.randomUUID().toString()),
+                userId = UUID.fromString(savedUser.id.value),
+                firstName = request.firstName,
+                lastName = request.lastName,
+                email = request.email,
+                phone = request.phone ?: "",
+                licenseNumber = request.licenseNumber,
+                licenseExpiry = licenseExpiry,
+                licenseClass = request.licenseClass,
+                address = request.address,
+                city = request.city,
+                state = request.state,
+                postalCode = request.postalCode,
+                country = request.country,
+            )
         return driverRepository.save(driver)
     }
 }

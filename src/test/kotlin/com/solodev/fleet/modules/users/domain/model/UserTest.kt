@@ -1,10 +1,11 @@
 package com.solodev.fleet.modules.users.domain.model
 
 import org.junit.jupiter.api.Test
-import kotlin.test.*
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 
 class UserTest {
-
     @Test
     fun `UserId rejects blank value`() {
         assertFailsWith<IllegalArgumentException> {
@@ -30,16 +31,15 @@ class UserTest {
         assertFalse(user.isVerified)
     }
 
-    private fun sampleUser(
-        isVerified: Boolean = true
-    ) = User(
-        id = UserId("a8098c1a-f86e-11da-bd1a-00112444be1e"),
-        email = "juan@fleet.ph",
-        firstName = "Juan",
-        lastName = "dela Cruz",
-        passwordHash = "hashed_password",
-        phone = "+63912345678",
-        isVerified = isVerified,
-        roles = emptyList()
-    )
+    private fun sampleUser(isVerified: Boolean = true) =
+        User(
+            id = UserId("a8098c1a-f86e-11da-bd1a-00112444be1e"),
+            email = "juan@fleet.ph",
+            firstName = "Juan",
+            lastName = "dela Cruz",
+            passwordHash = "hashed_password",
+            phone = "+63912345678",
+            isVerified = isVerified,
+            roles = emptyList(),
+        )
 }

@@ -1,10 +1,7 @@
 package com.solodev.fleet.modules.maintenance.application.dto
 
-import com.solodev.fleet.modules.maintenance.domain.model.IncidentSeverity
-import com.solodev.fleet.modules.maintenance.domain.model.IncidentStatus
 import com.solodev.fleet.modules.maintenance.domain.model.VehicleIncident
 import kotlinx.serialization.Serializable
-import java.time.Instant
 
 @Serializable
 data class ReportIncidentRequest(
@@ -13,7 +10,7 @@ data class ReportIncidentRequest(
     val severity: String, // String to be mapped to enum
     val odometerKm: Int? = null,
     val latitude: Double? = null,
-    val longitude: Double? = null
+    val longitude: Double? = null,
 )
 
 @Serializable
@@ -30,10 +27,13 @@ data class IncidentResponse(
     val maintenanceJobId: String? = null,
     val odometerKm: Int? = null,
     val latitude: Double? = null,
-    val longitude: Double? = null
+    val longitude: Double? = null,
 ) {
     companion object {
-        fun fromDomain(incident: VehicleIncident, vehiclePlate: String? = null) = IncidentResponse(
+        fun fromDomain(
+            incident: VehicleIncident,
+            vehiclePlate: String? = null,
+        ) = IncidentResponse(
             id = incident.id.value.toString(),
             vehicleId = incident.vehicleId.value,
             vehiclePlate = incident.vehiclePlate ?: vehiclePlate,
@@ -46,7 +46,7 @@ data class IncidentResponse(
             maintenanceJobId = incident.maintenanceJobId?.value,
             odometerKm = incident.odometerKm,
             latitude = incident.latitude,
-            longitude = incident.longitude
+            longitude = incident.longitude,
         )
     }
 }

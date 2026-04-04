@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Location(
     val latitude: Double,
-    val longitude: Double
+    val longitude: Double,
 ) {
     init {
         require(latitude in -90.0..90.0) { "Latitude must be between -90 and 90" }

@@ -4,9 +4,7 @@ import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 
 class DeleteVehicleUseCase(
-    private val repository: VehicleRepository
+    private val repository: VehicleRepository,
 ) {
-    suspend fun execute(id: String): Boolean {
-        return repository.deleteById(VehicleId(id))
-    }
+    suspend fun execute(id: String): Boolean = repository.deleteById(VehicleId(id))
 }

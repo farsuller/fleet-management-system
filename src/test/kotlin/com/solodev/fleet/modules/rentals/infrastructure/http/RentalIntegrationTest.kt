@@ -5,7 +5,6 @@ import com.solodev.fleet.configurePostgres
 import com.solodev.fleet.module
 import com.solodev.fleet.modules.rentals.application.dto.RentalRequest
 import com.solodev.fleet.modules.rentals.application.dto.RentalResponse
-import com.solodev.fleet.modules.rentals.application.dto.UpdateRentalRequest
 import com.solodev.fleet.modules.rentals.infrastructure.persistence.CustomersTable
 import com.solodev.fleet.modules.rentals.infrastructure.persistence.RentalsTable
 import com.solodev.fleet.modules.vehicles.infrastructure.persistence.VehiclesTable
@@ -13,8 +12,6 @@ import com.solodev.fleet.shared.models.ApiResponse
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.bearerAuth
-import io.ktor.client.request.get
-import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -34,7 +31,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class RentalIntegrationTest : IntegrationTestBase() {
-
     private val adminId = UUID.randomUUID()
     private val adminEmail = "admin@fleet.ph"
 
@@ -105,106 +101,119 @@ class RentalIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should create a rental`() = testApplication {
-        configurePostgres()
-        application { module() }
+    fun `should create a rental`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
 
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
-        val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
-        val request = RentalRequest(
-            customerId = testCustomerId.toString(),
-            vehicleId = testVehicleId.toString(),
-            startDate = Instant.now().plusSeconds(3600).toString(),
-            endDate = Instant.now().plusSeconds(86400).toString(),
-            dailyRateAmount = 1500L
-        )
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
+            val request =
+                RentalRequest(
+                    customerId = testCustomerId.toString(),
+                    vehicleId = testVehicleId.toString(),
+                    startDate = Instant.now().plusSeconds(3600).toString(),
+                    endDate = Instant.now().plusSeconds(86400).toString(),
+                    dailyRateAmount = 1500L,
+                )
 
-        client.post("/v1/rentals") {
-            bearerAuth(token)
-            contentType(ContentType.Application.Json)
-            setBody(request)
-        }.let { response ->
-            assertEquals(HttpStatusCode.Created, response.status)
-            val apiResponse = response.body<ApiResponse<RentalResponse>>()
-            assertTrue(apiResponse.success)
-            assertEquals("RESERVED", apiResponse.data!!.status)
+            client
+                .post("/v1/rentals") {
+                    bearerAuth(token)
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.Created, response.status)
+                    val apiResponse = response.body<ApiResponse<RentalResponse>>()
+                    assertTrue(apiResponse.success)
+                    assertEquals("RESERVED", apiResponse.data!!.status)
+                }
         }
-    }
 
     @Test
-    fun `should activate a rental`() = testApplication {
-        configurePostgres()
-        application { module() }
-        val rentalId = seedRental()
+    fun `should activate a rental`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
+            val rentalId = seedRental()
 
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
-        val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
 
-        client.post("/v1/rentals/$rentalId/activate") {
-            bearerAuth(token)
-        }.let { response ->
-            assertEquals(HttpStatusCode.OK, response.status)
-            val apiResponse = response.body<ApiResponse<RentalResponse>>()
-            assertEquals("ACTIVE", apiResponse.data!!.status)
-            assertNotNull(apiResponse.data!!.actualStartDate)
+            client
+                .post("/v1/rentals/$rentalId/activate") {
+                    bearerAuth(token)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.OK, response.status)
+                    val apiResponse = response.body<ApiResponse<RentalResponse>>()
+                    assertEquals("ACTIVE", apiResponse.data!!.status)
+                    assertNotNull(apiResponse.data!!.actualStartDate)
+                }
         }
-    }
 
     @Test
-    fun `should complete a rental`() = testApplication {
-        configurePostgres()
-        application { module() }
-        val rentalId = seedRental()
-        
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
-        val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
-        client.post("/v1/rentals/$rentalId/activate") { 
-            bearerAuth(token)
-        }
+    fun `should complete a rental`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
+            val rentalId = seedRental()
 
-        client.post("/v1/rentals/$rentalId/complete") {
-            bearerAuth(token)
-            contentType(ContentType.Application.Json)
-            setBody(mapOf("endOdometer" to 1000))
-        }.let { response ->
-            assertEquals(HttpStatusCode.OK, response.status)
-            val apiResponse = response.body<ApiResponse<RentalResponse>>()
-            assertEquals("COMPLETED", apiResponse.data!!.status)
-            assertEquals(1000, apiResponse.data!!.endOdometerKm)
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
+            client.post("/v1/rentals/$rentalId/activate") {
+                bearerAuth(token)
+            }
+
+            client
+                .post("/v1/rentals/$rentalId/complete") {
+                    bearerAuth(token)
+                    contentType(ContentType.Application.Json)
+                    setBody(mapOf("endOdometer" to 1000))
+                }.let { response ->
+                    assertEquals(HttpStatusCode.OK, response.status)
+                    val apiResponse = response.body<ApiResponse<RentalResponse>>()
+                    assertEquals("COMPLETED", apiResponse.data!!.status)
+                    assertEquals(1000, apiResponse.data!!.endOdometerKm)
+                }
         }
-    }
 
     @Test
-    fun `should cancel a rental`() = testApplication {
-        configurePostgres()
-        application { module() }
-        val rentalId = seedRental()
+    fun `should cancel a rental`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
+            val rentalId = seedRental()
 
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
-        val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
 
-        client.post("/v1/rentals/$rentalId/cancel") {
-            bearerAuth(token)
-        }.let { response ->
-            assertEquals(HttpStatusCode.OK, response.status)
-            val apiResponse = response.body<ApiResponse<RentalResponse>>()
-            assertEquals("CANCELLED", apiResponse.data!!.status)
+            client
+                .post("/v1/rentals/$rentalId/cancel") {
+                    bearerAuth(token)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.OK, response.status)
+                    val apiResponse = response.body<ApiResponse<RentalResponse>>()
+                    assertEquals("CANCELLED", apiResponse.data!!.status)
+                }
         }
-    }
 }

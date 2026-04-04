@@ -9,33 +9,34 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 class DeleteRentalUseCaseTest {
-
     private val repository = mockk<RentalRepository>()
     private val useCase = DeleteRentalUseCase(repository)
 
     @Test
-    fun shouldReturnTrue_WhenRentalDeletedSuccessfully() = runBlocking {
-        // Arrange
-        val rentalId = "rent-123"
-        coEvery { repository.deleteById(RentalId(rentalId)) } returns true
+    fun shouldReturnTrue_WhenRentalDeletedSuccessfully(): Unit =
+        runBlocking {
+            // Arrange
+            val rentalId = "rent-123"
+            coEvery { repository.deleteById(RentalId(rentalId)) } returns true
 
-        // Act
-        val result = useCase.execute(rentalId)
+            // Act
+            val result = useCase.execute(rentalId)
 
-        // Assert
-        assertThat(result).isTrue()
-    }
+            // Assert
+            assertThat(result).isTrue()
+        }
 
     @Test
-    fun shouldReturnFalse_WhenRentalNotFound() = runBlocking {
-        // Arrange
-        val rentalId = "rent-non-existent"
-        coEvery { repository.deleteById(RentalId(rentalId)) } returns false
+    fun shouldReturnFalse_WhenRentalNotFound(): Unit =
+        runBlocking {
+            // Arrange
+            val rentalId = "rent-non-existent"
+            coEvery { repository.deleteById(RentalId(rentalId)) } returns false
 
-        // Act
-        val result = useCase.execute(rentalId)
+            // Act
+            val result = useCase.execute(rentalId)
 
-        // Assert
-        assertThat(result).isFalse()
-    }
+            // Assert
+            assertThat(result).isFalse()
+        }
 }

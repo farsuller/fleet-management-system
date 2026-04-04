@@ -10,5 +10,5 @@ data class DriverRemittanceRequest(
     val paymentIds: List<String>,
     /** ISO-8601 timestamp of when the driver physically submitted the funds. */
     val remittanceDate: String,
-    val notes: String? = null
+    val notes: String? = null,
 )

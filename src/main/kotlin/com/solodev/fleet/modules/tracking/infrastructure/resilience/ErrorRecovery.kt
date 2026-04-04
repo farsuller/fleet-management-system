@@ -1,9 +1,9 @@
 package com.solodev.fleet.modules.tracking.infrastructure.resilience
 
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.min
-import org.slf4j.LoggerFactory
 
 /**
  * Circuit Breaker pattern implementation for error recovery.
@@ -23,7 +23,7 @@ class CircuitBreaker(
     private val name: String,
     private val failureThreshold: Int = 5,
     private val successThreshold: Int = 2,
-    private val timeoutSeconds: Long = 60
+    private val timeoutSeconds: Long = 60,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -37,16 +37,15 @@ class CircuitBreaker(
      * Execute operation with circuit breaker protection.
      * Throws CircuitBreakerOpenException if circuit is open.
      */
-    suspend fun <T> execute(operation: suspend () -> T): T {
-        return when (state) {
+    suspend fun <T> execute(operation: suspend () -> T): T =
+        when (state) {
             CircuitState.CLOSED -> executeInClosed(operation)
             CircuitState.OPEN -> executeInOpen(operation)
             CircuitState.HALF_OPEN -> executeInHalfOpen(operation)
         }
-    }
 
-    private suspend fun <T> executeInClosed(operation: suspend () -> T): T {
-        return try {
+    private suspend fun <T> executeInClosed(operation: suspend () -> T): T =
+        try {
             val result = operation()
             failureCount.set(0) // Reset on success
             result
@@ -54,12 +53,12 @@ class CircuitBreaker(
             handleFailure(e)
             throw e
         }
-    }
 
     private suspend fun <T> executeInOpen(operation: suspend () -> T): T {
         // Check if timeout expired, if so transition to HALF_OPEN
-        val timeSinceOpen = java.time.temporal.ChronoUnit.SECONDS
-            .between(stateTransitionTime, Instant.now())
+        val timeSinceOpen =
+            java.time.temporal.ChronoUnit.SECONDS
+                .between(stateTransitionTime, Instant.now())
 
         if (timeSinceOpen > timeoutSeconds) {
             logger.info("$name: Circuit breaker timeout expired, transitioning to HALF_OPEN")
@@ -70,8 +69,8 @@ class CircuitBreaker(
         throw CircuitBreakerOpenException("$name: Circuit breaker is OPEN")
     }
 
-    private suspend fun <T> executeInHalfOpen(operation: suspend () -> T): T {
-        return try {
+    private suspend fun <T> executeInHalfOpen(operation: suspend () -> T): T =
+        try {
             val result = operation()
             successCount.incrementAndGet()
 
@@ -87,7 +86,6 @@ class CircuitBreaker(
             transitionTo(CircuitState.OPEN)
             throw e
         }
-    }
 
     private fun handleFailure(e: Exception) {
         lastFailureTime = Instant.now()
@@ -99,7 +97,7 @@ class CircuitBreaker(
         } else {
             logger.warn(
                 "$name: Failure detected (${failureCount.get()}/$failureThreshold)",
-                e
+                e,
             )
         }
     }
@@ -126,16 +124,15 @@ class CircuitBreaker(
 
     fun getState(): CircuitState = state
 
-    fun getStats(): CircuitBreakerStats {
-        return CircuitBreakerStats(
+    fun getStats(): CircuitBreakerStats =
+        CircuitBreakerStats(
             name = name,
             state = state,
             failureCount = failureCount.get(),
             successCount = successCount.get(),
             lastFailureTime = lastFailureTime,
-            lastStateChange = stateTransitionTime
+            lastStateChange = stateTransitionTime,
         )
-    }
 
     fun reset() {
         transitionTo(CircuitState.CLOSED)
@@ -144,12 +141,14 @@ class CircuitBreaker(
 }
 
 enum class CircuitState {
-    CLOSED,     // Normal operation
-    OPEN,       // Rejecting requests
-    HALF_OPEN   // Testing recovery
+    CLOSED, // Normal operation
+    OPEN, // Rejecting requests
+    HALF_OPEN, // Testing recovery
 }
 
-class CircuitBreakerOpenException(message: String) : Exception(message)
+class CircuitBreakerOpenException(
+    message: String,
+) : Exception(message)
 
 data class CircuitBreakerStats(
     val name: String,
@@ -157,7 +156,7 @@ data class CircuitBreakerStats(
     val failureCount: Int,
     val successCount: Int,
     val lastFailureTime: Instant?,
-    val lastStateChange: Instant
+    val lastStateChange: Instant,
 )
 
 /**
@@ -178,13 +177,13 @@ data class CircuitBreakerStats(
 class RetryPolicy(
     private val maxRetries: Int = 3,
     private val initialDelayMs: Long = 100,
-    private val maxDelayMs: Long = 5000
+    private val maxDelayMs: Long = 5000,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun <T> execute(
         operationName: String,
-        operation: suspend () -> T
+        operation: suspend () -> T,
     ): T {
         var lastException: Exception? = null
         var delay = initialDelayMs
@@ -200,7 +199,16 @@ class RetryPolicy(
 
                 val result = operation()
                 if (attempt > 0) {
-                    val successSuffix = if (operationName.contains("Test", ignoreCase = true)) " [Test marked as PASSED after retries]" else ""
+                    val successSuffix =
+                        if (operationName.contains(
+                                "Test",
+                                ignoreCase = true,
+                            )
+                        ) {
+                            " [Test marked as PASSED after retries]"
+                        } else {
+                            ""
+                        }
                     logger.info("$operationName: Operation succeeded on attempt ${attempt + 1}$successSuffix")
                 }
                 return result
@@ -210,12 +218,12 @@ class RetryPolicy(
                 if (attempt < maxRetries && isRetryable(e)) {
                     logger.warn(
                         "$operationName: Transient failure on attempt ${attempt + 1}, will retry",
-                        e
+                        e,
                     )
                 } else {
                     logger.error(
                         "$operationName: Failed after ${attempt + 1} attempts",
-                        e
+                        e,
                     )
                     throw e
                 }
@@ -225,8 +233,8 @@ class RetryPolicy(
         throw lastException ?: Exception("$operationName: All retries exhausted")
     }
 
-    private fun isRetryable(e: Exception): Boolean {
-        return when (e) {
+    private fun isRetryable(e: Exception): Boolean =
+        when (e) {
             is java.net.SocketTimeoutException -> true
             is java.net.ConnectException -> true
             is java.io.IOException -> true // Network errors
@@ -234,7 +242,6 @@ class RetryPolicy(
             is kotlinx.coroutines.TimeoutCancellationException -> true
             else -> false
         }
-    }
 }
 
 /**
@@ -248,12 +255,12 @@ class RetryPolicy(
 class FallbackHandler<T>(
     private val operationName: String,
     private val primary: suspend () -> T,
-    private val fallback: suspend () -> T?
+    private val fallback: suspend () -> T?,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    suspend fun execute(): T? {
-        return try {
+    suspend fun execute(): T? =
+        try {
             logger.debug("$operationName: Executing primary operation")
             primary()
         } catch (e: Exception) {
@@ -267,7 +274,6 @@ class FallbackHandler<T>(
                 throw fallbackError
             }
         }
-    }
 }
 
 /**
@@ -281,7 +287,7 @@ interface HealthCheck {
         val isHealthy: Boolean,
         val lastCheckTime: Instant,
         val errorMessage: String? = null,
-        val responseTimeMs: Long = 0
+        val responseTimeMs: Long = 0,
     )
 }
 
@@ -291,19 +297,17 @@ interface HealthCheck {
 suspend fun <T> withTimeout(
     timeoutMs: Long,
     operationName: String,
-    operation: suspend () -> T
-): T {
-    return try {
+    operation: suspend () -> T,
+): T =
+    try {
         kotlinx.coroutines.withTimeoutOrNull(timeoutMs) {
             operation()
         } ?: throw java.util.concurrent.TimeoutException(
-            "$operationName: Operation exceeded timeout of ${timeoutMs}ms"
+            "$operationName: Operation exceeded timeout of ${timeoutMs}ms",
         )
     } catch (e: Exception) {
-        throw java.util.concurrent.TimeoutException(
-            "$operationName: Timeout or error after ${timeoutMs}ms"
-        ).initCause(e)
+        throw java.util.concurrent
+            .TimeoutException(
+                "$operationName: Timeout or error after ${timeoutMs}ms",
+            ).initCause(e)
     }
-}
-
-

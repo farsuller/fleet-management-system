@@ -37,7 +37,6 @@ import java.sql.ResultSet
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class IntegrationTestBase {
-
     companion object {
         // Must match length requirements for HMAC-SHA256. Use a fixed string for reproducibility.
         const val JWT_SECRET = "test-secret-at-least-64-bytes-long-for-hmac-sha256-security-1234567890"
@@ -45,22 +44,24 @@ abstract class IntegrationTestBase {
         const val JWT_AUDIENCE = "test-audience"
 
         private val postgisImage =
-            DockerImageName.parse("postgis/postgis:15-3.3-alpine")
+            DockerImageName
+                .parse("postgis/postgis:15-3.3-alpine")
                 .asCompatibleSubstituteFor("postgres")
 
         /**
          * Seed / reference tables that must NEVER be truncated between tests.
          * Populated by Flyway migrations; truncating them breaks FK constraints.
          */
-        private val SEED_TABLES = setOf(
-            "flyway_schema_history",
-            "spatial_ref_sys",
-            "roles",
-            "accounts",
-            "payment_methods",
-            "routes",
-            "geofences",
-        )
+        private val SEED_TABLES =
+            setOf(
+                "flyway_schema_history",
+                "spatial_ref_sys",
+                "roles",
+                "accounts",
+                "payment_methods",
+                "routes",
+                "geofences",
+            )
 
         /**
          * Singleton PostGIS container shared across all suites in the JVM.
@@ -81,7 +82,8 @@ abstract class IntegrationTestBase {
 
                 // Run Flyway migrations immediately so the schema is fully ready
                 // before the first test's @BeforeEach fires.
-                org.flywaydb.core.Flyway.configure()
+                org.flywaydb.core.Flyway
+                    .configure()
                     .dataSource(jdbcUrl, username, password)
                     .locations("classpath:db/migration")
                     .baselineOnMigrate(true)
@@ -94,34 +96,39 @@ abstract class IntegrationTestBase {
                 // connection from a previous test runner) in tests that never go through
                 // testApplication { module() } → configureDatabases() → Database.connect().
                 org.jetbrains.exposed.sql.Database.connect(
-                    url      = jdbcUrl,
-                    driver   = "org.postgresql.Driver",
-                    user     = username,
+                    url = jdbcUrl,
+                    driver = "org.postgresql.Driver",
+                    user = username,
                     password = password,
                 )
             }
         }
 
         fun isDockerAvailable(): Boolean =
-            try { DockerClientFactory.instance().isDockerAvailable } catch (_: Exception) { false }
+            try {
+                DockerClientFactory.instance().isDockerAvailable
+            } catch (_: Exception) {
+                false
+            }
 
         /**
          * Builds a [MapApplicationConfig] that routes the Ktor app to the test container.
          * Redis is disabled; all JWT values are fixed test constants.
          */
-        fun buildTestConfig(): MapApplicationConfig = MapApplicationConfig(
-            "storage.jdbcUrl"         to postgres.jdbcUrl,
-            "storage.username"        to postgres.username,
-            "storage.password"        to postgres.password,
-            "storage.driverClassName" to "org.postgresql.Driver",
-            "storage.maximumPoolSize" to "2",
-            "jwt.secret"              to JWT_SECRET,
-            "jwt.issuer"              to JWT_ISSUER,
-            "jwt.audience"            to JWT_AUDIENCE,
-            "jwt.realm"               to "test-realm",
-            "jwt.expiresIn"           to "3600000",
-            "redis.enabled"           to "false"
-        )
+        fun buildTestConfig(): MapApplicationConfig =
+            MapApplicationConfig(
+                "storage.jdbcUrl" to postgres.jdbcUrl,
+                "storage.username" to postgres.username,
+                "storage.password" to postgres.password,
+                "storage.driverClassName" to "org.postgresql.Driver",
+                "storage.maximumPoolSize" to "2",
+                "jwt.secret" to JWT_SECRET,
+                "jwt.issuer" to JWT_ISSUER,
+                "jwt.audience" to JWT_AUDIENCE,
+                "jwt.realm" to "test-realm",
+                "jwt.expiresIn" to "3600000",
+                "redis.enabled" to "false",
+            )
 
         /**
          * Generates a signed JWT directly from the test secret.
@@ -133,7 +140,11 @@ abstract class IntegrationTestBase {
          * client.get("/v1/vehicles") { bearerAuth(token) }
          * ```
          */
-        fun tokenFor(id: String, email: String, vararg roles: String): String =
+        fun tokenFor(
+            id: String,
+            email: String,
+            vararg roles: String,
+        ): String =
             JwtService(JWT_SECRET, JWT_ISSUER, JWT_AUDIENCE, expiresInMs = 3_600_000L)
                 .generateToken(id, email, roles.toList())
     }
@@ -144,7 +155,7 @@ abstract class IntegrationTestBase {
             isDockerAvailable(),
             "Skipping integration test — Docker not reachable. " +
                 "On Windows: ensure Docker Desktop is running and the TCP socket is exposed " +
-                "on localhost:2375 (Settings → General → Expose daemon on tcp://localhost:2375)."
+                "on localhost:2375 (Settings → General → Expose daemon on tcp://localhost:2375).",
         )
         // Force the postgres lazy property to initialise (starts container + Flyway + Exposed
         // connect) before any @BeforeEach or @Test method runs.  This guarantees cleanDatabase()
@@ -174,17 +185,19 @@ abstract class IntegrationTestBase {
         postgres.createConnection("").use { conn ->
             // 1. Discover all BASE TABLEs present in the public schema.
             val tables = mutableListOf<String>()
-            conn.createStatement().executeQuery(
-                """
-                SELECT table_name
-                FROM   information_schema.tables
-                WHERE  table_schema = 'public'
-                  AND  table_type   = 'BASE TABLE'
-                ORDER BY table_name
-                """.trimIndent()
-            ).use { rs: ResultSet ->
-                while (rs.next()) tables.add(rs.getString("table_name"))
-            }
+            conn
+                .createStatement()
+                .executeQuery(
+                    """
+                    SELECT table_name
+                    FROM   information_schema.tables
+                    WHERE  table_schema = 'public'
+                      AND  table_type   = 'BASE TABLE'
+                    ORDER BY table_name
+                    """.trimIndent(),
+                ).use { rs: ResultSet ->
+                    while (rs.next()) tables.add(rs.getString("table_name"))
+                }
 
             val tablesToTruncate = tables.filter { it !in SEED_TABLES }
             if (tablesToTruncate.isEmpty()) return
@@ -194,20 +207,21 @@ abstract class IntegrationTestBase {
             //    aborting the entire setup.
             //
             //    [Expected test-infrastructure behaviour — not a test assertion failure]
-            val doBlock = buildString {
-                append("DO \$\$\nBEGIN\n")
-                for (table in tablesToTruncate) {
-                    append(
-                        "  BEGIN\n" +
-                        "    TRUNCATE TABLE \"$table\" RESTART IDENTITY CASCADE;\n" +
-                        "  EXCEPTION\n" +
-                        "    WHEN undefined_table THEN NULL;\n" + // 42P01 — table not created yet
-                        "    WHEN others          THEN NULL;\n" + // catch-all safety net
-                        "  END;\n"
-                    )
+            val doBlock =
+                buildString {
+                    append("DO \$\$\nBEGIN\n")
+                    for (table in tablesToTruncate) {
+                        append(
+                            "  BEGIN\n" +
+                                "    TRUNCATE TABLE \"$table\" RESTART IDENTITY CASCADE;\n" +
+                                "  EXCEPTION\n" +
+                                "    WHEN undefined_table THEN NULL;\n" + // 42P01 — table not created yet
+                                "    WHEN others          THEN NULL;\n" + // catch-all safety net
+                                "  END;\n",
+                        )
+                    }
+                    append("END \$\$;\n")
                 }
-                append("END \$\$;\n")
-            }
 
             conn.createStatement().execute(doBlock)
         }

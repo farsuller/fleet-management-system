@@ -1,10 +1,12 @@
 package com.solodev.fleet.shared.plugins
 
-import io.ktor.server.application.*
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
 import io.ktor.server.plugins.origin
-import io.ktor.server.plugins.ratelimit.*
+import io.ktor.server.plugins.ratelimit.RateLimit
+import io.ktor.server.plugins.ratelimit.RateLimitName
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -24,14 +26,12 @@ fun Application.configureRateLimiting() {
         register(RateLimitName("public_api")) {
             rateLimiter(limit = 100, refillPeriod = 1.minutes)
             requestKey { call -> call.request.origin.remoteHost }
-
         }
 
         // 3. Sensitive Endpoints: Extremely strict limits to block brute-force attacks.
         register(RateLimitName("auth_strict")) {
             rateLimiter(limit = 5, refillPeriod = 1.minutes)
             requestKey { call -> call.request.origin.remoteHost }
-
         }
 
         // 4. Authenticated API: User-based limiting.
@@ -40,10 +40,13 @@ fun Application.configureRateLimiting() {
             rateLimiter(limit = 500, refillPeriod = 1.minutes)
             requestKey { call ->
                 // Why: Grouping by ID prevents a user from bypassing limits by switching IPs
-                call.principal<JWTPrincipal>()?.payload?.getClaim("id")?.asString()
-                        ?: call.request.origin.remoteHost
+                call
+                    .principal<JWTPrincipal>()
+                    ?.payload
+                    ?.getClaim("id")
+                    ?.asString()
+                    ?: call.request.origin.remoteHost
             }
-
         }
     }
 }

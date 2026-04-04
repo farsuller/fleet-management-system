@@ -4,15 +4,15 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class VehicleUpdateRequest(
-        val licensePlate: String? = null,
-        val make: String? = null,
-        val model: String? = null,
-        val year: Int? = null,
-        val color: String? = null,
-        val dailyRate: Double? = null,
-        val mileageKm: Int? = null,
-        val lastServiceMileage: Int? = null,
-        val nextServiceMileage: Int? = null
+    val licensePlate: String? = null,
+    val make: String? = null,
+    val model: String? = null,
+    val year: Int? = null,
+    val color: String? = null,
+    val dailyRate: Double? = null,
+    val mileageKm: Int? = null,
+    val lastServiceMileage: Int? = null,
+    val nextServiceMileage: Int? = null,
 ) {
     init {
         dailyRate?.let { require(it >= 0.0) { "Daily rate cannot be negative" } }
@@ -21,13 +21,13 @@ data class VehicleUpdateRequest(
     }
 
     fun hasUpdates(): Boolean =
-            licensePlate != null ||
-                    make != null ||
-                    model != null ||
-                    year != null ||
-                    color != null ||
-                    dailyRate != null ||
-                    mileageKm != null ||
-                    lastServiceMileage != null ||
-                    nextServiceMileage != null
+        licensePlate != null ||
+            make != null ||
+            model != null ||
+            year != null ||
+            color != null ||
+            dailyRate != null ||
+            mileageKm != null ||
+            lastServiceMileage != null ||
+            nextServiceMileage != null
 }

@@ -14,7 +14,7 @@ data class VehicleUsageHistoryDto(
     val endDate: Long,
     val startOdometer: Int?,
     val endOdometer: Int?,
-    val status: String
+    val status: String,
 )
 
 @Serializable
@@ -36,29 +36,31 @@ data class MaintenanceResponse(
     val totalCostPhp: Long,
     val startedAt: Long? = null,
     val completedAt: Long? = null,
-    val usageHistory: List<VehicleUsageHistoryDto> = emptyList()
+    val usageHistory: List<VehicleUsageHistoryDto> = emptyList(),
 ) {
     companion object {
-        fun fromDomain(j: MaintenanceJob, history: List<VehicleUsageHistoryDto> = emptyList()) =
-            MaintenanceResponse(
-                id = j.id.value,
-                jobNumber = j.jobNumber,
-                vehicleId = j.vehicleId.value,
-                vehiclePlate = j.vehiclePlate,
-                vehicleMake = j.vehicleMake,
-                vehicleModel = j.vehicleModel,
-                status = j.status,
-                type = j.jobType,
-                priority = j.priority,
-                description = j.description,
-                scheduledDate = j.scheduledDate.toEpochMilli(),
-                estimatedCostPhp = j.laborCost.toLong(),
-                laborCostPhp = j.laborCost.toLong(),
-                partsCostPhp = j.partsCost.toLong(),
-                totalCostPhp = j.totalCost.toLong(),
-                startedAt = j.startedAt?.toEpochMilli(),
-                completedAt = j.completedAt?.toEpochMilli(),
-                usageHistory = history
-            )
+        fun fromDomain(
+            j: MaintenanceJob,
+            history: List<VehicleUsageHistoryDto> = emptyList(),
+        ) = MaintenanceResponse(
+            id = j.id.value,
+            jobNumber = j.jobNumber,
+            vehicleId = j.vehicleId.value,
+            vehiclePlate = j.vehiclePlate,
+            vehicleMake = j.vehicleMake,
+            vehicleModel = j.vehicleModel,
+            status = j.status,
+            type = j.jobType,
+            priority = j.priority,
+            description = j.description,
+            scheduledDate = j.scheduledDate.toEpochMilli(),
+            estimatedCostPhp = j.laborCost.toLong(),
+            laborCostPhp = j.laborCost.toLong(),
+            partsCostPhp = j.partsCost.toLong(),
+            totalCostPhp = j.totalCost.toLong(),
+            startedAt = j.startedAt?.toEpochMilli(),
+            completedAt = j.completedAt?.toEpochMilli(),
+            usageHistory = history,
+        )
     }
 }

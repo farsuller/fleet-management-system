@@ -4,10 +4,13 @@ import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJob
 import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJobId
 import com.solodev.fleet.modules.maintenance.domain.repository.MaintenanceRepository
 
-class CancelMaintenanceUseCase(private val repository: MaintenanceRepository) {
+class CancelMaintenanceUseCase(
+    private val repository: MaintenanceRepository,
+) {
     suspend fun execute(jobId: String): MaintenanceJob {
-        val job = repository.findById(MaintenanceJobId(jobId))
-            ?: throw IllegalArgumentException("Job not found")
+        val job =
+            repository.findById(MaintenanceJobId(jobId))
+                ?: throw IllegalArgumentException("Job not found")
 
         val cancelJob = job.cancel()
         return repository.saveJob(cancelJob)

@@ -1,10 +1,10 @@
 package com.solodev.fleet.modules.drivers.infrastructure.http
 
 import com.solodev.fleet.IntegrationTestBase
-import com.solodev.fleet.module
 import com.solodev.fleet.configurePostgres
-import com.solodev.fleet.modules.drivers.application.dto.StartShiftRequest
+import com.solodev.fleet.module
 import com.solodev.fleet.modules.drivers.application.dto.ShiftResponse
+import com.solodev.fleet.modules.drivers.application.dto.StartShiftRequest
 import com.solodev.fleet.modules.drivers.infrastructure.persistence.DriversTable
 import com.solodev.fleet.modules.vehicles.infrastructure.persistence.VehiclesTable
 import com.solodev.fleet.shared.models.ApiResponse
@@ -33,7 +33,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class DriverShiftIntegrationTest : IntegrationTestBase() {
-
     private val driverId = UUID.randomUUID()
     private val vehicleId = UUID.randomUUID()
     private val driverEmail = "driver@fleet.ph"
@@ -75,99 +74,109 @@ class DriverShiftIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should manage shift lifecycle`() = testApplication {
-        configurePostgres()
-        application { module() }
+    fun `should manage shift lifecycle`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
 
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+
+            val token = tokenFor(driverId.toString(), driverEmail, "DRIVER")
+
+            // 1. Get Active Shift (should be null)
+            client
+                .get("/v1/drivers/shifts/active") {
+                    bearerAuth(token)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.OK, response.status)
+                    val apiResponse = response.body<ApiResponse<ShiftResponse?>>()
+                    assertTrue(apiResponse.success)
+                    assertNull(apiResponse.data)
+                }
+
+            // 2. Start Shift
+            client
+                .post("/v1/drivers/shifts/start") {
+                    bearerAuth(token)
+                    contentType(ContentType.Application.Json)
+                    setBody(StartShiftRequest(vehicleId.toString(), "Starting test shift"))
+                }.let { response ->
+                    assertEquals(HttpStatusCode.Created, response.status)
+                    val apiResponse = response.body<ApiResponse<ShiftResponse>>()
+                    assertTrue(apiResponse.success)
+                    assertEquals(vehicleId.toString(), apiResponse.data!!.vehicleId)
+                    assertEquals(driverId.toString(), apiResponse.data!!.driverId)
+                    assertNotNull(apiResponse.data!!.startedAt)
+                    assertNull(apiResponse.data!!.endedAt)
+                    assertTrue(apiResponse.data!!.isActive)
+                }
+
+            // 3. Get Active Shift (should be present)
+            client
+                .get("/v1/drivers/shifts/active") {
+                    bearerAuth(token)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.OK, response.status)
+                    val apiResponse = response.body<ApiResponse<ShiftResponse?>>()
+                    assertTrue(apiResponse.success)
+                    assertNotNull(apiResponse.data)
+                    assertEquals(vehicleId.toString(), apiResponse.data!!.vehicleId)
+                }
+
+            // 4. End Shift
+            client
+                .post("/v1/drivers/shifts/end") {
+                    bearerAuth(token)
+                    contentType(ContentType.Application.Json)
+                    setBody(mapOf("notes" to "Ending test shift"))
+                }.let { response ->
+                    assertEquals(HttpStatusCode.OK, response.status)
+                    val apiResponse = response.body<ApiResponse<ShiftResponse>>()
+                    assertTrue(apiResponse.success)
+                    assertNotNull(apiResponse.data!!.endedAt)
+                    assertTrue(!apiResponse.data!!.isActive)
+                }
+
+            // 5. Get Active Shift (should be null again)
+            client
+                .get("/v1/drivers/shifts/active") {
+                    bearerAuth(token)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.OK, response.status)
+                    val apiResponse = response.body<ApiResponse<ShiftResponse?>>()
+                    assertTrue(apiResponse.success)
+                    assertNull(apiResponse.data)
+                }
         }
-
-        val token = tokenFor(driverId.toString(), driverEmail, "DRIVER")
-
-        // 1. Get Active Shift (should be null)
-        client.get("/v1/drivers/shifts/active") {
-            bearerAuth(token)
-        }.let { response ->
-            assertEquals(HttpStatusCode.OK, response.status)
-            val apiResponse = response.body<ApiResponse<ShiftResponse?>>()
-            assertTrue(apiResponse.success)
-            assertNull(apiResponse.data)
-        }
-
-        // 2. Start Shift
-        client.post("/v1/drivers/shifts/start") {
-            bearerAuth(token)
-            contentType(ContentType.Application.Json)
-            setBody(StartShiftRequest(vehicleId.toString(), "Starting test shift"))
-        }.let { response ->
-            assertEquals(HttpStatusCode.Created, response.status)
-            val apiResponse = response.body<ApiResponse<ShiftResponse>>()
-            assertTrue(apiResponse.success)
-            assertEquals(vehicleId.toString(), apiResponse.data!!.vehicleId)
-            assertEquals(driverId.toString(), apiResponse.data!!.driverId)
-            assertNotNull(apiResponse.data!!.startedAt)
-            assertNull(apiResponse.data!!.endedAt)
-            assertTrue(apiResponse.data!!.isActive)
-        }
-
-        // 3. Get Active Shift (should be present)
-        client.get("/v1/drivers/shifts/active") {
-            bearerAuth(token)
-        }.let { response ->
-            assertEquals(HttpStatusCode.OK, response.status)
-            val apiResponse = response.body<ApiResponse<ShiftResponse?>>()
-            assertTrue(apiResponse.success)
-            assertNotNull(apiResponse.data)
-            assertEquals(vehicleId.toString(), apiResponse.data!!.vehicleId)
-        }
-
-        // 4. End Shift
-        client.post("/v1/drivers/shifts/end") {
-            bearerAuth(token)
-            contentType(ContentType.Application.Json)
-            setBody(mapOf("notes" to "Ending test shift"))
-        }.let { response ->
-            assertEquals(HttpStatusCode.OK, response.status)
-            val apiResponse = response.body<ApiResponse<ShiftResponse>>()
-            assertTrue(apiResponse.success)
-            assertNotNull(apiResponse.data!!.endedAt)
-            assertTrue(!apiResponse.data!!.isActive)
-        }
-
-        // 5. Get Active Shift (should be null again)
-        client.get("/v1/drivers/shifts/active") {
-            bearerAuth(token)
-        }.let { response ->
-            assertEquals(HttpStatusCode.OK, response.status)
-            val apiResponse = response.body<ApiResponse<ShiftResponse?>>()
-            assertTrue(apiResponse.success)
-            assertNull(apiResponse.data)
-        }
-    }
 
     @Test
-    fun `should fail to start shift when driver does not exist`() = testApplication {
-        configurePostgres()
-        application { module() }
+    fun `should fail to start shift when driver does not exist`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
 
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+
+            val unknownDriverId = UUID.randomUUID()
+            val token = tokenFor(unknownDriverId.toString(), "unknown@fleet.ph", "DRIVER")
+
+            client
+                .post("/v1/drivers/shifts/start") {
+                    bearerAuth(token)
+                    contentType(ContentType.Application.Json)
+                    setBody(StartShiftRequest(vehicleId.toString(), "Starting test shift"))
+                }.let { response ->
+                    assertEquals(HttpStatusCode.NotFound, response.status)
+                }
         }
-
-        val unknownDriverId = UUID.randomUUID()
-        val token = tokenFor(unknownDriverId.toString(), "unknown@fleet.ph", "DRIVER")
-
-        client.post("/v1/drivers/shifts/start") {
-            bearerAuth(token)
-            contentType(ContentType.Application.Json)
-            setBody(StartShiftRequest(vehicleId.toString(), "Starting test shift"))
-        }.let { response ->
-            assertEquals(HttpStatusCode.NotFound, response.status)
-        }
-    }
 }

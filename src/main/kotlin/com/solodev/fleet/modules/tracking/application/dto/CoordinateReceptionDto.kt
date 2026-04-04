@@ -5,11 +5,13 @@ import kotlinx.serialization.Serializable
 import java.time.Instant
 
 @Serializable
-data class CoordinateReceptionRequest(val enabled: Boolean)
+data class CoordinateReceptionRequest(
+    val enabled: Boolean,
+)
 
 @Serializable
 data class CoordinateReceptionStatus(
-    val enabled:   Boolean,
+    val enabled: Boolean,
     @Contextual val updatedAt: Instant,
     val updatedBy: String,
 )
