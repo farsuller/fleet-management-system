@@ -5,8 +5,8 @@ import com.solodev.fleet.modules.rentals.domain.model.CustomerId
 import com.solodev.fleet.modules.rentals.domain.repository.CustomerRepository
 
 /** Retrieves a customer by ID. */
-class GetCustomerUseCase(private val customerRepository: CustomerRepository) {
-    suspend fun execute(id: String): Customer? {
-        return customerRepository.findById(CustomerId(id))
-    }
+class GetCustomerUseCase(
+    private val customerRepository: CustomerRepository,
+) {
+    suspend fun execute(id: String): Customer? = customerRepository.findById(CustomerId(id))
 }

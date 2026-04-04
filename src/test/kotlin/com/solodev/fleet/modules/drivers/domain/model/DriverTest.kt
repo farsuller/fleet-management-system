@@ -2,10 +2,13 @@ package com.solodev.fleet.modules.drivers.domain.model
 
 import org.junit.jupiter.api.Test
 import java.time.Instant
-import kotlin.test.*
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class DriverTest {
-
     @Test
     fun `DriverId rejects blank value`() {
         assertFailsWith<IllegalArgumentException> {
@@ -104,13 +107,14 @@ class DriverTest {
 
     @Test
     fun `Driver stores optional address fields`() {
-        val driver = sampleDriver().copy(
-            address    = "456 Rizal Ave",
-            city       = "Cebu",
-            state      = "Cebu",
-            postalCode = "6000",
-            country    = "Philippines",
-        )
+        val driver =
+            sampleDriver().copy(
+                address = "456 Rizal Ave",
+                city = "Cebu",
+                state = "Cebu",
+                postalCode = "6000",
+                country = "Philippines",
+            )
         assertEquals("456 Rizal Ave", driver.address)
         assertEquals("Cebu", driver.city)
     }
@@ -129,13 +133,13 @@ class DriverTest {
         licenseNumber: String = "LN-0001",
         isActive: Boolean = true,
     ) = Driver(
-        id            = DriverId("driver-001"),
-        firstName     = firstName,
-        lastName      = lastName,
-        email         = email,
-        phone         = phone,
+        id = DriverId("driver-001"),
+        firstName = firstName,
+        lastName = lastName,
+        email = email,
+        phone = phone,
         licenseNumber = licenseNumber,
         licenseExpiry = Instant.parse("2030-01-01T00:00:00Z"),
-        isActive      = isActive,
+        isActive = isActive,
     )
 }

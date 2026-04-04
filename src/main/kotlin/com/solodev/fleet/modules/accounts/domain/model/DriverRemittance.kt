@@ -5,10 +5,10 @@ import java.util.UUID
 
 /** Lifecycle state of a driver remittance. */
 enum class RemittanceStatus {
-    PENDING,      // created but driver has not physically handed over funds yet
-    SUBMITTED,    // driver submitted; awaiting back-office verification
-    VERIFIED,     // back-office verified amounts match; GL entries posted
-    DISCREPANCY   // submitted amount differs from recorded collections; requires manual review
+    PENDING, // created but driver has not physically handed over funds yet
+    SUBMITTED, // driver submitted; awaiting back-office verification
+    VERIFIED, // back-office verified amounts match; GL entries posted
+    DISCREPANCY, // submitted amount differs from recorded collections; requires manual review
 }
 
 /**
@@ -26,7 +26,7 @@ data class DriverRemittance(
     val totalAmount: Int,
     val status: RemittanceStatus,
     val paymentIds: List<UUID>,
-    val notes: String?
+    val notes: String?,
 ) {
     init {
         require(remittanceNumber.isNotBlank()) { "Remittance number cannot be blank" }

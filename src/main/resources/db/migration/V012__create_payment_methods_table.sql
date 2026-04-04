@@ -13,7 +13,7 @@ CREATE TABLE payment_methods (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Seed initial payment methods linked to the Chart of Accounts
+-- Seed initial payment methods linked to the Chart of Accounts (Idempotent)
 INSERT INTO payment_methods (code, display_name, target_account_code, description) VALUES
     ('CASH', 'Cash on Hand', '1000', 'Physical cash payments received'),
     ('BANK_TRANSFER', 'Bank Transfer', '1010', 'Direct deposit to BPI account'),
@@ -21,7 +21,8 @@ INSERT INTO payment_methods (code, display_name, target_account_code, descriptio
     ('GCASH', 'GCash', '1020', 'GCash merchant wallet'),
     ('MAYA', 'Maya (PayMaya)', '1030', 'Maya merchant wallet'),
     ('CREDIT_CARD', 'Credit Card', '1040', 'Payments via Stripe/Terminal'),
-    ('DEBIT_CARD', 'Debit Card', '1010', 'Debit card via POS');
+    ('DEBIT_CARD', 'Debit Card', '1010', 'Debit card via POS')
+ON CONFLICT (code) DO NOTHING;
 
 -- Create an index for faster lookups by code
 CREATE INDEX idx_payment_methods_code ON payment_methods(code);

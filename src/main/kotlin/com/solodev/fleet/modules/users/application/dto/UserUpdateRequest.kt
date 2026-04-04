@@ -8,7 +8,7 @@ data class UserUpdateRequest(
     val lastName: String? = null,
     val phone: String? = null,
     val isActive: Boolean? = null,
-    val staffProfile: StaffProfileUpdateRequest? = null
+    val staffProfile: StaffProfileUpdateRequest? = null,
 ) {
     init {
         firstName?.let { require(it.isNotBlank()) { "First name cannot be blank" } }

@@ -16,7 +16,5 @@ class InMemoryVehicleLiveBroadcaster : VehicleLiveBroadcaster {
         broadcastFlow.emit(delta)
     }
 
-    override fun stream(): Flow<VehicleStateDelta> {
-        return broadcastFlow
-    }
+    override fun stream(): Flow<VehicleStateDelta> = broadcastFlow
 }

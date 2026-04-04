@@ -4,13 +4,17 @@ import java.time.Instant
 import java.util.UUID
 
 @JvmInline
-value class DriverId(val value: String) {
-    init { require(value.isNotBlank()) { "Driver ID cannot be blank" } }
+value class DriverId(
+    val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "Driver ID cannot be blank" }
+    }
 }
 
 data class Driver(
     val id: DriverId,
-    val userId: UUID? = null,          // optional link to users table (mobile app login)
+    val userId: UUID? = null, // optional link to users table (mobile app login)
     val firstName: String,
     val lastName: String,
     val email: String,

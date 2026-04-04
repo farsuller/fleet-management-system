@@ -27,6 +27,8 @@ object VehiclesTable : UUIDTable("vehicles") {
     val lastLocation = geometry("last_location").nullable()
     val routeProgress = double("route_progress").default(0.0)
     val bearing = double("bearing").default(0.0)
+    val lastServiceMileage = integer("last_service_mileage").nullable()
+    val nextServiceMileage = integer("next_service_mileage").nullable()
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
     val version = long("version").default(0)

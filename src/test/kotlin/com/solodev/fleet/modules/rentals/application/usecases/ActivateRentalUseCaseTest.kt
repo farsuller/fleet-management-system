@@ -1,12 +1,15 @@
 package com.solodev.fleet.modules.rentals.application.usecases
 
-import com.solodev.fleet.modules.rentals.domain.model.*
+import com.solodev.fleet.modules.rentals.domain.model.CustomerId
+import com.solodev.fleet.modules.rentals.domain.model.Rental
+import com.solodev.fleet.modules.rentals.domain.model.RentalId
+import com.solodev.fleet.modules.rentals.domain.model.RentalStatus
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 
 /**
  * ActivateRentalUseCase wraps execution in `newSuspendedTransaction(Dispatchers.IO)`, so
@@ -16,7 +19,6 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
  * rules directly via the Rental domain model's activate() method — no DB needed.
  */
 class ActivateRentalUseCaseTest {
-
     private val now = Instant.now()
 
     // --- Business rule: rental.activate() requires RESERVED status ---
@@ -68,15 +70,16 @@ class ActivateRentalUseCaseTest {
         }.isInstanceOf(IllegalArgumentException::class.java)
     }
 
-    private fun sampleRental(status: RentalStatus) = Rental(
-        id = RentalId("rental-001"),
-        rentalNumber = "RNT-001",
-        customerId = CustomerId("cust-001"),
-        vehicleId = VehicleId("veh-001"),
-        status = status,
-        startDate = now,
-        endDate = now.plus(7, ChronoUnit.DAYS),
-        dailyRateAmount = 250000,
-        totalAmount = 250000 * 7
-    )
+    private fun sampleRental(status: RentalStatus) =
+        Rental(
+            id = RentalId("rental-001"),
+            rentalNumber = "RNT-001",
+            customerId = CustomerId("cust-001"),
+            vehicleId = VehicleId("veh-001"),
+            status = status,
+            startDate = now,
+            endDate = now.plus(7, ChronoUnit.DAYS),
+            dailyRateAmount = 250000,
+            totalAmount = 250000 * 7,
+        )
 }

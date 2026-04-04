@@ -12,7 +12,7 @@ interface VehicleLiveBroadcaster {
      * Publishes a vehicle state delta to all connected subscribers.
      */
     suspend fun publish(delta: VehicleStateDelta)
-    
+
     /**
      * Returns a Flow of all state deltas for WebSocket subscribers.
      */

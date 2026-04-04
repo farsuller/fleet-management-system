@@ -2,9 +2,11 @@ package com.solodev.fleet.modules.vehicles.application.dto
 
 import kotlinx.serialization.Serializable
 
+// AVAILABLE, RENTED, MAINTENANCE, RETIRED
+
 @Serializable
 data class VehicleStateRequest(
-    val state: String // AVAILABLE, RENTED, MAINTENANCE, RETIRED
+    val state: String,
 ) {
     init {
         require(state.isNotBlank()) { "State cannot be blank" }

@@ -1,21 +1,25 @@
 package com.solodev.fleet.modules.accounts.application.usecases
 
 import com.solodev.fleet.modules.accounts.application.dto.DriverCollectionRequest
-import com.solodev.fleet.modules.accounts.domain.model.*
+import com.solodev.fleet.modules.accounts.domain.model.Invoice
+import com.solodev.fleet.modules.accounts.domain.model.InvoiceStatus
+import com.solodev.fleet.modules.accounts.domain.model.PaymentCollectionType
+import com.solodev.fleet.modules.accounts.domain.model.PaymentStatus
 import com.solodev.fleet.modules.accounts.domain.repository.InvoiceRepository
 import com.solodev.fleet.modules.accounts.domain.repository.PaymentRepository
 import com.solodev.fleet.modules.rentals.domain.model.CustomerId
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
-import java.time.Instant
-import java.time.temporal.ChronoUnit
-import java.util.UUID
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+import java.util.UUID
 
 class RecordDriverCollectionUseCaseTest {
-
     private val invoiceRepository = mockk<InvoiceRepository>()
     private val paymentRepository = mockk<PaymentRepository>()
     private val useCase = RecordDriverCollectionUseCase(invoiceRepository, paymentRepository)
@@ -25,32 +29,34 @@ class RecordDriverCollectionUseCaseTest {
     private val invoiceId = UUID.randomUUID()
 
     @Test
-    fun shouldCreatePendingDriverCollectedPayment_WhenRequestIsValid() = runBlocking {
-        // Arrange
-        val invoice = sampleInvoice(status = InvoiceStatus.ISSUED, paidAmount = 0)
-        coEvery { invoiceRepository.findById(invoiceId) } returns invoice
-        coEvery { paymentRepository.save(any()) } returnsArgument 0
+    fun shouldCreatePendingDriverCollectedPayment_WhenRequestIsValid() =
+        runBlocking {
+            // Arrange
+            val invoice = sampleInvoice(status = InvoiceStatus.ISSUED, paidAmount = 0)
+            coEvery { invoiceRepository.findById(invoiceId) } returns invoice
+            coEvery { paymentRepository.save(any()) } returnsArgument 0
 
-        val request = DriverCollectionRequest(
-            driverId = driverId,
-            customerId = customerId,
-            invoiceId = invoiceId.toString(),
-            amount = 5000,
-            paymentMethod = "CASH",
-            transactionReference = null,
-            collectedAt = Instant.now().toString()
-        )
+            val request =
+                DriverCollectionRequest(
+                    driverId = driverId,
+                    customerId = customerId,
+                    invoiceId = invoiceId.toString(),
+                    amount = 5000,
+                    paymentMethod = "CASH",
+                    transactionReference = null,
+                    collectedAt = Instant.now().toString(),
+                )
 
-        // Act
-        val result = useCase.execute(request)
+            // Act
+            val result = useCase.execute(request)
 
-        // Assert
-        assertThat(result.status).isEqualTo(PaymentStatus.PENDING)
-        assertThat(result.collectionType).isEqualTo(PaymentCollectionType.DRIVER_COLLECTED)
-        assertThat(result.driverId).isEqualTo(UUID.fromString(driverId))
-        assertThat(result.amount).isEqualTo(5000)
-        coVerify(exactly = 1) { paymentRepository.save(any()) }
-    }
+            // Assert
+            assertThat(result.status).isEqualTo(PaymentStatus.PENDING)
+            assertThat(result.collectionType).isEqualTo(PaymentCollectionType.DRIVER_COLLECTED)
+            assertThat(result.driverId).isEqualTo(UUID.fromString(driverId))
+            assertThat(result.amount).isEqualTo(5000)
+            coVerify(exactly = 1) { paymentRepository.save(any()) }
+        }
 
     @Test
     fun shouldThrowIllegalArgument_WhenInvoiceNotFound() {
@@ -126,7 +132,7 @@ class RecordDriverCollectionUseCaseTest {
 
     private fun sampleRequest(
         customerId: String = this.customerId,
-        amount: Int = 5000
+        amount: Int = 5000,
     ) = DriverCollectionRequest(
         driverId = driverId,
         customerId = customerId,
@@ -134,14 +140,14 @@ class RecordDriverCollectionUseCaseTest {
         amount = amount,
         paymentMethod = "CASH",
         transactionReference = null,
-        collectedAt = Instant.now().toString()
+        collectedAt = Instant.now().toString(),
     )
 
     private fun sampleInvoice(
         customerId: String = this.customerId,
         status: InvoiceStatus = InvoiceStatus.ISSUED,
         subtotal: Int = 10000,
-        paidAmount: Int = 0
+        paidAmount: Int = 0,
     ) = Invoice(
         id = invoiceId,
         invoiceNumber = "INV-TEST-001",
@@ -151,6 +157,6 @@ class RecordDriverCollectionUseCaseTest {
         tax = 0,
         paidAmount = paidAmount,
         issueDate = Instant.now().minus(1, ChronoUnit.DAYS),
-        dueDate = Instant.now().plus(29, ChronoUnit.DAYS)
+        dueDate = Instant.now().plus(29, ChronoUnit.DAYS),
     )
 }

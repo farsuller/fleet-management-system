@@ -33,4 +33,4 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
 # Start the application
-CMD ["java", "-jar", "app.jar"]
+CMD ["java", "-Xmx512m", "-jar", "app.jar"]

@@ -7,13 +7,14 @@ import kotlinx.serialization.Serializable
 data class PaymentReceiptResponse(
     val message: String,
     val payment: PaymentResponse,
-    val invoice: InvoiceResponse
+    val invoice: InvoiceResponse,
 ) {
     companion object {
-        fun fromDomain(receipt: com.solodev.fleet.modules.accounts.domain.model.PaymentReceipt) = PaymentReceiptResponse(
-            message = receipt.message,
-            payment = PaymentResponse.fromDomain(receipt.payment),
-            invoice = InvoiceResponse.fromDomain(receipt.updatedInvoice)
-        )
+        fun fromDomain(receipt: com.solodev.fleet.modules.accounts.domain.model.PaymentReceipt) =
+            PaymentReceiptResponse(
+                message = receipt.message,
+                payment = PaymentResponse.fromDomain(receipt.payment),
+                invoice = InvoiceResponse.fromDomain(receipt.updatedInvoice),
+            )
     }
 }

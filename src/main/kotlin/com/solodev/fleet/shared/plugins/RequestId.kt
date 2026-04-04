@@ -1,9 +1,12 @@
 package com.solodev.fleet.shared.plugins
 
-import io.ktor.server.application.*
-import io.ktor.server.request.*
-import io.ktor.util.*
-import java.util.*
+import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.call
+import io.ktor.server.request.header
+import io.ktor.util.AttributeKey
+import java.util.UUID
 
 /** Request ID attribute key for storing correlation IDs. */
 val RequestIdKey = AttributeKey<String>("RequestId")

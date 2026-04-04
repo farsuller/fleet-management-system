@@ -6,15 +6,15 @@ import com.solodev.fleet.modules.users.domain.repository.VerificationTokenReposi
 import java.time.Instant
 
 class VerifyEmailUseCase(
-        private val userRepository: UserRepository,
-        private val tokenRepository: VerificationTokenRepository
+    private val userRepository: UserRepository,
+    private val tokenRepository: VerificationTokenRepository,
 ) {
     suspend fun execute(token: String) {
         val verificationToken =
-                tokenRepository.findByToken(token, TokenType.EMAIL_VERIFICATION)
-                        ?: throw IllegalArgumentException(
-                                "Invalid or non-existent verification token"
-                        )
+            tokenRepository.findByToken(token, TokenType.EMAIL_VERIFICATION)
+                ?: throw IllegalArgumentException(
+                    "Invalid or non-existent verification token",
+                )
 
         if (verificationToken.expiresAt.isBefore(Instant.now())) {
             throw IllegalArgumentException("Verification token has expired")
@@ -22,8 +22,8 @@ class VerifyEmailUseCase(
 
         // Find user by ID from the token
         val user =
-                userRepository.findById(verificationToken.userId)
-                        ?: throw IllegalStateException("User associated with token not found")
+            userRepository.findById(verificationToken.userId)
+                ?: throw IllegalStateException("User associated with token not found")
 
         // Update user status
         val verifiedUser = user.copy(isVerified = true)

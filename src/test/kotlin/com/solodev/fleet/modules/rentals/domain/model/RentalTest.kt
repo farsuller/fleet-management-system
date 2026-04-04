@@ -1,13 +1,14 @@
 package com.solodev.fleet.modules.rentals.domain.model
 
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
+import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import org.junit.jupiter.api.Test
-import kotlin.test.*
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 
 class RentalTest {
-
     private val now = Instant.now()
     private val tomorrow = now.plus(1, ChronoUnit.DAYS)
     private val nextWeek = now.plus(7, ChronoUnit.DAYS)
@@ -84,7 +85,7 @@ class RentalTest {
         status: RentalStatus = RentalStatus.RESERVED,
         startDate: Instant = now,
         endDate: Instant = nextWeek,
-        totalAmount: Int = 5000
+        totalAmount: Int = 5000,
     ) = Rental(
         id = RentalId("rental-001"),
         rentalNumber = "RNT-001",
@@ -94,6 +95,6 @@ class RentalTest {
         startDate = startDate,
         endDate = endDate,
         dailyRateAmount = 1000,
-        totalAmount = totalAmount
+        totalAmount = totalAmount,
     )
 }

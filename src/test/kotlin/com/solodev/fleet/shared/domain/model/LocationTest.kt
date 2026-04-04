@@ -5,7 +5,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class LocationTest {
-
     @Test
     fun `should create location with valid coordinates`() {
         val location = Location(14.5995, 121.0244)

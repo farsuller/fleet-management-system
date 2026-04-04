@@ -8,7 +8,7 @@ data class VehicleDriverAssignment(
     val vehicleId: String,
     val driverId: String,
     val assignedAt: Instant,
-    val releasedAt: Instant? = null,   // null = currently active
+    val releasedAt: Instant? = null, // null = currently active
     val notes: String? = null,
 ) {
     val isActive: Boolean get() = releasedAt == null

@@ -18,20 +18,27 @@ data class ApiResponse<T>(
     val success: Boolean,
     val data: T? = null,
     val error: ErrorDetail? = null,
-    val requestId: String
+    val requestId: String,
+    val metadata: Map<String, String>? = null,
 ) {
     companion object {
         // Factory for successful responses
-        fun <T> success(data: T, requestId: String) =
-            ApiResponse(success = true, data = data, requestId = requestId)
+        fun <T> success(
+            data: T,
+            requestId: String,
+            metadata: Map<String, String>? = null,
+        ) = ApiResponse(success = true, data = data, requestId = requestId, metadata = metadata)
 
         // Factory for error responses
-        fun error(code: String, message: String, requestId: String) =
-            ApiResponse<Unit>(
-                success = false,
-                error = ErrorDetail(code, message),
-                requestId = requestId
-            )
+        fun error(
+            code: String,
+            message: String,
+            requestId: String,
+        ) = ApiResponse<Unit>(
+            success = false,
+            error = ErrorDetail(code, message),
+            requestId = requestId,
+        )
     }
 }
 
@@ -46,7 +53,7 @@ data class ApiResponse<T>(
 data class ErrorDetail(
     val code: String,
     val message: String,
-    val details: List<FieldError>? = null
+    val details: List<FieldError>? = null,
 )
 
 /**
@@ -56,4 +63,7 @@ data class ErrorDetail(
  * @param reason The validation failure reason
  */
 @Serializable
-data class FieldError(val field: String, val reason: String)
+data class FieldError(
+    val field: String,
+    val reason: String,
+)

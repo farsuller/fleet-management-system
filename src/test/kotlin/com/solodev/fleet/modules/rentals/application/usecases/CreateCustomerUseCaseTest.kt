@@ -3,45 +3,48 @@ package com.solodev.fleet.modules.rentals.application.usecases
 import com.solodev.fleet.modules.rentals.application.dto.CustomerRequest
 import com.solodev.fleet.modules.rentals.domain.model.Customer
 import com.solodev.fleet.modules.rentals.domain.repository.CustomerRepository
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 
 class CreateCustomerUseCaseTest {
-
     private val repository = mockk<CustomerRepository>()
     private val useCase = CreateCustomerUseCase(repository)
 
-    private val validRequest = CustomerRequest(
-        email = "maria@example.com",
-        firstName = "Maria",
-        lastName = "Santos",
-        driversLicense = "DL12345678",
-        driverLicenseExpiry = "2027-12-31",
-        phone = "+63912345678",
-        address = "123 Main St",
-        city = "Manila",
-        country = "Philippines"
-    )
+    private val validRequest =
+        CustomerRequest(
+            email = "maria@example.com",
+            firstName = "Maria",
+            lastName = "Santos",
+            driversLicense = "DL12345678",
+            driverLicenseExpiry = "2027-12-31",
+            phone = "+63912345678",
+            address = "123 Main St",
+            city = "Manila",
+            country = "Philippines",
+        )
 
     @Test
-    fun shouldCreateCustomer_WhenDataIsValid() = runBlocking {
-        // Arrange
-        val savedCustomer = slot<Customer>()
-        coEvery { repository.findByEmail("maria@example.com") } returns null
-        coEvery { repository.findByDriverLicense("DL12345678") } returns null
-        coEvery { repository.save(capture(savedCustomer)) } returnsArgument 0
+    fun shouldCreateCustomer_WhenDataIsValid(): Unit =
+        runBlocking {
+            // Arrange
+            val savedCustomer = slot<Customer>()
+            coEvery { repository.findByEmail("maria@example.com") } returns null
+            coEvery { repository.findByDriverLicense("DL12345678") } returns null
+            coEvery { repository.save(capture(savedCustomer)) } returnsArgument 0
 
-        // Act
-        val result = useCase.execute(validRequest)
+            // Act
+            val result = useCase.execute(validRequest)
 
-        // Assert
-        assertThat(result.email).isEqualTo("maria@example.com")
-        assertThat(result.firstName).isEqualTo("Maria")
-        assertThat(savedCustomer.captured.email).isEqualTo("maria@example.com")
-    }
+            // Assert
+            assertThat(result.email).isEqualTo("maria@example.com")
+            assertThat(result.firstName).isEqualTo("Maria")
+            assertThat(savedCustomer.captured.email).isEqualTo("maria@example.com")
+        }
 
     @Test
     fun shouldThrowIllegalArgument_WhenEmailAlreadyRegistered() {
@@ -89,16 +92,17 @@ class CreateCustomerUseCaseTest {
     }
 
     @Test
-    fun shouldBeActiveByDefault_WhenCustomerIsCreated() = runBlocking {
-        // Arrange
-        coEvery { repository.findByEmail("maria@example.com") } returns null
-        coEvery { repository.findByDriverLicense("DL12345678") } returns null
-        coEvery { repository.save(any()) } returnsArgument 0
+    fun shouldBeActiveByDefault_WhenCustomerIsCreated(): Unit =
+        runBlocking {
+            // Arrange
+            coEvery { repository.findByEmail("maria@example.com") } returns null
+            coEvery { repository.findByDriverLicense("DL12345678") } returns null
+            coEvery { repository.save(any()) } returnsArgument 0
 
-        // Act
-        val result = useCase.execute(validRequest)
+            // Act
+            val result = useCase.execute(validRequest)
 
-        // Assert
-        assertThat(result.isActive).isTrue()
-    }
+            // Assert
+            assertThat(result.isActive).isTrue()
+        }
 }

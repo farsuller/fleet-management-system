@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test
  * Tests per-vehicle rate limiting with sliding window algorithm.
  */
 class LocationUpdateRateLimiterTest {
-
     private lateinit var rateLimiter: LocationUpdateRateLimiter
 
     @BeforeEach
@@ -200,4 +199,3 @@ class LocationUpdateRateLimiterTest {
         }
     }
 }
-

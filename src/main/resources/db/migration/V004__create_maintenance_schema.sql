@@ -1,8 +1,8 @@
 -- V004: Create Maintenance Schema
 -- This migration creates tables for vehicle maintenance tracking
 
--- Maintenance jobs table: Track maintenance work on vehicles
-CREATE TABLE maintenance_jobs (
+-- Maintenance jobs table: Track maintenance work on vehicles (Idempotent)
+CREATE TABLE IF NOT EXISTS maintenance_jobs (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     job_number VARCHAR(50) NOT NULL UNIQUE,
     vehicle_id UUID NOT NULL REFERENCES vehicles(id),
@@ -44,8 +44,8 @@ CREATE TABLE maintenance_jobs (
     )
 );
 
--- Parts used in maintenance table: Track parts inventory and usage
-CREATE TABLE maintenance_parts (
+-- Parts used in maintenance table: Track parts inventory and usage (Idempotent)
+CREATE TABLE IF NOT EXISTS maintenance_parts (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     job_id UUID NOT NULL REFERENCES maintenance_jobs(id) ON DELETE CASCADE,
     part_number VARCHAR(100) NOT NULL,
@@ -59,8 +59,8 @@ CREATE TABLE maintenance_parts (
     added_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Maintenance schedules table: Define recurring maintenance requirements
-CREATE TABLE maintenance_schedules (
+-- Maintenance schedules table: Define recurring maintenance requirements (Idempotent)
+CREATE TABLE IF NOT EXISTS maintenance_schedules (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     vehicle_id UUID NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
     schedule_type VARCHAR(50) NOT NULL CHECK (schedule_type IN ('OIL_CHANGE', 'TIRE_ROTATION', 'BRAKE_INSPECTION', 'GENERAL_INSPECTION', 'CUSTOM')),
@@ -91,24 +91,27 @@ CREATE TABLE maintenance_schedules (
     )
 );
 
--- Indexes for performance
-CREATE INDEX idx_maintenance_jobs_vehicle_id ON maintenance_jobs(vehicle_id);
-CREATE INDEX idx_maintenance_jobs_status ON maintenance_jobs(status);
-CREATE INDEX idx_maintenance_jobs_scheduled_date ON maintenance_jobs(scheduled_date);
-CREATE INDEX idx_maintenance_jobs_job_number ON maintenance_jobs(job_number);
-CREATE INDEX idx_maintenance_jobs_assigned_to ON maintenance_jobs(assigned_to_user_id);
-CREATE INDEX idx_maintenance_parts_job_id ON maintenance_parts(job_id);
-CREATE INDEX idx_maintenance_schedules_vehicle_id ON maintenance_schedules(vehicle_id);
-CREATE INDEX idx_maintenance_schedules_next_service ON maintenance_schedules(next_service_date, next_service_odometer_km) WHERE is_active = true;
+-- Indexes for performance (Idempotent)
+CREATE INDEX IF NOT EXISTS idx_maintenance_jobs_vehicle_id ON maintenance_jobs(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_maintenance_jobs_status ON maintenance_jobs(status);
+CREATE INDEX IF NOT EXISTS idx_maintenance_jobs_scheduled_date ON maintenance_jobs(scheduled_date);
+CREATE INDEX IF NOT EXISTS idx_maintenance_jobs_job_number ON maintenance_jobs(job_number);
+CREATE INDEX IF NOT EXISTS idx_maintenance_jobs_assigned_to ON maintenance_jobs(assigned_to_user_id);
+CREATE INDEX IF NOT EXISTS idx_maintenance_parts_job_id ON maintenance_parts(job_id);
+CREATE INDEX IF NOT EXISTS idx_maintenance_schedules_vehicle_id ON maintenance_schedules(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_maintenance_schedules_next_service ON maintenance_schedules(next_service_date, next_service_odometer_km) WHERE is_active = true;
 
--- Triggers for updated_at
+-- Triggers for updated_at (Idempotent)
+DROP TRIGGER IF EXISTS update_maintenance_jobs_updated_at ON maintenance_jobs;
 CREATE TRIGGER update_maintenance_jobs_updated_at BEFORE UPDATE ON maintenance_jobs
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_maintenance_schedules_updated_at ON maintenance_schedules;
 CREATE TRIGGER update_maintenance_schedules_updated_at BEFORE UPDATE ON maintenance_schedules
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Trigger for version increment
+-- Trigger for version increment (Idempotent)
+DROP TRIGGER IF EXISTS increment_maintenance_jobs_version ON maintenance_jobs;
 CREATE TRIGGER increment_maintenance_jobs_version BEFORE UPDATE ON maintenance_jobs
     FOR EACH ROW EXECUTE FUNCTION increment_version();
 
@@ -138,6 +141,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Trigger for update_schedule_after_job_completion (Idempotent)
+DROP TRIGGER IF EXISTS update_schedule_after_job_completion ON maintenance_jobs;
 CREATE TRIGGER update_schedule_after_job_completion
     AFTER UPDATE ON maintenance_jobs
     FOR EACH ROW

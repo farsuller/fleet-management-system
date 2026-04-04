@@ -8,24 +8,27 @@ import com.solodev.fleet.modules.vehicles.domain.model.VehicleType
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 import java.util.UUID
 
-class CreateVehicleUseCase(private val repository: VehicleRepository) {
+class CreateVehicleUseCase(
+    private val repository: VehicleRepository,
+) {
     suspend fun execute(request: VehicleRequest): Vehicle {
         val vehicle =
-                Vehicle(
-                        id = VehicleId(UUID.randomUUID().toString()),
-                        vin = request.vin,
-                        licensePlate = request.licensePlate,
-                        make = request.make,
-                        model = request.model,
-                        year = request.year,
-                        color = request.color,
-                        vehicleType = runCatching { VehicleType.valueOf(request.vehicleType.uppercase()) }
-                            .getOrDefault(VehicleType.OTHER),
-                        state = VehicleState.AVAILABLE,
-                        mileageKm = request.mileageKm,
-                        dailyRateAmount = request.dailyRate?.let { (it * 100).toInt() },
-                        passengerCapacity = request.passengerCapacity
-                )
+            Vehicle(
+                id = VehicleId(UUID.randomUUID().toString()),
+                vin = request.vin,
+                licensePlate = request.licensePlate,
+                make = request.make,
+                model = request.model,
+                year = request.year,
+                color = request.color,
+                vehicleType =
+                    runCatching { VehicleType.valueOf(request.vehicleType.uppercase()) }
+                        .getOrDefault(VehicleType.OTHER),
+                state = VehicleState.AVAILABLE,
+                mileageKm = request.mileageKm,
+                dailyRateAmount = request.dailyRate?.let { (it * 100).toInt() },
+                passengerCapacity = request.passengerCapacity,
+            )
 
         return repository.save(vehicle)
     }

@@ -2,88 +2,91 @@ package com.solodev.fleet.modules.drivers.application.usecases
 
 import com.solodev.fleet.modules.drivers.application.dto.DriverRegistrationRequest
 import com.solodev.fleet.modules.drivers.domain.model.Driver
-import com.solodev.fleet.modules.drivers.domain.model.DriverId
 import com.solodev.fleet.modules.drivers.domain.repository.DriverRepository
 import com.solodev.fleet.modules.users.domain.model.Role
 import com.solodev.fleet.modules.users.domain.model.RoleId
-import com.solodev.fleet.modules.users.domain.model.User
 import com.solodev.fleet.modules.users.domain.repository.UserRepository
 import com.solodev.fleet.modules.users.domain.repository.VerificationTokenRepository
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import java.time.Instant
 
 class RegisterDriverUseCaseTest {
-
-    private val driverRepository  = mockk<DriverRepository>()
-    private val userRepository    = mockk<UserRepository>()
-    private val tokenRepository   = mockk<VerificationTokenRepository>()
+    private val driverRepository = mockk<DriverRepository>()
+    private val userRepository = mockk<UserRepository>()
+    private val tokenRepository = mockk<VerificationTokenRepository>()
     private val useCase = RegisterDriverUseCase(driverRepository, userRepository, tokenRepository)
 
     private val driverRole = Role(id = RoleId("role-driver"), name = "DRIVER")
 
-    private val validRequest = DriverRegistrationRequest(
-        email         = "driver@fleet.ph",
-        passwordRaw   = "secret-pass",
-        firstName     = "Jose",
-        lastName      = "Cruz",
-        phone         = "+63917000002",
-        licenseNumber = "LN-MOB-001",
-        licenseExpiry = "2030-12-31",
-        licenseClass  = "B",
-    )
+    private val validRequest =
+        DriverRegistrationRequest(
+            email = "driver@fleet.ph",
+            passwordRaw = "secret-pass",
+            firstName = "Jose",
+            lastName = "Cruz",
+            phone = "+63917000002",
+            licenseNumber = "LN-MOB-001",
+            licenseExpiry = "2030-12-31",
+            licenseClass = "B",
+        )
 
     @Test
-    fun shouldRegisterDriver_WhenAllDataIsUnique() = runBlocking {
-        val savedDriver = slot<Driver>()
-        coEvery { driverRepository.findByEmail("driver@fleet.ph") } returns null
-        coEvery { driverRepository.findByLicenseNumber("LN-MOB-001") } returns null
-        coEvery { userRepository.findByEmail("driver@fleet.ph") } returns null
-        coEvery { userRepository.findRoleByName("DRIVER") } returns driverRole
-        coEvery { userRepository.save(any()) } returnsArgument 0
-        coEvery { tokenRepository.save(any()) } returnsArgument 0
-        coEvery { driverRepository.save(capture(savedDriver)) } returnsArgument 0
+    fun shouldRegisterDriver_WhenAllDataIsUnique(): Unit =
+        runBlocking {
+            val savedDriver = slot<Driver>()
+            coEvery { driverRepository.findByEmail("driver@fleet.ph") } returns null
+            coEvery { driverRepository.findByLicenseNumber("LN-MOB-001") } returns null
+            coEvery { userRepository.findByEmail("driver@fleet.ph") } returns null
+            coEvery { userRepository.findRoleByName("DRIVER") } returns driverRole
+            coEvery { userRepository.save(any()) } returnsArgument 0
+            coEvery { tokenRepository.save(any()) } returnsArgument 0
+            coEvery { driverRepository.save(capture(savedDriver)) } returnsArgument 0
 
-        val result = useCase.execute(validRequest)
+            val result = useCase.execute(validRequest)
 
-        assertThat(result.email).isEqualTo("driver@fleet.ph")
-        assertThat(result.firstName).isEqualTo("Jose")
-        assertThat(savedDriver.captured.userId).isNotNull()
-    }
-
-    @Test
-    fun shouldLinkDriverToUser_WhenRegistrationSucceeds() = runBlocking {
-        val savedDriver = slot<Driver>()
-        coEvery { driverRepository.findByEmail("driver@fleet.ph") } returns null
-        coEvery { driverRepository.findByLicenseNumber("LN-MOB-001") } returns null
-        coEvery { userRepository.findByEmail("driver@fleet.ph") } returns null
-        coEvery { userRepository.findRoleByName("DRIVER") } returns driverRole
-        coEvery { userRepository.save(any()) } returnsArgument 0
-        coEvery { tokenRepository.save(any()) } returnsArgument 0
-        coEvery { driverRepository.save(capture(savedDriver)) } returnsArgument 0
-
-        useCase.execute(validRequest)
-
-        assertThat(savedDriver.captured.userId).isNotNull()
-    }
+            assertThat(result.email).isEqualTo("driver@fleet.ph")
+            assertThat(result.firstName).isEqualTo("Jose")
+            assertThat(savedDriver.captured.userId).isNotNull()
+        }
 
     @Test
-    fun shouldIssueVerificationToken_WhenRegistrationSucceeds() = runBlocking {
-        coEvery { driverRepository.findByEmail("driver@fleet.ph") } returns null
-        coEvery { driverRepository.findByLicenseNumber("LN-MOB-001") } returns null
-        coEvery { userRepository.findByEmail("driver@fleet.ph") } returns null
-        coEvery { userRepository.findRoleByName("DRIVER") } returns driverRole
-        coEvery { userRepository.save(any()) } returnsArgument 0
-        coEvery { tokenRepository.save(any()) } returnsArgument 0
-        coEvery { driverRepository.save(any()) } returnsArgument 0
+    fun shouldLinkDriverToUser_WhenRegistrationSucceeds(): Unit =
+        runBlocking {
+            val savedDriver = slot<Driver>()
+            coEvery { driverRepository.findByEmail("driver@fleet.ph") } returns null
+            coEvery { driverRepository.findByLicenseNumber("LN-MOB-001") } returns null
+            coEvery { userRepository.findByEmail("driver@fleet.ph") } returns null
+            coEvery { userRepository.findRoleByName("DRIVER") } returns driverRole
+            coEvery { userRepository.save(any()) } returnsArgument 0
+            coEvery { tokenRepository.save(any()) } returnsArgument 0
+            coEvery { driverRepository.save(capture(savedDriver)) } returnsArgument 0
 
-        useCase.execute(validRequest)
+            useCase.execute(validRequest)
 
-        coVerify(exactly = 1) { tokenRepository.save(any()) }
-    }
+            assertThat(savedDriver.captured.userId).isNotNull()
+        }
+
+    @Test
+    fun shouldIssueVerificationToken_WhenRegistrationSucceeds() =
+        runBlocking {
+            coEvery { driverRepository.findByEmail("driver@fleet.ph") } returns null
+            coEvery { driverRepository.findByLicenseNumber("LN-MOB-001") } returns null
+            coEvery { userRepository.findByEmail("driver@fleet.ph") } returns null
+            coEvery { userRepository.findRoleByName("DRIVER") } returns driverRole
+            coEvery { userRepository.save(any()) } returnsArgument 0
+            coEvery { tokenRepository.save(any()) } returnsArgument 0
+            coEvery { driverRepository.save(any()) } returnsArgument 0
+
+            useCase.execute(validRequest)
+
+            coVerify(exactly = 1) { tokenRepository.save(any()) }
+        }
 
     @Test
     fun shouldThrowIllegalArgument_WhenDriverEmailAlreadyExists() {

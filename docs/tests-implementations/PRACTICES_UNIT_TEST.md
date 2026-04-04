@@ -2,7 +2,12 @@ Act as a **Senior Kotlin Backend Developer (Ktor)**. I need you to generate a **
 
 Please strictly adhere to the following **Best Practices and Guidelines**:
 
----
+### Initial Setup
+* Do not deviate from these practices, as they are crucial for ensuring the reliability and maintainability of our integration tests. Do not use wildcards or shortcuts that compromise the integrity of the tests.
+* Each point is essential for creating robust and effective integration tests that accurately reflect real-world scenarios and interactions within our Ktor application.
+* And do not use wildcard imports, as they can lead to namespace pollution and make it harder to identify which classes are being used in the test.
+* Always import only the specific classes needed for the test to maintain clarity and readability.
+
 
 ### 1. Frameworks
 

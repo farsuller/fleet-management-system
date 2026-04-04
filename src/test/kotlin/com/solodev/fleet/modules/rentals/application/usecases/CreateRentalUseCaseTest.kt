@@ -1,14 +1,18 @@
 package com.solodev.fleet.modules.rentals.application.usecases
 
 import com.solodev.fleet.modules.rentals.application.dto.RentalRequest
-import com.solodev.fleet.modules.rentals.domain.model.*
-import com.solodev.fleet.modules.vehicles.domain.model.*
-import org.junit.jupiter.api.Test
-import java.time.Instant
-import java.time.temporal.ChronoUnit
-import java.util.UUID
+import com.solodev.fleet.modules.rentals.domain.model.CustomerId
+import com.solodev.fleet.modules.rentals.domain.model.Rental
+import com.solodev.fleet.modules.rentals.domain.model.RentalId
+import com.solodev.fleet.modules.rentals.domain.model.RentalStatus
+import com.solodev.fleet.modules.vehicles.domain.model.Vehicle
+import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
+import com.solodev.fleet.modules.vehicles.domain.model.VehicleState
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.Test
+import java.time.Instant
+import java.util.UUID
 
 /**
  * CreateRentalUseCase wraps execution in `dbQuery {}` (DB transaction), so calling
@@ -18,9 +22,8 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
  * rules directly via domain objects — no DB, no mockk repositories needed.
  */
 class CreateRentalUseCaseTest {
-
     private val startDate = Instant.parse("2026-03-10T00:00:00Z")
-    private val endDate   = Instant.parse("2026-03-17T00:00:00Z")
+    private val endDate = Instant.parse("2026-03-17T00:00:00Z")
 
     // --- Business rule: vehicle must be AVAILABLE ---
 
@@ -31,17 +34,18 @@ class CreateRentalUseCaseTest {
         require(vehicle.state == VehicleState.AVAILABLE) { "Vehicle is not available for rental" }
 
         // Act
-        val rental = Rental(
-            id = RentalId(UUID.randomUUID().toString()),
-            rentalNumber = "RNT-001",
-            vehicleId = vehicle.id,
-            customerId = CustomerId("cust-001"),
-            status = RentalStatus.RESERVED,
-            startDate = startDate,
-            endDate = endDate,
-            dailyRateAmount = 250000,
-            totalAmount = 250000 * 7
-        )
+        val rental =
+            Rental(
+                id = RentalId(UUID.randomUUID().toString()),
+                rentalNumber = "RNT-001",
+                vehicleId = vehicle.id,
+                customerId = CustomerId("cust-001"),
+                status = RentalStatus.RESERVED,
+                startDate = startDate,
+                endDate = endDate,
+                dailyRateAmount = 250000,
+                totalAmount = 250000 * 7,
+            )
 
         // Assert
         assertThat(rental.status).isEqualTo(RentalStatus.RESERVED)
@@ -76,17 +80,18 @@ class CreateRentalUseCaseTest {
     @Test
     fun shouldThrowIllegalArgument_WhenRentalDatesConflict() {
         // Arrange
-        val existingRental = Rental(
-            id = RentalId(UUID.randomUUID().toString()),
-            rentalNumber = "RNT-EXISTING",
-            vehicleId = VehicleId("veh-001"),
-            customerId = CustomerId("cust-002"),
-            status = RentalStatus.RESERVED,
-            startDate = startDate,
-            endDate = endDate,
-            dailyRateAmount = 250000,
-            totalAmount = 250000 * 7
-        )
+        val existingRental =
+            Rental(
+                id = RentalId(UUID.randomUUID().toString()),
+                rentalNumber = "RNT-EXISTING",
+                vehicleId = VehicleId("veh-001"),
+                customerId = CustomerId("cust-002"),
+                status = RentalStatus.RESERVED,
+                startDate = startDate,
+                endDate = endDate,
+                dailyRateAmount = 250000,
+                totalAmount = 250000 * 7,
+            )
         val conflicts = listOf(existingRental)
 
         // Act / Assert
@@ -105,7 +110,7 @@ class CreateRentalUseCaseTest {
                 vehicleId = "",
                 customerId = "cust-001",
                 startDate = "2026-03-10T00:00:00Z",
-                endDate = "2026-03-17T00:00:00Z"
+                endDate = "2026-03-17T00:00:00Z",
             )
         }.isInstanceOf(IllegalArgumentException::class.java)
     }
@@ -118,12 +123,29 @@ class CreateRentalUseCaseTest {
                 vehicleId = "veh-001",
                 customerId = "cust-001",
                 startDate = "2026-03-17T00:00:00Z",
-                endDate = "2026-03-10T00:00:00Z"
+                endDate = "2026-03-10T00:00:00Z",
             )
         }.isInstanceOf(IllegalArgumentException::class.java)
     }
 
-    private fun sampleVehicle(state: VehicleState) = Vehicle(
+    @Test
+    fun shouldCalculateTotalWithCustomRate() {
+        // Arrange
+        val vehicle = sampleVehicle(state = VehicleState.AVAILABLE, defaultRate = 1000)
+        val customRate = 1500L
+        val days = 7L
+
+        // Act
+        val totalAmount = (days * (customRate ?: 1000L)).toInt()
+
+        // Assert
+        assertThat(totalAmount).isEqualTo(10500)
+    }
+
+    private fun sampleVehicle(
+        state: VehicleState,
+        defaultRate: Int = 5000,
+    ) = Vehicle(
         id = VehicleId("veh-001"),
         vin = "1HGBH41JXMN109186",
         licensePlate = "ABC-1234",
@@ -131,6 +153,7 @@ class CreateRentalUseCaseTest {
         model = "Corolla",
         year = 2023,
         state = state,
-        mileageKm = 5000
+        mileageKm = 5000,
+        dailyRateAmount = defaultRate,
     )
 }

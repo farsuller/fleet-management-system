@@ -26,11 +26,11 @@ import org.testcontainers.utility.DockerImageName
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 open class BaseSpatialTest {
-
     companion object {
         private val postgisImage =
-                DockerImageName.parse("postgis/postgis:15-3.3")
-                        .asCompatibleSubstituteFor("postgres")
+            DockerImageName
+                .parse("postgis/postgis:15-3.3")
+                .asCompatibleSubstituteFor("postgres")
 
         val container by lazy {
             PostgreSQLContainer<Nothing>(postgisImage).apply {
@@ -46,7 +46,11 @@ open class BaseSpatialTest {
          * whether containers can actually start (not just whether a port accepts TCP).
          */
         fun isDockerAvailable(): Boolean =
-            try { DockerClientFactory.instance().isDockerAvailable } catch (_: Exception) { false }
+            try {
+                DockerClientFactory.instance().isDockerAvailable
+            } catch (_: Exception) {
+                false
+            }
     }
 
     @BeforeAll
@@ -54,14 +58,14 @@ open class BaseSpatialTest {
         assumeTrue(
             isDockerAvailable(),
             "Skipping PostGIS integration test — Docker not reachable. " +
-            "On Windows: install a WSL2 distro (wsl --install Ubuntu) and enable Docker Desktop WSL2 integration."
+                "On Windows: install a WSL2 distro (wsl --install Ubuntu) and enable Docker Desktop WSL2 integration.",
         )
 
         Database.connect(
-                url = container.jdbcUrl,
-                driver = "org.postgresql.Driver",
-                user = container.username,
-                password = container.password
+            url = container.jdbcUrl,
+            driver = "org.postgresql.Driver",
+            user = container.username,
+            password = container.password,
         )
 
         transaction {
@@ -70,4 +74,3 @@ open class BaseSpatialTest {
         }
     }
 }
-

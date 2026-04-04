@@ -4,8 +4,8 @@ import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Idempotency key manager for location update endpoints.
- * Prevents duplicate processing of the same request due to network retries.
+ * Idempotency key manager for location update endpoints. Prevents duplicate processing of the same
+ * request due to network retries.
  *
  * **How It Works**:
  * 1. Client generates idempotency-key (UUID) for each request
@@ -20,25 +20,24 @@ import java.util.concurrent.ConcurrentHashMap
  * **Expiration**: Keys automatically expire after configured TTL (default: 24 hours)
  */
 class IdempotencyKeyManager(
-    private val ttlMinutes: Int = 1440 // 24 hours default
+    private val ttlMinutes: Int = 1440,
 ) {
     data class CachedResponse(
         val responseBody: String,
         val timestamp: Instant,
-        val httpStatus: Int
+        val httpStatus: Int,
     )
 
     private val cache = ConcurrentHashMap<String, CachedResponse>()
 
     /**
-     * Record a request processing result with idempotency key.
-     * Returns true if this is a new key (first time seeing it).
-     * Returns false if key already exists (duplicate request).
+     * Record a request processing result with idempotency key. Returns true if this is a new key
+     * (first time seeing it). Returns false if key already exists (duplicate request).
      */
     fun recordRequest(
         idempotencyKey: String,
         responseBody: String,
-        httpStatus: Int = 200
+        httpStatus: Int = 200,
     ): Boolean {
         val now = Instant.now()
 
@@ -49,19 +48,17 @@ class IdempotencyKeyManager(
         }
 
         // Store new response
-        cache[idempotencyKey] = CachedResponse(
-            responseBody = responseBody,
-            timestamp = now,
-            httpStatus = httpStatus
-        )
+        cache[idempotencyKey] =
+            CachedResponse(
+                responseBody = responseBody,
+                timestamp = now,
+                httpStatus = httpStatus,
+            )
 
         return true // First time processing this key
     }
 
-    /**
-     * Get cached response for idempotency key.
-     * Returns null if key doesn't exist or is expired.
-     */
+    /** Get cached response for idempotency key. Returns null if key doesn't exist or is expired. */
     fun getCachedResponse(idempotencyKey: String): CachedResponse? {
         val cached = cache[idempotencyKey] ?: return null
 
@@ -74,36 +71,24 @@ class IdempotencyKeyManager(
     }
 
     /**
-     * Validate idempotency key format.
-     * Keys should be UUID-like format (alphanumeric with hyphens).
+     * Validate idempotency key format. Keys should be UUID-like format (alphanumeric with hyphens).
      */
-    fun isValidKey(key: String): Boolean {
-        return key.matches(Regex("^[a-zA-Z0-9-]{1,256}$"))
-    }
+    fun isValidKey(key: String): Boolean = key.matches(Regex("^[a-zA-Z0-9-]{1,256}$"))
 
-    /**
-     * Check if cached response has expired.
-     */
+    /** Check if cached response has expired. */
     private fun isExpired(cached: CachedResponse): Boolean {
         val expirationTime = cached.timestamp.plusSeconds((ttlMinutes * 60L))
         return Instant.now() > expirationTime
     }
 
-    /**
-     * Clean up expired entries from cache.
-     * Call periodically to prevent memory leak.
-     */
+    /** Clean up expired entries from cache. Call periodically to prevent memory leak. */
     fun cleanup() {
-        val expiredKeys = cache.entries
-            .filter { isExpired(it.value) }
-            .map { it.key }
+        val expiredKeys = cache.entries.filter { isExpired(it.value) }.map { it.key }
 
         expiredKeys.forEach { cache.remove(it) }
     }
 
-    /**
-     * Get cache statistics for monitoring.
-     */
+    /** Get cache statistics for monitoring. */
     fun getStats(): IdempotencyStats {
         val totalSize = cache.size
         val expiredCount = cache.values.count { isExpired(it) }
@@ -113,35 +98,28 @@ class IdempotencyKeyManager(
             totalCachedRequests = totalSize,
             activeRequests = activeCount,
             expiredRequests = expiredCount,
-            cacheCapacityUsed = "${(totalSize * 100) / 10000}%"
+            cacheCapacityUsed = "${(totalSize * 100) / 10000}%",
         )
     }
 
-    /**
-     * Clear all cached requests (admin only).
-     */
+    /** Clear all cached requests (admin only). */
     fun clearAll() {
         cache.clear()
     }
 }
 
-/**
- * Statistics about idempotency cache usage.
- */
+/** Statistics about idempotency cache usage. */
 data class IdempotencyStats(
     val totalCachedRequests: Int,
     val activeRequests: Int,
     val expiredRequests: Int,
-    val cacheCapacityUsed: String
+    val cacheCapacityUsed: String,
 )
 
-/**
- * Result of idempotency key processing.
- */
+/** Result of idempotency key processing. */
 data class IdempotencyCheckResult(
     val idempotencyKey: String,
     val isFirstRequest: Boolean,
     val cachedResponse: String? = null,
-    val cachedStatus: Int? = null
+    val cachedStatus: Int? = null,
 )
-

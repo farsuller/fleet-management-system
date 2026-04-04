@@ -1,13 +1,21 @@
 package com.solodev.fleet.shared.plugins
 
-import com.solodev.fleet.shared.exceptions.*
+import com.solodev.fleet.shared.exceptions.ConflictException
+import com.solodev.fleet.shared.exceptions.ForbiddenException
+import com.solodev.fleet.shared.exceptions.NotFoundException
+import com.solodev.fleet.shared.exceptions.RateLimitException
+import com.solodev.fleet.shared.exceptions.UnauthenticatedException
+import com.solodev.fleet.shared.exceptions.ValidationException
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.models.ErrorDetail
 import com.solodev.fleet.shared.models.FieldError
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.plugins.statuspages.*
-import io.ktor.server.response.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
+import io.ktor.server.application.log
+import io.ktor.server.plugins.BadRequestException
+import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.response.respond
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.postgresql.util.PSQLException
 
@@ -22,80 +30,80 @@ fun Application.configureStatusPages() {
         // Domain-specific exceptions
         exception<NotFoundException> { call, cause ->
             call.respond(
-                    HttpStatusCode.NotFound,
-                    ApiResponse<Nothing>(
-                            success = false,
-                            error =
-                                    ErrorDetail(
-                                            code = cause.errorCode,
-                                            message = cause.message ?: "Resource not found"
-                                    ),
-                            requestId = call.requestId
-                    )
+                HttpStatusCode.NotFound,
+                ApiResponse<Nothing>(
+                    success = false,
+                    error =
+                        ErrorDetail(
+                            code = cause.errorCode,
+                            message = cause.message ?: "Resource not found",
+                        ),
+                    requestId = call.requestId,
+                ),
             )
         }
 
         exception<ValidationException> { call, cause ->
             call.respond(
-                    HttpStatusCode.UnprocessableEntity,
-                    ApiResponse<Nothing>(
-                            success = false,
-                            error =
-                                    ErrorDetail(
-                                            code = cause.errorCode,
-                                            message = cause.message ?: "Validation failed",
-                                            details =
-                                                    cause.fieldErrors.map { (field, reason) ->
-                                                        FieldError(field, reason)
-                                                    }
-                                    ),
-                            requestId = call.requestId
-                    )
+                HttpStatusCode.UnprocessableEntity,
+                ApiResponse<Nothing>(
+                    success = false,
+                    error =
+                        ErrorDetail(
+                            code = cause.errorCode,
+                            message = cause.message ?: "Validation failed",
+                            details =
+                                cause.fieldErrors.map { (field, reason) ->
+                                    FieldError(field, reason)
+                                },
+                        ),
+                    requestId = call.requestId,
+                ),
             )
         }
 
         exception<ConflictException> { call, cause ->
             call.respond(
-                    HttpStatusCode.Conflict,
-                    ApiResponse<Nothing>(
-                            success = false,
-                            error =
-                                    ErrorDetail(
-                                            code = cause.errorCode,
-                                            message = cause.message ?: "Conflict detected"
-                                    ),
-                            requestId = call.requestId
-                    )
+                HttpStatusCode.Conflict,
+                ApiResponse<Nothing>(
+                    success = false,
+                    error =
+                        ErrorDetail(
+                            code = cause.errorCode,
+                            message = cause.message ?: "Conflict detected",
+                        ),
+                    requestId = call.requestId,
+                ),
             )
         }
 
         exception<UnauthenticatedException> { call, cause ->
             call.respond(
-                    HttpStatusCode.Unauthorized,
-                    ApiResponse<Nothing>(
-                            success = false,
-                            error =
-                                    ErrorDetail(
-                                            code = cause.errorCode,
-                                            message = cause.message ?: "Authentication required"
-                                    ),
-                            requestId = call.requestId
-                    )
+                HttpStatusCode.Unauthorized,
+                ApiResponse<Nothing>(
+                    success = false,
+                    error =
+                        ErrorDetail(
+                            code = cause.errorCode,
+                            message = cause.message ?: "Authentication required",
+                        ),
+                    requestId = call.requestId,
+                ),
             )
         }
 
         exception<ForbiddenException> { call, cause ->
             call.respond(
-                    HttpStatusCode.Forbidden,
-                    ApiResponse<Nothing>(
-                            success = false,
-                            error =
-                                    ErrorDetail(
-                                            code = cause.errorCode,
-                                            message = cause.message ?: "Insufficient permissions"
-                                    ),
-                            requestId = call.requestId
-                    )
+                HttpStatusCode.Forbidden,
+                ApiResponse<Nothing>(
+                    success = false,
+                    error =
+                        ErrorDetail(
+                            code = cause.errorCode,
+                            message = cause.message ?: "Insufficient permissions",
+                        ),
+                    requestId = call.requestId,
+                ),
             )
         }
 
@@ -107,16 +115,47 @@ fun Application.configureStatusPages() {
 
         exception<RateLimitException> { call, cause ->
             call.respond(
-                    HttpStatusCode.TooManyRequests,
-                    ApiResponse<Nothing>(
-                            success = false,
-                            error =
-                                    ErrorDetail(
-                                            code = cause.errorCode,
-                                            message = cause.message ?: "Rate limit exceeded"
-                                    ),
-                            requestId = call.requestId
-                    )
+                HttpStatusCode.TooManyRequests,
+                ApiResponse<Nothing>(
+                    success = false,
+                    error =
+                        ErrorDetail(
+                            code = cause.errorCode,
+                            message = cause.message ?: "Rate limit exceeded",
+                        ),
+                    requestId = call.requestId,
+                ),
+            )
+        }
+
+        // Serialization and Bad Request handling
+        exception<BadRequestException> { call, cause ->
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ApiResponse<Nothing>(
+                    success = false,
+                    error =
+                        ErrorDetail(
+                            code = "BAD_REQUEST",
+                            message = cause.message ?: "Invalid request format",
+                        ),
+                    requestId = call.requestId,
+                ),
+            )
+        }
+
+        exception<kotlinx.serialization.SerializationException> { call, cause ->
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ApiResponse<Nothing>(
+                    success = false,
+                    error =
+                        ErrorDetail(
+                            code = "SERIALIZATION_ERROR",
+                            message = "Malformed JSON or type mismatch: ${cause.message}",
+                        ),
+                    requestId = call.requestId,
+                ),
             )
         }
 
@@ -126,68 +165,68 @@ fun Application.configureStatusPages() {
             call.application.log.error("Unhandled exception", cause)
 
             call.respond(
-                    HttpStatusCode.InternalServerError,
-                    ApiResponse<Nothing>(
-                            success = false,
-                            error =
-                                    ErrorDetail(
-                                            code = "INTERNAL_ERROR",
-                                            message = "An unexpected error occurred"
-                                    ),
-                            requestId = call.requestId
-                    )
+                HttpStatusCode.InternalServerError,
+                ApiResponse<Nothing>(
+                    success = false,
+                    error =
+                        ErrorDetail(
+                            code = "INTERNAL_ERROR",
+                            message = "An unexpected error occurred",
+                        ),
+                    requestId = call.requestId,
+                ),
             )
         }
 
         status(HttpStatusCode.NotFound) { call, _ ->
             call.respond(
-                    HttpStatusCode.NotFound,
-                    ApiResponse<Nothing>(
-                            success = false,
-                            error =
-                                    ErrorDetail(
-                                            code = "NOT_FOUND",
-                                            message =
-                                                    "The requested resource or endpoint was not found"
-                                    ),
-                            requestId = call.requestId
-                    )
+                HttpStatusCode.NotFound,
+                ApiResponse<Nothing>(
+                    success = false,
+                    error =
+                        ErrorDetail(
+                            code = "NOT_FOUND",
+                            message =
+                                "The requested resource or endpoint was not found",
+                        ),
+                    requestId = call.requestId,
+                ),
             )
         }
         exception<ExposedSQLException> { call, cause ->
             val psqlException = cause.cause as? PSQLException
             if (psqlException?.sqlState == "23505") {
                 call.respond(
-                        HttpStatusCode.Conflict,
-                        ApiResponse<Nothing>(
-                                success = false,
-                                error =
-                                        ErrorDetail(
-                                                code = "CONFLICT",
-                                                message =
-                                                        "Resource already exists (duplicate key violation): ${
-                                psqlException.message?.substringAfter(
-                                    "Detail: "
-                                ) ?: psqlException.message
-                            }"
-                                        ),
-                                requestId = call.requestId
-                        )
+                    HttpStatusCode.Conflict,
+                    ApiResponse<Nothing>(
+                        success = false,
+                        error =
+                            ErrorDetail(
+                                code = "CONFLICT",
+                                message =
+                                    "Resource already exists (duplicate key violation): ${
+                                        psqlException.message?.substringAfter(
+                                            "Detail: ",
+                                        ) ?: psqlException.message
+                                    }",
+                            ),
+                        requestId = call.requestId,
+                    ),
                 )
             } else {
                 // Not a unique violation, fall back to default behavior (log and 500)
                 call.application.log.error("Database error", cause)
                 call.respond(
-                        HttpStatusCode.InternalServerError,
-                        ApiResponse<Nothing>(
-                                success = false,
-                                error =
-                                        ErrorDetail(
-                                                code = "DATABASE_ERROR",
-                                                message = "A database error occurred"
-                                        ),
-                                requestId = call.requestId
-                        )
+                    HttpStatusCode.InternalServerError,
+                    ApiResponse<Nothing>(
+                        success = false,
+                        error =
+                            ErrorDetail(
+                                code = "DATABASE_ERROR",
+                                message = "A database error occurred",
+                            ),
+                        requestId = call.requestId,
+                    ),
                 )
             }
         }

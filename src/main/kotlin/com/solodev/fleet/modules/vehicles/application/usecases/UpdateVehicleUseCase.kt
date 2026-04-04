@@ -5,18 +5,40 @@ import com.solodev.fleet.modules.vehicles.domain.model.Vehicle
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 
-class UpdateVehicleUseCase(private val repository: VehicleRepository) {
-    suspend fun execute(id: String, request: VehicleUpdateRequest): Vehicle? {
+class UpdateVehicleUseCase(
+    private val repository: VehicleRepository,
+) {
+    suspend fun execute(
+        id: String,
+        request: VehicleUpdateRequest,
+    ): Vehicle? {
         val existing = repository.findById(VehicleId(id)) ?: return null
 
         val updated =
-                existing.copy(
-                        licensePlate = request.licensePlate ?: existing.licensePlate,
-                        color = request.color ?: existing.color,
-                        dailyRateAmount = request.dailyRate?.let { (it * 100).toInt() }
-                                        ?: existing.dailyRateAmount
-                )
+            existing.copy(
+                licensePlate = request.licensePlate ?: existing.licensePlate,
+                make = request.make ?: existing.make,
+                model = request.model ?: existing.model,
+                year = request.year ?: existing.year,
+                color = request.color ?: existing.color,
+                dailyRateAmount =
+                    request.dailyRate?.let { (it * 100).toInt() }
+                        ?: existing.dailyRateAmount,
+                mileageKm = request.mileageKm ?: existing.mileageKm,
+            )
 
-        return repository.save(updated)
+        // Validate mileage if updated
+        if (request.mileageKm != null && request.mileageKm < existing.mileageKm) {
+            throw IllegalArgumentException("New mileage (${request.mileageKm}) cannot be less than current mileage (${existing.mileageKm})")
+        }
+
+        val saved = repository.save(updated)
+
+        // Record history if mileage changed
+        if (request.mileageKm != null && request.mileageKm > existing.mileageKm) {
+            repository.recordOdometerReading(existing.id, request.mileageKm)
+        }
+
+        return saved
     }
 }

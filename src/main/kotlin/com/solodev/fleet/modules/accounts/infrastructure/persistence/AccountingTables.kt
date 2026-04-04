@@ -15,8 +15,8 @@ object AccountsTable : UUIDTable("accounts") {
     val accountName = varchar("account_name", 255)
     val accountType = varchar("account_type", 20)
     val parentAccountId =
-            reference("parent_account_id", AccountsTable, onDelete = ReferenceOption.SET_NULL)
-                    .nullable()
+        reference("parent_account_id", AccountsTable, onDelete = ReferenceOption.SET_NULL)
+            .nullable()
     val isActive = bool("is_active").default(true)
     val description = text("description").nullable()
     val createdAt = timestamp("created_at")
@@ -48,7 +48,7 @@ object InvoicesTable : UUIDTable("invoices") {
     val invoiceNumber = varchar("invoice_number", 50).uniqueIndex()
     val customerId = reference("customer_id", CustomersTable, onDelete = ReferenceOption.RESTRICT)
     val rentalId =
-            reference("rental_id", RentalsTable, onDelete = ReferenceOption.SET_NULL).nullable()
+        reference("rental_id", RentalsTable, onDelete = ReferenceOption.SET_NULL).nullable()
     val status = varchar("status", 20)
 
     // Amounts — balance is a DB-generated column (GENERATED ALWAYS AS) and is NOT written by
@@ -83,11 +83,13 @@ object PaymentsTable : UUIDTable("payments") {
     val paymentNumber = varchar("payment_number", 50).uniqueIndex()
     val customerId = reference("customer_id", CustomersTable, onDelete = ReferenceOption.RESTRICT)
     val invoiceId =
-            reference("invoice_id", InvoicesTable, onDelete = ReferenceOption.SET_NULL).nullable()
+        reference("invoice_id", InvoicesTable, onDelete = ReferenceOption.SET_NULL).nullable()
+
     /** Nullable FK to driver who collected this payment on behalf of the company. */
     val driverId =
-            reference("driver_id", DriversTable, onDelete = ReferenceOption.SET_NULL)
-                    .nullable()
+        reference("driver_id", DriversTable, onDelete = ReferenceOption.SET_NULL)
+            .nullable()
+
     /** DIRECT = customer paid company; DRIVER_COLLECTED = collected by driver, awaiting remittance. */
     val collectionType = varchar("collection_type", 20).default("DIRECT")
     val paymentMethod = varchar("payment_method", 50)

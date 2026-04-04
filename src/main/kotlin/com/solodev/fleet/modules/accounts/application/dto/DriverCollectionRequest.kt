@@ -13,5 +13,5 @@ data class DriverCollectionRequest(
     val paymentMethod: String,
     val transactionReference: String? = null,
     /** ISO-8601 timestamp of when the driver collected from the customer. */
-    val collectedAt: String
+    val collectedAt: String,
 )

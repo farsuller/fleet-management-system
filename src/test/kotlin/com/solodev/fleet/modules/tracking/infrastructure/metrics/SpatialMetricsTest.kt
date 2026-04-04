@@ -5,7 +5,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 class SpatialMetricsTest {
-
     @Test
     fun shouldRecordSnapDurationMetric_WhenRecordSnapDurationCalled() {
         // Arrange
@@ -72,4 +71,3 @@ class SpatialMetricsTest {
         assertThat(counter!!.count()).isEqualTo(1.0)
     }
 }
-

@@ -2,9 +2,10 @@ package com.solodev.fleet.shared.plugins
 
 import com.solodev.fleet.shared.infrastructure.serialization.InstantSerializer
 import com.solodev.fleet.shared.infrastructure.serialization.UUIDSerializer
-import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.application.*
-import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.json
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import java.time.Instant
@@ -19,17 +20,18 @@ import java.util.UUID
  * - `ignoreUnknownKeys`: Prevents crashes when parsing JSON with extra fields.
  */
 fun Application.configureSerialization() {
+    val json =
+        Json {
+            prettyPrint = true
+            ignoreUnknownKeys = true
+            encodeDefaults = true
 
-    val json = Json {
-        prettyPrint = true
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-
-        serializersModule = SerializersModule {
-            contextual(UUID::class) { UUIDSerializer }
-            contextual(Instant::class) { InstantSerializer }
+            serializersModule =
+                SerializersModule {
+                    contextual(UUID::class) { UUIDSerializer }
+                    contextual(Instant::class) { InstantSerializer }
+                }
         }
-    }
 
     install(ContentNegotiation) {
         json(json)

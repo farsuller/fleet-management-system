@@ -6,11 +6,12 @@ object PasswordHasher {
     private val hasher = BCrypt.withDefaults()
     private val verifier = BCrypt.verifyer()
 
-    fun hash(password: String): String {
-        return hasher.hashToString(12, password.toCharArray())
-    }
+    fun hash(password: String): String = hasher.hashToString(12, password.toCharArray())
 
-    fun verify(password: String, hash: String): Boolean {
+    fun verify(
+        password: String,
+        hash: String,
+    ): Boolean {
         if (!hash.startsWith("$2")) {
             // Handle legacy/mock passwords or unknown formats gracefully
             // For development transition: strictly fail or allow simple match if intended

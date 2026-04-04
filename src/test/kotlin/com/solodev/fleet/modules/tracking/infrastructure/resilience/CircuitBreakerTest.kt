@@ -1,8 +1,8 @@
 package com.solodev.fleet.modules.tracking.infrastructure.resilience
 
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.BeforeEach
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
@@ -12,17 +12,17 @@ import kotlin.test.assertNotNull
  * Tests circuit breaker pattern with state transitions.
  */
 class CircuitBreakerTest {
-
     private lateinit var circuitBreaker: CircuitBreaker
 
     @BeforeEach
     fun setup() {
-        circuitBreaker = CircuitBreaker(
-            name = "TestBreaker",
-            failureThreshold = 3,
-            successThreshold = 2,
-            timeoutSeconds = 5
-        )
+        circuitBreaker =
+            CircuitBreaker(
+                name = "TestBreaker",
+                failureThreshold = 3,
+                successThreshold = 2,
+                timeoutSeconds = 5,
+            )
     }
 
     @Test
@@ -33,9 +33,10 @@ class CircuitBreakerTest {
     @Test
     fun `should execute operation successfully in CLOSED state`() {
         runBlocking {
-            val result = circuitBreaker.execute {
-                "success"
-            }
+            val result =
+                circuitBreaker.execute {
+                    "success"
+                }
 
             assertEquals("success", result)
             assertEquals(CircuitState.CLOSED, circuitBreaker.getState())
@@ -211,12 +212,12 @@ class CircuitBreakerTest {
             circuitBreaker.reset()
 
             // Execute should work now
-            val result = circuitBreaker.execute {
-                "success after reset"
-            }
+            val result =
+                circuitBreaker.execute {
+                    "success after reset"
+                }
 
             assertEquals("success after reset", result)
         }
     }
 }
-

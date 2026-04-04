@@ -1,8 +1,8 @@
 -- V003: Create Rentals Schema
 -- This migration creates tables for rental management with double-booking prevention
 
--- Customers table: Customer information
-CREATE TABLE customers (
+-- Customers table: Customer information (Idempotent)
+CREATE TABLE IF NOT EXISTS customers (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID UNIQUE REFERENCES users(id) ON DELETE SET NULL,
     first_name VARCHAR(100) NOT NULL,
@@ -20,8 +20,8 @@ CREATE TABLE customers (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Rentals table: Core rental information
-CREATE TABLE rentals (
+-- Rentals table: Core rental information (Idempotent)
+CREATE TABLE IF NOT EXISTS rentals (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     rental_number VARCHAR(50) NOT NULL UNIQUE,
     customer_id UUID NOT NULL REFERENCES customers(id),
@@ -64,7 +64,7 @@ CREATE TABLE rentals (
 -- This ensures no overlapping rentals for the same vehicle when status is RESERVED or ACTIVE
 CREATE EXTENSION IF NOT EXISTS btree_gist;
 
-CREATE TABLE rental_periods (
+CREATE TABLE IF NOT EXISTS rental_periods (
     rental_id UUID PRIMARY KEY REFERENCES rentals(id) ON DELETE CASCADE,
     vehicle_id UUID NOT NULL REFERENCES vehicles(id),
     period TSTZRANGE NOT NULL,
@@ -77,8 +77,8 @@ CREATE TABLE rental_periods (
     ) WHERE (status IN ('RESERVED', 'ACTIVE'))
 );
 
--- Rental charges table: Additional charges beyond base rental
-CREATE TABLE rental_charges (
+-- Rental charges table: Additional charges beyond base rental (Idempotent)
+CREATE TABLE IF NOT EXISTS rental_charges (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     rental_id UUID NOT NULL REFERENCES rentals(id) ON DELETE CASCADE,
     charge_type VARCHAR(50) NOT NULL CHECK (charge_type IN ('FUEL', 'DAMAGE', 'LATE_FEE', 'CLEANING', 'TOLL', 'OTHER')),
@@ -89,8 +89,8 @@ CREATE TABLE rental_charges (
     charged_by_user_id UUID REFERENCES users(id)
 );
 
--- Rental payments table: Track payments for rentals
-CREATE TABLE rental_payments (
+-- Rental payments table: Track payments for rentals (Idempotent)
+CREATE TABLE IF NOT EXISTS rental_payments (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     rental_id UUID NOT NULL REFERENCES rentals(id) ON DELETE CASCADE,
     payment_method VARCHAR(50) NOT NULL CHECK (payment_method IN ('CREDIT_CARD', 'DEBIT_CARD', 'CASH', 'BANK_TRANSFER')),
@@ -103,30 +103,34 @@ CREATE TABLE rental_payments (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Indexes for performance
-CREATE INDEX idx_rentals_customer_id ON rentals(customer_id);
-CREATE INDEX idx_rentals_vehicle_id ON rentals(vehicle_id);
-CREATE INDEX idx_rentals_status ON rentals(status);
-CREATE INDEX idx_rentals_start_date ON rentals(start_date);
-CREATE INDEX idx_rentals_end_date ON rentals(end_date);
-CREATE INDEX idx_rentals_rental_number ON rentals(rental_number);
-CREATE INDEX idx_rental_periods_vehicle_id ON rental_periods(vehicle_id);
-CREATE INDEX idx_rental_charges_rental_id ON rental_charges(rental_id);
-CREATE INDEX idx_rental_payments_rental_id ON rental_payments(rental_id);
-CREATE INDEX idx_customers_email ON customers(email);
-CREATE INDEX idx_customers_driver_license ON customers(driver_license_number);
+-- Indexes for performance (Idempotent)
+CREATE INDEX IF NOT EXISTS idx_rentals_customer_id ON rentals(customer_id);
+CREATE INDEX IF NOT EXISTS idx_rentals_vehicle_id ON rentals(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_rentals_status ON rentals(status);
+CREATE INDEX IF NOT EXISTS idx_rentals_start_date ON rentals(start_date);
+CREATE INDEX IF NOT EXISTS idx_rentals_end_date ON rentals(end_date);
+CREATE INDEX IF NOT EXISTS idx_rentals_rental_number ON rentals(rental_number);
+CREATE INDEX IF NOT EXISTS idx_rental_periods_vehicle_id ON rental_periods(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_rental_charges_rental_id ON rental_charges(rental_id);
+CREATE INDEX IF NOT EXISTS idx_rental_payments_rental_id ON rental_payments(rental_id);
+CREATE INDEX IF NOT EXISTS idx_customers_email ON customers(email);
+CREATE INDEX IF NOT EXISTS idx_customers_driver_license ON customers(driver_license_number);
 
--- Triggers for updated_at
+-- Triggers for updated_at (Idempotent)
+DROP TRIGGER IF EXISTS update_customers_updated_at ON customers;
 CREATE TRIGGER update_customers_updated_at BEFORE UPDATE ON customers
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_rentals_updated_at ON rentals;
 CREATE TRIGGER update_rentals_updated_at BEFORE UPDATE ON rentals
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_rental_payments_updated_at ON rental_payments;
 CREATE TRIGGER update_rental_payments_updated_at BEFORE UPDATE ON rental_payments
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Trigger for version increment
+-- Trigger for version increment (Idempotent)
+DROP TRIGGER IF EXISTS increment_rentals_version ON rentals;
 CREATE TRIGGER increment_rentals_version BEFORE UPDATE ON rentals
     FOR EACH ROW EXECUTE FUNCTION increment_version();
 
@@ -151,6 +155,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Trigger for sync_rental_period (Idempotent)
+DROP TRIGGER IF EXISTS sync_rental_period_trigger ON rentals;
 CREATE TRIGGER sync_rental_period_trigger
     AFTER INSERT OR UPDATE ON rentals
     FOR EACH ROW

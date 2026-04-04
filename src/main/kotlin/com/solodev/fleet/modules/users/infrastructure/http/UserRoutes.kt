@@ -1,23 +1,42 @@
 package com.solodev.fleet.modules.users.infrastructure.http
 
-import com.solodev.fleet.modules.users.application.dto.*
-import com.solodev.fleet.modules.users.application.usecases.*
+import com.solodev.fleet.modules.users.application.dto.LoginRequest
+import com.solodev.fleet.modules.users.application.dto.LoginResponse
+import com.solodev.fleet.modules.users.application.dto.RoleResponse
+import com.solodev.fleet.modules.users.application.dto.UserRegistrationRequest
+import com.solodev.fleet.modules.users.application.dto.UserResponse
+import com.solodev.fleet.modules.users.application.dto.UserUpdateRequest
+import com.solodev.fleet.modules.users.application.usecases.AssignRoleUseCase
+import com.solodev.fleet.modules.users.application.usecases.DeleteUserUseCase
+import com.solodev.fleet.modules.users.application.usecases.GetUserProfileUseCase
+import com.solodev.fleet.modules.users.application.usecases.ListRolesUseCase
+import com.solodev.fleet.modules.users.application.usecases.ListUsersUseCase
+import com.solodev.fleet.modules.users.application.usecases.LoginUserUseCase
+import com.solodev.fleet.modules.users.application.usecases.RegisterUserUseCase
+import com.solodev.fleet.modules.users.application.usecases.UpdateUserUseCase
+import com.solodev.fleet.modules.users.application.usecases.VerifyEmailUseCase
 import com.solodev.fleet.modules.users.domain.repository.UserRepository
 import com.solodev.fleet.modules.users.domain.repository.VerificationTokenRepository
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.requestId
 import com.solodev.fleet.shared.utils.JwtService
-import io.ktor.http.*
-import io.ktor.server.auth.*
-import io.ktor.server.plugins.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.call
+import io.ktor.server.auth.authenticate
+import io.ktor.server.plugins.BadRequestException
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.delete
+import io.ktor.server.routing.get
+import io.ktor.server.routing.patch
+import io.ktor.server.routing.post
+import io.ktor.server.routing.route
 
 fun Route.userRoutes(
     userRepository: UserRepository,
     tokenRepository: VerificationTokenRepository,
-    jwtService: JwtService
+    jwtService: JwtService,
 ) {
     val registerUserUseCase = RegisterUserUseCase(userRepository, tokenRepository)
     val verifyEmailUseCase = VerifyEmailUseCase(userRepository, tokenRepository)
@@ -38,8 +57,8 @@ fun Route.userRoutes(
                         ApiResponse.error(
                             "MISSING_TOKEN",
                             "Token required",
-                            call.requestId
-                        )
+                            call.requestId,
+                        ),
                     )
 
             try {
@@ -47,8 +66,8 @@ fun Route.userRoutes(
                 call.respond(
                     ApiResponse.success(
                         mapOf("message" to "Email successfully verified"),
-                        call.requestId
-                    )
+                        call.requestId,
+                    ),
                 )
             } catch (e: Exception) {
                 call.respond(
@@ -56,15 +75,14 @@ fun Route.userRoutes(
                     ApiResponse.error(
                         "VERIFICATION_FAILED",
                         e.message ?: "Invalid token",
-                        call.requestId
-                    )
+                        call.requestId,
+                    ),
                 )
             }
         }
     }
 
     route("/v1/users") {
-
         post("/register") {
             try {
                 val request = call.receive<UserRegistrationRequest>()
@@ -76,8 +94,8 @@ fun Route.userRoutes(
                     ApiResponse.error(
                         "VALIDATION_ERROR",
                         e.message ?: "Invalid data",
-                        call.requestId
-                    )
+                        call.requestId,
+                    ),
                 )
             } catch (e: IllegalStateException) {
                 call.respond(
@@ -85,8 +103,8 @@ fun Route.userRoutes(
                     ApiResponse.error(
                         "CONFLICT",
                         e.message ?: "Resource conflict",
-                        call.requestId
-                    )
+                        call.requestId,
+                    ),
                 )
             }
         }
@@ -105,8 +123,8 @@ fun Route.userRoutes(
                     ApiResponse.error(
                         "INVALID_REQUEST",
                         "Invalid request body. Expected JSON: {\"email\": \"...\", \"password\": \"...\"}",
-                        call.requestId
-                    )
+                        call.requestId,
+                    ),
                 )
             } catch (e: IllegalArgumentException) {
                 call.respond(
@@ -114,8 +132,8 @@ fun Route.userRoutes(
                     ApiResponse.error(
                         "AUTH_FAILED",
                         e.message ?: "Invalid credentials",
-                        call.requestId
-                    )
+                        call.requestId,
+                    ),
                 )
             }
         }
@@ -129,7 +147,7 @@ fun Route.userRoutes(
             get("/roles") {
                 val roles = listRolesUseCase.execute()
                 call.respond(
-                    ApiResponse.success(roles.map { RoleResponse.fromDomain(it) }, call.requestId)
+                    ApiResponse.success(roles.map { RoleResponse.fromDomain(it) }, call.requestId),
                 )
             }
 
@@ -142,8 +160,8 @@ fun Route.userRoutes(
                                 ApiResponse.error(
                                     "MISSING_ID",
                                     "ID required",
-                                    call.requestId
-                                )
+                                    call.requestId,
+                                ),
                             )
                     val user = getUserProfileUseCase.execute(id)
                     user?.let {
@@ -151,7 +169,7 @@ fun Route.userRoutes(
                     }
                         ?: call.respond(
                             HttpStatusCode.NotFound,
-                            ApiResponse.error("NOT_FOUND", "User not found", call.requestId)
+                            ApiResponse.error("NOT_FOUND", "User not found", call.requestId),
                         )
                 }
 
@@ -164,19 +182,19 @@ fun Route.userRoutes(
                                     ApiResponse.error(
                                         "MISSING_ID",
                                         "ID required",
-                                        call.requestId
-                                    )
+                                        call.requestId,
+                                    ),
                                 )
                         val request = call.receive<UserUpdateRequest>()
                         val updated = updateUserUseCase.execute(id, request)
                         updated?.let {
                             call.respond(
-                                ApiResponse.success(UserResponse.fromDomain(it), call.requestId)
+                                ApiResponse.success(UserResponse.fromDomain(it), call.requestId),
                             )
                         }
                             ?: call.respond(
                                 HttpStatusCode.NotFound,
-                                ApiResponse.error("NOT_FOUND", "User not found", call.requestId)
+                                ApiResponse.error("NOT_FOUND", "User not found", call.requestId),
                             )
                     } catch (e: IllegalArgumentException) {
                         call.respond(
@@ -184,8 +202,8 @@ fun Route.userRoutes(
                             ApiResponse.error(
                                 "VALIDATION_ERROR",
                                 e.message ?: "Invalid data",
-                                call.requestId
-                            )
+                                call.requestId,
+                            ),
                         )
                     }
                 }
@@ -198,8 +216,8 @@ fun Route.userRoutes(
                                 ApiResponse.error(
                                     "MISSING_ID",
                                     "ID required",
-                                    call.requestId
-                                )
+                                    call.requestId,
+                                ),
                             )
                     val deleted = deleteUserUseCase.execute(id)
                     if (deleted) {
@@ -207,13 +225,13 @@ fun Route.userRoutes(
                             HttpStatusCode.OK,
                             ApiResponse.success(
                                 mapOf("message" to "User deleted successfully"),
-                                call.requestId
-                            )
+                                call.requestId,
+                            ),
                         )
                     } else {
                         call.respond(
                             HttpStatusCode.NotFound,
-                            ApiResponse.error("NOT_FOUND", "User not found", call.requestId)
+                            ApiResponse.error("NOT_FOUND", "User not found", call.requestId),
                         )
                     }
                 }
@@ -226,8 +244,8 @@ fun Route.userRoutes(
                                 ApiResponse.error(
                                     "MISSING_ID",
                                     "ID required",
-                                    call.requestId
-                                )
+                                    call.requestId,
+                                ),
                             )
                     val roleName =
                         call.receive<Map<String, String>>()["roleName"]
@@ -236,20 +254,20 @@ fun Route.userRoutes(
                                 ApiResponse.error(
                                     "INVALID_BODY",
                                     "roleName required",
-                                    call.requestId
-                                )
+                                    call.requestId,
+                                ),
                             )
 
                     try {
                         val updated = assignRoleUseCase.execute(id, roleName)
                         updated?.let {
                             call.respond(
-                                ApiResponse.success(UserResponse.fromDomain(it), call.requestId)
+                                ApiResponse.success(UserResponse.fromDomain(it), call.requestId),
                             )
                         }
                             ?: call.respond(
                                 HttpStatusCode.NotFound,
-                                ApiResponse.error("NOT_FOUND", "User not found", call.requestId)
+                                ApiResponse.error("NOT_FOUND", "User not found", call.requestId),
                             )
                     } catch (e: IllegalArgumentException) {
                         call.respond(
@@ -257,8 +275,8 @@ fun Route.userRoutes(
                             ApiResponse.error(
                                 "ROLE_NOT_FOUND",
                                 e.message ?: "Role not found",
-                                call.requestId
-                            )
+                                call.requestId,
+                            ),
                         )
                     }
                 }

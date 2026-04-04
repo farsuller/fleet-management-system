@@ -2,7 +2,8 @@ package com.solodev.fleet.shared.plugins
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import io.ktor.server.application.*
+import io.ktor.server.application.Application
+import io.ktor.server.application.log
 import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -46,7 +47,7 @@ fun Application.configureDatabases() {
             jdbcUrl = "jdbc:postgresql://$host$port$path$query"
         } catch (e: Exception) {
             environment.log.warn(
-                "Failed to parse complex JDBC URL (${e.message}), falling back to simple prefixing"
+                "Failed to parse complex JDBC URL (${e.message}), falling back to simple prefixing",
             )
             if (!jdbcUrl.startsWith("jdbc:")) jdbcUrl = "jdbc:$jdbcUrl"
         }
@@ -78,15 +79,16 @@ fun Application.configureDatabases() {
 
     // H2 Compatibility: Define gen_random_uuid() for tests
     if (jdbcUrl.startsWith("jdbc:h2:")) {
-        try {
-            dataSource.connection.use { conn ->
-                conn.createStatement()
-                    .execute(
-                        "CREATE ALIAS IF NOT EXISTS gen_random_uuid FOR \"java.util.UUID.randomUUID\""
+        synchronized(this) {
+            try {
+                dataSource.connection.use { conn ->
+                    conn.createStatement().execute(
+                        "CREATE ALIAS IF NOT EXISTS gen_random_uuid FOR \"java.util.UUID.randomUUID\"",
                     )
+                }
+            } catch (t: Throwable) {
+                log.warn("Non-fatal: H2 gen_random_uuid registration skipped: ${t.message}")
             }
-        } catch (e: Exception) {
-            log.warn("Failed to create H2 alias for gen_random_uuid", e)
         }
     }
 
@@ -153,6 +155,10 @@ fun Application.configureDatabases() {
             "V024__add_driver_payment_fields.sql",
             "V025__add_invoice_id_to_rentals.sql",
             "V026__add_vehicle_type.sql",
+            "V027__add_sensor_fields_to_location_history.sql",
+            "V028__create_driver_shifts.sql",
+            "V029__add_vehicle_service_mileage.sql",
+            "V030__create_vehicle_incidents.sql",
         )
 
     log.info("Extracting ${migrationFiles.size} migrations to: ${migrationDir.absolutePath}...")
@@ -165,7 +171,7 @@ fun Application.configureDatabases() {
             java.nio.file.Files.copy(
                 inputStream,
                 destFile.toPath(),
-                java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING,
             )
         } else {
             log.warn("Extraction: Could not find migration in classpath: $resourcePath")
@@ -184,7 +190,8 @@ fun Application.configureDatabases() {
     // Adding trailing slash to path as some Flyway versions require it for directory walking
     val filesystemLocation = "filesystem:${migrationDir.absolutePath}/"
     val flyway =
-        Flyway.configure()
+        Flyway
+            .configure()
             .dataSource(dataSource)
             .locations(filesystemLocation)
             .sqlMigrationPrefix("V")
@@ -200,7 +207,7 @@ fun Application.configureDatabases() {
         val pending = info.pending().size
         val applied = info.applied().size
         log.info(
-            "Flyway status: $applied applied, $pending pending, $all total discovered in filesystem:${migrationDir.absolutePath}"
+            "Flyway status: $applied applied, $pending pending, $all total discovered in filesystem:${migrationDir.absolutePath}",
         )
 
         // Repair handles checksum mismatches (common in tests)
@@ -210,11 +217,11 @@ fun Application.configureDatabases() {
             log.info("Executing $pending Flyway migrations...")
             val result = flyway.migrate()
             log.info(
-                "Flyway migrations completed successfully. Applied ${result.migrationsExecuted} migrations."
+                "Flyway migrations completed successfully. Applied ${result.migrationsExecuted} migrations.",
             )
         } else if (all == 0) {
             log.warn(
-                "WARNING: No migrations discovered by Flyway. Triggering Manual JDBC Fallback..."
+                "WARNING: No migrations discovered by Flyway. Triggering Manual JDBC Fallback...",
             )
 
             dataSource.connection.use { conn ->
@@ -236,7 +243,7 @@ fun Application.configureDatabases() {
                 }
             }
             log.info(
-                "Manual JDBC Fallback completed successfully. (Note: Flyway tracking was bypassed)"
+                "Manual JDBC Fallback completed successfully. (Note: Flyway tracking was bypassed)",
             )
         }
     } catch (e: Exception) {
@@ -246,7 +253,7 @@ fun Application.configureDatabases() {
             throw e // Fail fast in production
         } else {
             log.warn(
-                "Non-fatal migration error in test environment (H2). Falling back to automatic schema handling."
+                "Non-fatal migration error in test environment (H2). Falling back to automatic schema handling.",
             )
         }
     }

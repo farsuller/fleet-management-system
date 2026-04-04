@@ -5,9 +5,12 @@ import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 
 class RecordOdometerUseCase(
-    private val repository: VehicleRepository
+    private val repository: VehicleRepository,
 ) {
-    suspend fun execute(id: String, newMileage: Int): Vehicle? {
+    suspend fun execute(
+        id: String,
+        newMileage: Int,
+    ): Vehicle? {
         val vehicle = repository.findById(VehicleId(id)) ?: return null
 
         require(newMileage >= vehicle.mileageKm) {
@@ -15,6 +18,11 @@ class RecordOdometerUseCase(
         }
 
         val updated = vehicle.copy(mileageKm = newMileage)
-        return repository.save(updated)
+        val saved = repository.save(updated)
+
+        // Record history
+        repository.recordOdometerReading(vehicle.id, newMileage)
+
+        return saved
     }
 }

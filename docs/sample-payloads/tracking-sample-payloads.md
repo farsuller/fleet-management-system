@@ -61,6 +61,64 @@ This document details the tracking and spatial features, including real-time veh
 }
 ```
 
+### Batch Sensor Ping
+**Endpoint**: `POST /v1/sensors/ping`
+**Context**: High-concurrency endpoint for mobile apps to send batches of sensor readings (GPS + IMU). Supports request deduplication via `X-Idempotency-Key`.
+**Permissions**: Authenticated Vehicles/Drivers
+
+**Headers**:
+```
+X-Idempotency-Key: uuid-client-side-unique-key
+```
+
+**Request**:
+```json
+[
+  {
+    "vehicleId": "v-123",
+    "latitude": 14.5995,
+    "longitude": 121.0244,
+    "accuracy": 5.0,
+    "speed": 45.5,
+    "heading": 180.0,
+    "timestamp": "2026-03-07T14:32:15.123Z",
+    "routeId": "7b8e1e5b-...",
+    "accelX": -0.5,
+    "gyroZ": 0.01,
+    "batteryLevel": 85
+  },
+  {
+    "vehicleId": "v-123",
+    "latitude": 14.6000,
+    "longitude": 121.0250,
+    "accuracy": 4.5,
+    "speed": 46.2,
+    "heading": 182.0,
+    "timestamp": "2026-03-07T14:32:16.123Z",
+    "routeId": "7b8e1e5b-...",
+    "accelX": 0.2,
+    "gyroZ": -0.05,
+    "batteryLevel": 84
+  }
+]
+```
+
+**Response**: `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "totalProcessed": 2,
+    "errors": 0,
+    "failedIndices": []
+  },
+  "requestId": "req_batch_001"
+}
+```
+
+> [!TIP]
+> Use batching to reduce network overhead and battery consumption on mobile devices. If coordinate reception is disabled globally, this endpoint returns `503 Service Unavailable`.
+
 ### Create Route from GeoJSON
 **Endpoint**: `POST /v1/tracking/routes`
 **Context**: Import a route by providing a GeoJSON string (e.g., exported from geojson.io). Accepts a GeoJSON `Feature`, `FeatureCollection`, or bare `LineString` geometry. The server converts it to WKT and stores it in PostGIS.
@@ -556,6 +614,51 @@ PONG
     "endpoint": "/v1/fleet/live"
   },
   "requestId": "req_..."
+}
+```
+
+## Admin - Tracking Control
+
+### Get Coordinate Reception Status
+**Endpoint**: `GET /v1/tracking/admin/coordinate-reception`
+**Context**: Get current global state of the tracking ingestion pipeline.
+**Permissions**: Authenticated (Admin/FleetManager)
+
+**Response**: `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "enabled": true,
+    "updatedBy": "admin_uuid",
+    "updatedAt": "2026-03-10T08:00:00Z"
+  },
+  "requestId": "req_admin_recv_01"
+}
+```
+
+### Set Coordinate Reception Status
+**Endpoint**: `POST /v1/tracking/admin/coordinate-reception`
+**Context**: Globally enable or disable coordinate ingestion (emergency kill-switch).
+**Permissions**: Authenticated (Admin/FleetManager)
+
+**Request**:
+```json
+{
+  "enabled": false
+}
+```
+
+**Response**: `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "enabled": false,
+    "updatedBy": "current_user_id",
+    "updatedAt": "2026-03-13T14:30:00Z"
+  },
+  "requestId": "req_admin_recv_02"
 }
 ```
 
