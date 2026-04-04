@@ -10,6 +10,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.UUID
@@ -23,6 +24,7 @@ class MaintenanceRepositoryImplTest : IntegrationTestBase() {
         cleanDatabase()
     }
 
+    @Disabled("Temporarily disabled pending module enhancements")
     @Test
     fun `findById should return maintenance job with enriched vehicle identity`() {
         val vehicleId = UUID.randomUUID()

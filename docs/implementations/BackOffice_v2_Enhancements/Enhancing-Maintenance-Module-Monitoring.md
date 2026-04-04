@@ -1,54 +1,49 @@
-# Maintenance Module Enhancement: High-Level Business Perspective
+# Enhanced Maintenance Module: High-Level Business Perspective
 
-To enhance your **Maintenance Module**, you need to bridge the gap between "something is scheduled" and "knowing exactly what is happening in the shop in real-time." Based on your current screenshots, the flow is a bit static. 
-
-Here is a high-level business perspective on the enhancements for monitoring your fleet from the back office using your Kotlin stack.
+This enhancement aligns the **Maintenance Module** with the existing **Kotlin/Ktor** modular monolith architecture, ensuring high-scale operational integrity and real-time fleet visualization.
 
 ---
 
-## 1. The "Live Shop Floor" Monitoring
-Currently, your status is either "Scheduled" or "In Progress." From a business standpoint, you need to monitor the **stages of labor** to identify bottlenecks.
+## 1. Real-Time "Shop Floor" Orchestration
+Leveraging the existing **WebSocket Live Stream** and **Redis Pub/Sub** infrastructure, the back office can transition from manual tracking to live shop monitoring.
 
-* **Sub-Status Tracking:** Instead of just "In Progress," track `Awaiting Parts`, `Under Repair`, and `Quality Control`. 
-* **Mechanic Assignment:** Monitor *who* is working on the vehicle. This allows you to track labor efficiency and accountability directly from the back office.
-* **Real-time Frontend Update:** Since you are using Kotlin (likely with a framework like Ktor or Spring Boot), implement **WebSockets**. When a mechanic clicks "Start Work" on their side, your back-office dashboard should pulse or update the row color instantly without a page refresh.
+* **Granular Sub-Statuses**: Move beyond the basic `IN_PROGRESS` state to include `AWAITING_PARTS`, `TECHNICIAN_ASSIGNED`, and `QUALITY_CHECK`.
+* **Technician Accountability**: Assign `maintenance_jobs` directly to `staff_profiles` to monitor labor efficiency (Estimated vs. Actual time).
+* **Live Dashboard Updates**: Use the **WebSocket** interface to broadcast state changes instantly to the WebClient when a technician starts work via the mobile app, eliminating the need for page refreshes.
 
-## 2. Telemetry-Driven Maintenance Triggers
-Instead of manual scheduling, your backend should act as a "watchdog" over your vehicle data.
+## 2. Telemetry-Driven Proactive Triggers
+Utilize the existing `odometer_readings` and **Vehicle Module** invariants to automate maintenance scheduling.
 
-* **Odometer Sync:** Your "Vehicle Details" shows a manual odometer update. The backend should monitor mileage via GPS/Telemetry API. 
-* **Predictive Alerts:** If a Toyota Vios (like ASB-111) is averaging 500km/week, the backend should calculate the date it will hit its next 5,000km service and auto-create a "Draft" maintenance task.
-* **Business Value:** This moves you from *reactive* maintenance (fixing what's broken) to *proactive* fleet health.
+* **Predictive Maintenance Invariants**: The system should trigger a `MAINTENANCE_DUE` event when a vehicle is within a specific threshold of its `next_service_at_km`.
+* **Automated Job Generation**: Automatically create a `SCHEDULED` job based on the `service_mileage_interval_km` defined in the vehicle's domain profile.
+* **Strict Availability Guardrails**: Enforce the system invariant that vehicles in a `MAINTENANCE` state are strictly excluded from the **Rental Module** availability engine to prevent double-booking.
 
-## 3. The "Paper Trail" & Digital Documentation
-To monitor actions taken, you need more than just a description box. You need evidence.
+## 3. Integrated Financial Integrity
+Align maintenance activities with the **Accounting Module** to ensure every repair is reflected in the professional-grade double-entry ledger.
 
-* **Inspection Checklists:** Before a job moves to "Completed," the backend should require a digital checklist (e.g., Oil level checked, Tire pressure set, Brake pads inspected).
-* **Photo Evidence:** Allow the frontend to upload "Before" and "After" photos stored in your backend (S3/Cloud storage). In the back office, clicking a completed job should show a gallery of the work done.
-* **Parts Consumption:** Link the maintenance job to a "Parts Inventory." When a mechanic uses a filter or oil, it should deduct from your stock and update the `Estimated Cost` to `Actual Cost` in real-time.
+* **Automated Ledger Postings**: Every completed `maintenance_job` should automatically generate a ledger entry, debiting the Maintenance Expense Account and crediting the appropriate Asset/Cash account.
+* **Parts Inventory Linkage**: Use the `maintenance_parts` table to track part consumption and costs, allowing for "Maintenance-to-Revenue" ratio analysis per vehicle.
+* **Cost Accuracy**: Record `labor_cost` and `parts_cost` at completion to provide a total maintenance overhead analysis.
 
-## 4. Financial & Performance Analytics
-Since you have an **Accounting** module, the bridge between Maintenance and Finance is critical.
+## 4. Spatial Intelligence & Field Service
+Utilize the **PostGIS** spatial engine to enhance response times for reactive maintenance and vehicle incidents.
 
-* **Downtime Costing:** Monitor how many hours/days a vehicle is "Out of Service." 
-    > **Business Formula:** $$Downtime\ Cost = (Daily\ Revenue\ Potential \times Days\ in\ Shop) + Repair\ Cost$$
-* **Vendor Performance:** If you outsource repairs, monitor the "Estimated vs. Actual" turnaround time and cost to see which shops are overcharging or taking too long.
+* **Incident Response**: When a `vehicle_incident` is reported via the mobile app, use spatial snapping to identify the nearest authorized service center.
+* **Downtime Cost Mapping**: Combine data from the **Rental Module** (daily rates) and **Maintenance Module** (repair duration) to calculate the total financial impact of vehicle downtime.
 
 ---
 
-### Backend vs. Frontend Action Flow (Kotlin)
+### Implementation Flow (Backend vs. Frontend)
 
-| Action Stage | Frontend (Kotlin/Compose/React) | Backend (Kotlin/Spring/Ktor) |
+| Action Stage | Frontend (Web/Mobile) | Backend (Kotlin/Ktor Domain) |
 | :--- | :--- | :--- |
-| **Trigger** | High-mileage alert or manual schedule. | Service sends notification to Fleet Manager. |
-| **Assignment** | Manager assigns to a specific Mechanic/Bay. | Updates `maintenance_logs` table with `mechanic_id`. |
-| **Execution** | Mechanic taps **"Start Work"**. | Timestamp recorded; status changed to `IN_PROGRESS`. |
-| **Verification** | Checklist completed + Photos uploaded. | Validates all required fields before allowing status change. |
-| **Close-out** | Manager reviews and hits **"Approve"**. | Final costs pushed to **Accounting Module** (Invoice/Expense). |
+| **Trigger** | Manager views "Service Due" alert in the dashboard. | `VehicleMod` emits a domain event based on odometer threshold. |
+| **Assignment** | Manager assigns job to a specific Staff ID. | `MaintenanceUC` updates `assigned_to_user_id` in the database. |
+| **Execution** | Technician taps **"Start Work"** in the mobile app. | State machine moves job to `IN_PROGRESS` and vehicle to `MAINTENANCE`. |
+| **Financials** | Technician logs parts and labor costs. | `AccountingUC` prepares ledger lines for the double-entry system. |
+| **Release** | Manager approves the final completion. | Invariant check: Ensures `current_odometer_km` is updated before release. |
 
-### Summary of Key Back-Office Metrics to Monitor:
-1.  **MTTR (Mean Time To Repair):** How fast are we fixing cars?
-2.  **Maintenance Compliance:** What % of the fleet is overdue for service?
-3.  **Recurring Issues:** Is the same Toyota Vios coming back for the same engine issue every month? (Flag for "Lemon" or poor repair quality).
-
-By implementing these, your back office moves from a simple "list of tasks" to a **command center** that optimizes vehicle uptime and reduces operational costs.
+### Key Back-Office Metrics to Monitor
+1.  **Mean Time to Repair (MTTR)**: Average time elapsed from `SCHEDULED` to `COMPLETED`.
+2.  **Service Compliance Rate**: Percentage of the fleet serviced within their defined mileage intervals.
+3.  **Maintenance-to-Revenue Ratio**: Comparison of total repair costs against the rental income generated by specific vehicle units.

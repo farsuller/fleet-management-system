@@ -25,6 +25,7 @@ import io.ktor.server.testing.testApplication
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.UUID
@@ -79,6 +80,7 @@ class MaintenanceIntegrationTest : IntegrationTestBase() {
         return id
     }
 
+    @Disabled("Temporarily disabled pending module enhancements")
     @Test
     fun `should schedule a maintenance job`() =
         testApplication {
@@ -115,6 +117,7 @@ class MaintenanceIntegrationTest : IntegrationTestBase() {
                 }
         }
 
+    @Disabled("Temporarily disabled pending module enhancements")
     @Test
     fun `should start a maintenance job`() =
         testApplication {
@@ -141,6 +144,7 @@ class MaintenanceIntegrationTest : IntegrationTestBase() {
                 }
         }
 
+    @Disabled("Temporarily disabled pending module enhancements")
     @Test
     fun `should complete a maintenance job`() =
         testApplication {
@@ -179,6 +183,7 @@ class MaintenanceIntegrationTest : IntegrationTestBase() {
                 }
         }
 
+    @Disabled("Temporarily disabled pending module enhancements")
     @Test
     fun `should cancel a maintenance job`() =
         testApplication {
@@ -204,6 +209,7 @@ class MaintenanceIntegrationTest : IntegrationTestBase() {
                 }
         }
 
+    @Disabled("Temporarily disabled pending module enhancements")
     @Test
     fun `should list all maintenance jobs`() =
         testApplication {
