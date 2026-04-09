@@ -26,6 +26,15 @@ import java.util.UUID
 
 /** PostgreSQL implementation of MaintenanceRepository using Exposed ORM. */
 class MaintenanceRepositoryImpl : MaintenanceRepository {
+    private fun MaintenanceJobType.toPersistedValue(): String =
+        when (this) {
+            MaintenanceJobType.PREVENTIVE -> "ROUTINE"
+            MaintenanceJobType.CORRECTIVE -> "REPAIR"
+            MaintenanceJobType.INSPECTION -> "INSPECTION"
+            MaintenanceJobType.EMERGENCY -> "EMERGENCY"
+            MaintenanceJobType.UNKNOWN -> "INSPECTION"
+        }
+
     private fun ResultRow.toMaintenanceJob() =
         MaintenanceJob(
             id = MaintenanceJobId(this[MaintenanceJobsTable.id].value.toString()),
@@ -127,24 +136,43 @@ class MaintenanceRepositoryImpl : MaintenanceRepository {
                 MaintenanceJobsTable.update({
                     MaintenanceJobsTable.id eq UUID.fromString(job.id.value)
                 }) {
-                    it[status] = job.status.name
-                    it[startedAt] = job.startedAt
-                    it[completedAt] = job.completedAt
-                    it[laborCost] = job.laborCost
-                    it[partsCost] = job.partsCost
-                    it[updatedAt] = Instant.now()
+                    it[MaintenanceJobsTable.status] = job.status.name
+                    it[MaintenanceJobsTable.jobType] = job.jobType.toPersistedValue()
+                    it[MaintenanceJobsTable.description] = job.description
+                    it[MaintenanceJobsTable.priority] = job.priority.name
+                    it[MaintenanceJobsTable.scheduledDate] = job.scheduledDate
+                    it[MaintenanceJobsTable.startedAt] = job.startedAt
+                    it[MaintenanceJobsTable.completedAt] = job.completedAt
+                    it[MaintenanceJobsTable.odometerKm] = job.odometerKm
+                    it[MaintenanceJobsTable.laborCost] = job.laborCost
+                    it[MaintenanceJobsTable.partsCost] = job.partsCost
+                    it[MaintenanceJobsTable.currencyCode] = job.currencyCode
+                    it[MaintenanceJobsTable.assignedToUserId] = job.assignedToUserId
+                    it[MaintenanceJobsTable.completedByUserId] = job.completedByUserId
+                    it[MaintenanceJobsTable.notes] = job.notes
+                    it[MaintenanceJobsTable.updatedAt] = Instant.now()
                 }
             } else {
                 MaintenanceJobsTable.insert {
-                    it[id] = UUID.fromString(job.id.value)
-                    it[jobNumber] = job.jobNumber
-                    it[vehicleId] = UUID.fromString(job.vehicleId.value)
-                    it[status] = job.status.name
-                    it[jobType] = job.jobType.name
-                    it[description] = job.description
-                    it[scheduledDate] = job.scheduledDate
-                    it[createdAt] = Instant.now()
-                    it[updatedAt] = Instant.now()
+                    it[MaintenanceJobsTable.id] = UUID.fromString(job.id.value)
+                    it[MaintenanceJobsTable.jobNumber] = job.jobNumber
+                    it[MaintenanceJobsTable.vehicleId] = UUID.fromString(job.vehicleId.value)
+                    it[MaintenanceJobsTable.status] = job.status.name
+                    it[MaintenanceJobsTable.jobType] = job.jobType.toPersistedValue()
+                    it[MaintenanceJobsTable.description] = job.description
+                    it[MaintenanceJobsTable.priority] = job.priority.name
+                    it[MaintenanceJobsTable.scheduledDate] = job.scheduledDate
+                    it[MaintenanceJobsTable.startedAt] = job.startedAt
+                    it[MaintenanceJobsTable.completedAt] = job.completedAt
+                    it[MaintenanceJobsTable.odometerKm] = job.odometerKm
+                    it[MaintenanceJobsTable.laborCost] = job.laborCost
+                    it[MaintenanceJobsTable.partsCost] = job.partsCost
+                    it[MaintenanceJobsTable.currencyCode] = job.currencyCode
+                    it[MaintenanceJobsTable.assignedToUserId] = job.assignedToUserId
+                    it[MaintenanceJobsTable.completedByUserId] = job.completedByUserId
+                    it[MaintenanceJobsTable.notes] = job.notes
+                    it[MaintenanceJobsTable.createdAt] = Instant.now()
+                    it[MaintenanceJobsTable.updatedAt] = Instant.now()
                 }
             }
             job

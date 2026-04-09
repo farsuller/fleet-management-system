@@ -3,6 +3,7 @@ package com.solodev.fleet.modules.maintenance.application.usecases
 import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJob
 import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJobId
 import com.solodev.fleet.modules.maintenance.domain.repository.MaintenanceRepository
+import java.time.Instant
 
 class StartMaintenanceUseCase(
     private val repository: MaintenanceRepository,
@@ -11,6 +12,10 @@ class StartMaintenanceUseCase(
         val job =
             repository.findById(MaintenanceJobId(jobId))
                 ?: throw IllegalArgumentException("Job not found")
+
+        require(!job.scheduledDate.isAfter(Instant.now())) {
+            "Cannot start work before the scheduled date"
+        }
 
         val startedJob = job.start()
         return repository.saveJob(startedJob)

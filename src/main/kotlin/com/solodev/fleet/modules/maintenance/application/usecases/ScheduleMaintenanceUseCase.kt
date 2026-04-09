@@ -13,6 +13,13 @@ class ScheduleMaintenanceUseCase(
     private val repository: MaintenanceRepository,
 ) {
     suspend fun execute(request: MaintenanceRequest): MaintenanceJob {
+        val hasActiveJob =
+            repository
+                .findByVehicleId(VehicleId(request.vehicleId))
+                .any { it.status == MaintenanceStatus.SCHEDULED || it.status == MaintenanceStatus.IN_PROGRESS }
+
+        require(!hasActiveJob) { "Vehicle already has an active maintenance job" }
+
         val job =
             MaintenanceJob(
                 id = MaintenanceJobId(UUID.randomUUID().toString()),
