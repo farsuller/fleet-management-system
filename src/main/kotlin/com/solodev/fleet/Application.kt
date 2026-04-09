@@ -22,6 +22,7 @@ import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import java.net.URI
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
 import kotlin.time.Duration.Companion.seconds
@@ -44,12 +45,27 @@ fun main(args: Array<String>) {
  * Order matters: RequestId must be configured early so it's available in error handlers.
  */
 fun Application.module() {
+    val corsAllowedOrigins =
+        environment.config
+            .propertyOrNull("cors.allowedOrigins")
+            ?.getString()
+            ?.split(',')
+            ?.map(String::trim)
+            ?.filter(String::isNotBlank)
+            ?: emptyList()
+
     install(CORS) {
-        allowHost("localhost:8081")
-        allowHost("localhost:8080")
-        allowHost("localhost:8082")
-        allowHost("127.0.0.1:8081")
-        allowHost("127.0.0.1:8082")
+        corsAllowedOrigins.forEach { origin ->
+            val uri = URI(origin)
+            val host = buildString {
+                append(uri.host)
+                if (uri.port != -1) {
+                    append(":")
+                    append(uri.port)
+                }
+            }
+            allowHost(host, schemes = listOf(uri.scheme))
+        }
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Authorization)
         allowMethod(HttpMethod.Post)
