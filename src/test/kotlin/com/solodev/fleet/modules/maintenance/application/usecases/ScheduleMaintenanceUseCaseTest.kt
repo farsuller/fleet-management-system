@@ -33,6 +33,7 @@ class ScheduleMaintenanceUseCaseTest {
         runBlocking {
             // Arrange
             val savedJob = slot<MaintenanceJob>()
+            coEvery { repository.findByVehicleId(VehicleId("veh-001")) } returns emptyList()
             coEvery { repository.saveJob(capture(savedJob)) } returnsArgument 0
 
             // Act
@@ -51,6 +52,7 @@ class ScheduleMaintenanceUseCaseTest {
     fun shouldAutoGenerateJobNumber_WhenJobIsScheduled(): Unit =
         runBlocking {
             // Arrange
+            coEvery { repository.findByVehicleId(VehicleId("veh-001")) } returns emptyList()
             coEvery { repository.saveJob(any()) } returnsArgument 0
 
             // Act
