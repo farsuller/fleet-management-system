@@ -1,3 +1,4 @@
+import org.gradle.testing.jacoco.tasks.JacocoReport
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -145,6 +146,26 @@ tasks.test {
 // JaCoCo Code Coverage Configuration
 jacoco {
     toolVersion = libs.versions.jacoco.get()
+}
+
+val jacocoCoverageExclusions =
+    listOf(
+        "**/*Table.class",
+        "**/*Table$*.class",
+        "**/*Tables.class",
+        "**/*Tables$*.class",
+    )
+
+tasks.withType<JacocoReport>().configureEach {
+    classDirectories.setFrom(
+        files(
+            classDirectories.files.map { directory ->
+                fileTree(directory) {
+                    exclude(jacocoCoverageExclusions)
+                }
+            },
+        ),
+    )
 }
 
 tasks.jacocoTestReport {

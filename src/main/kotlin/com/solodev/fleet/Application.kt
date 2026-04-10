@@ -22,9 +22,9 @@ import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import java.net.URI
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
+import java.net.URI
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -57,13 +57,14 @@ fun Application.module() {
     install(CORS) {
         corsAllowedOrigins.forEach { origin ->
             val uri = URI(origin)
-            val host = buildString {
-                append(uri.host)
-                if (uri.port != -1) {
-                    append(":")
-                    append(uri.port)
+            val host =
+                buildString {
+                    append(uri.host)
+                    if (uri.port != -1) {
+                        append(":")
+                        append(uri.port)
+                    }
                 }
-            }
             allowHost(host, schemes = listOf(uri.scheme))
         }
         allowHeader(HttpHeaders.ContentType)
