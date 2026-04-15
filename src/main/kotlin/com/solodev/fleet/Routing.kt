@@ -150,6 +150,8 @@ fun Application.configureRouting(
                     ledgerRepository = ledgerRepo,
                     paymentMethodRepository = paymentMethodRepo,
                     customerRepository = customerRepo,
+                    rentalRepository = rentalRepo,
+                    vehicleRepository = vehicleRepo,
                     remittanceRepository = remittanceRepo,
                     reconciliationService = reconciliationService,
                 )

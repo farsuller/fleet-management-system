@@ -19,6 +19,8 @@ import com.solodev.fleet.shared.plugins.requestId
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -113,6 +115,29 @@ fun Route.rentalRoutes(
                             e.message ?: "Invalid request",
                             call.requestId,
                         ),
+                    )
+                }
+            }
+
+            get("/assigned") {
+                val principal = call.principal<JWTPrincipal>()
+                val driverId = principal?.payload?.getClaim("id")?.asString()
+
+                if (driverId == null) {
+                    return@get call.respond(
+                        HttpStatusCode.Unauthorized,
+                        ApiResponse.error("UNAUTHORIZED", "Missing driver ID in token", call.requestId),
+                    )
+                }
+
+                try {
+                    val rentals = rentalRepository.findByDriverIdWithDetails(java.util.UUID.fromString(driverId))
+                    val response = rentals.map { RentalResponse.fromDomain(it) }
+                    call.respond(ApiResponse.success(response, call.requestId))
+                } catch (e: Exception) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        ApiResponse.error("INVALID_DRIVER_ID", "Invalid Driver ID format", call.requestId),
                     )
                 }
             }

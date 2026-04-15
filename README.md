@@ -134,6 +134,7 @@ The system provides a comprehensive REST API documented via Swagger/OpenAPI.
 | :--- | :--- |
 | **Format Code** | `./gradlew spotlessApply` |
 | **Run Tests** | `./gradlew test` |
+| **Verify Coverage (JaCoCo)** | `./gradlew jacocoVerify` |
 | **Build Project** | `./gradlew build` |
 | **Run App** | `./gradlew run` |
 
@@ -154,9 +155,36 @@ The system provides a comprehensive REST API documented via Swagger/OpenAPI.
 4. **Prepare & Run**:
    ```bash
    ./gradlew spotlessApply  # Standardize formatting
+   ./gradlew jacocoVerify   # Run tests + JaCoCo report + coverage gate
    ./gradlew build          # Compile and verify
    ./gradlew run            # Launch application
    ```
+
+### JaCoCo Local Verification
+
+Use this command to run local coverage verification:
+
+```bash
+./gradlew jacocoVerify
+```
+
+What this runs:
+- Unit/integration tests (`test`)
+- Coverage report generation (`jacocoTestReport`)
+- Coverage threshold check (`jacocoTestCoverageVerification`)
+
+Current minimum coverage threshold: **40%** (aligned with CI).
+
+Generated reports:
+- XML: `build/reports/jacoco/test/jacocoTestReport.xml`
+- HTML: `build/reports/jacoco/test/html/index.html`
+
+
+
+To view detailed coverage:
+1. Open `build/reports/jacoco/test/html/index.html` in your browser
+2. Navigate through packages/classes to see line-by-line coverage
+3. Identify uncovered code blocks and write additional tests
 
 ---
 

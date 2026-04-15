@@ -12,6 +12,12 @@ interface LedgerRepository {
         upToDate: Instant,
     ): Long
 
+    suspend fun calculateAccountBalanceBetween(
+        accountId: AccountId,
+        from: Instant,
+        to: Instant,
+    ): Long
+
     suspend fun calculateSumForReference(
         reference: String,
         accountId: AccountId,
@@ -21,4 +27,14 @@ interface LedgerRepository {
         prefix: String,
         accountId: AccountId,
     ): Long
+
+    /**
+     * Returns all (entryDate, netCreditAmount) pairs for the given revenue account IDs
+     * within [from, to). Used for time-series chart grouping.
+     */
+    suspend fun getRevenueLinesInRange(
+        accountIds: List<AccountId>,
+        from: Instant,
+        to: Instant,
+    ): List<Pair<Instant, Long>>
 }

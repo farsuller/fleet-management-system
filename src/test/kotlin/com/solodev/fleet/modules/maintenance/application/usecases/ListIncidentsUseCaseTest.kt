@@ -94,4 +94,27 @@ class ListIncidentsUseCaseTest {
             assertThat(result[0].title).isEqualTo("Engine Smoke")
             coVerify(exactly = 1) { repository.findIncidentsByJobId(jobId) }
         }
+
+    @Test
+    fun `should return all incidents without status filter`() =
+        runBlocking {
+            coEvery { repository.findAllIncidents(null) } returns listOf(incident1, incident2)
+
+            val result = useCase.getAll()
+
+            assertThat(result).hasSize(2)
+            coVerify(exactly = 1) { repository.findAllIncidents(null) }
+        }
+
+    @Test
+    fun `should return incidents filtered by status`() =
+        runBlocking {
+            coEvery { repository.findAllIncidents(IncidentStatus.REPORTED) } returns listOf(incident1)
+
+            val result = useCase.getAll(IncidentStatus.REPORTED)
+
+            assertThat(result).hasSize(1)
+            assertThat(result[0].status).isEqualTo(IncidentStatus.REPORTED)
+            coVerify(exactly = 1) { repository.findAllIncidents(IncidentStatus.REPORTED) }
+        }
 }

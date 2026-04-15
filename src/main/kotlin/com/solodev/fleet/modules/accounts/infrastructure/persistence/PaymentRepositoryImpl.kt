@@ -1,5 +1,6 @@
 package com.solodev.fleet.modules.accounts.infrastructure.persistence
 
+import com.solodev.fleet.modules.accounts.domain.model.InvoiceCategory
 import com.solodev.fleet.modules.accounts.domain.model.Payment
 import com.solodev.fleet.modules.accounts.domain.model.PaymentCollectionType
 import com.solodev.fleet.modules.accounts.domain.model.PaymentStatus
@@ -29,6 +30,7 @@ class PaymentRepositoryImpl : PaymentRepository {
             if (exists) {
                 PaymentsTable.update({ PaymentsTable.id eq payment.id }) {
                     it[status] = payment.status.name
+                    it[category] = payment.category.name
                     it[notes] = payment.notes
                     it[updatedAt] = Instant.now()
                 }
@@ -45,6 +47,7 @@ class PaymentRepositoryImpl : PaymentRepository {
                     it[transactionReference] = payment.transactionReference
                     it[status] = payment.status.name
                     it[paymentDate] = payment.paymentDate
+                    it[category] = payment.category.name
                     it[notes] = payment.notes
                     it[createdAt] = Instant.now()
                     it[updatedAt] = Instant.now()
@@ -102,6 +105,25 @@ class PaymentRepositoryImpl : PaymentRepository {
             PaymentsTable.selectAll().map { toDomain(it) }
         }
 
+    override suspend fun findByCategory(category: String): List<Payment> =
+        dbQuery {
+            PaymentsTable
+                .selectAll()
+                .where { PaymentsTable.category eq category }
+                .map { toDomain(it) }
+        }
+
+    override suspend fun findByCategoryAndInvoiceId(
+        category: String,
+        invoiceId: UUID,
+    ): List<Payment> =
+        dbQuery {
+            PaymentsTable
+                .selectAll()
+                .where { (PaymentsTable.category eq category) and (PaymentsTable.invoiceId eq invoiceId) }
+                .map { toDomain(it) }
+        }
+
     private fun toDomain(row: ResultRow): Payment =
         Payment(
             id = row[PaymentsTable.id].value,
@@ -118,6 +140,7 @@ class PaymentRepositoryImpl : PaymentRepository {
                 PaymentCollectionType.valueOf(
                     row[PaymentsTable.collectionType] ?: PaymentCollectionType.DIRECT.name,
                 ),
+            category = InvoiceCategory.valueOf(row[PaymentsTable.category]),
             notes = row[PaymentsTable.notes],
         )
 }

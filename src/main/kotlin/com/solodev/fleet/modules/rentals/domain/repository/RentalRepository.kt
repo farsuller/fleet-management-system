@@ -36,6 +36,12 @@ interface RentalRepository {
     /** Find all rentals for a specific vehicle. */
     suspend fun findByVehicleId(vehicleId: VehicleId): List<Rental>
 
+    /** Find all rentals for a specific driver. */
+    suspend fun findByDriverId(driverId: java.util.UUID): List<Rental>
+
+    /** Find all rentals with a specific driver including enriched details. */
+    suspend fun findByDriverIdWithDetails(driverId: java.util.UUID): List<RentalWithDetails>
+
     /**
      * Find active or reserved rentals for a vehicle in a date range. Used to check for
      * conflicts/double-booking.

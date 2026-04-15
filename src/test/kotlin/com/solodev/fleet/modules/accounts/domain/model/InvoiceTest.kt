@@ -46,10 +46,29 @@ class InvoiceTest {
         }
     }
 
+    @Test
+    fun `invoice defaults to RENTAL category`() {
+        val invoice = sampleInvoice()
+        assertEquals(InvoiceCategory.RENTAL, invoice.category)
+    }
+
+    @Test
+    fun `invoice can be created with MAINTENANCE category`() {
+        val invoice = sampleInvoice(category = InvoiceCategory.MAINTENANCE)
+        assertEquals(InvoiceCategory.MAINTENANCE, invoice.category)
+    }
+
+    @Test
+    fun `invoice can be created with DIRECT category`() {
+        val invoice = sampleInvoice(category = InvoiceCategory.DIRECT)
+        assertEquals(InvoiceCategory.DIRECT, invoice.category)
+    }
+
     private fun sampleInvoice(
         subtotal: Int = 10000,
         tax: Int = 1200,
         paidAmount: Int = 0,
+        category: InvoiceCategory = InvoiceCategory.RENTAL,
     ) = Invoice(
         id = UUID.randomUUID(),
         invoiceNumber = "INV-2026-001",
@@ -60,5 +79,6 @@ class InvoiceTest {
         status = InvoiceStatus.ISSUED,
         issueDate = Instant.now(),
         dueDate = Instant.parse("2026-12-31T23:59:59Z"),
+        category = category,
     )
 }

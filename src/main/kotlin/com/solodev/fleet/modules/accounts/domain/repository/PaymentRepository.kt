@@ -20,5 +20,12 @@ interface PaymentRepository {
 
     suspend fun findAll(): List<Payment>
 
+    suspend fun findByCategory(category: String): List<Payment>
+
+    suspend fun findByCategoryAndInvoiceId(
+        category: String,
+        invoiceId: UUID,
+    ): List<Payment>
+
     suspend fun delete(id: UUID): Boolean
 }

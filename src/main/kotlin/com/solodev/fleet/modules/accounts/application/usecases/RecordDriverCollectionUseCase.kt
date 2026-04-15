@@ -43,6 +43,7 @@ class RecordDriverCollectionUseCase(
                 customerId = invoice.customerId,
                 invoiceId = invoice.id,
                 driverId = UUID.fromString(request.driverId),
+                category = invoice.category,
                 amount = request.amount,
                 paymentMethod = request.paymentMethod,
                 transactionReference = request.transactionReference,

@@ -99,6 +99,7 @@ class CompleteRentalUseCaseTest {
             assertThat(invoiceSlot.captured.customerId).isEqualTo(customerId)
             assertThat(invoiceSlot.captured.rentalId).isEqualTo(rentalId)
             assertThat(invoiceSlot.captured.subtotal).isEqualTo(7000)
+            assertThat(invoiceSlot.captured.category).isEqualTo("RENTAL")
         }
 
     @Test

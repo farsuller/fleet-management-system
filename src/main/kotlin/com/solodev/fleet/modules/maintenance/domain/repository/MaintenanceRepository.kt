@@ -2,6 +2,7 @@ package com.solodev.fleet.modules.maintenance.domain.repository
 
 import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJob
 import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceJobId
+import com.solodev.fleet.modules.maintenance.domain.model.MaintenancePart
 import com.solodev.fleet.modules.maintenance.domain.model.MaintenanceStatus
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import java.time.Instant
@@ -35,6 +36,9 @@ interface MaintenanceRepository {
 
     /** Find maintenance jobs assigned to a specific user. */
     suspend fun findByAssignedUser(userId: UUID): List<MaintenanceJob>
+
+    /** Find all parts used in a specific maintenance job. */
+    suspend fun findPartsByJobId(jobId: MaintenanceJobId): List<MaintenancePart>
 
     // ── Incident methods ──────────────────────────────────────────────────────
 

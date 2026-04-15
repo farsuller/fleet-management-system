@@ -58,6 +58,7 @@ class CompleteRentalUseCase(
                     rentalId = id,
                     subtotal = savedRental.totalAmount,
                     tax = 0,
+                    category = "RENTAL",
                     dueDate = Instant.now().plus(30, ChronoUnit.DAYS).toString(),
                 )
             issueInvoiceUseCase.execute(invoiceRequest)

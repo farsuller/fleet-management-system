@@ -1,4 +1,3 @@
-import org.gradle.testing.jacoco.tasks.JacocoReport
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -100,100 +99,8 @@ dependencies {
     testImplementation(libs.assertj.core) // Fluent assertion library
 }
 
-// Test configuration
-tasks.test {
-    useJUnitPlatform()
-    outputs.upToDateWhen { false } // always rerun — never skip as UP-TO-DATE
-    // Testcontainers on Windows with Docker Desktop.
-    // docker.host is configured in src/test/resources/testcontainers.properties.
-    // Ryuk disabled to prevent reaper container errors on Windows Docker Desktop.
-    environment("TESTCONTAINERS_RYUK_DISABLED", "true")
+ext["jacocoToolVersion"] = libs.versions.jacoco.get()
 
-    // Collect failed test class names so the summary can show them
-    val failedClasses = mutableSetOf<String>()
-
-    afterTest(
-        KotlinClosure2({ desc: TestDescriptor, result: TestResult ->
-            if (result.resultType == TestResult.ResultType.FAILURE) {
-                val className = desc.className ?: desc.parent?.className ?: "Unknown"
-                failedClasses += className.substringAfterLast('.')
-                println("  FAILED: ${desc.className}#${desc.name}")
-                result.exception?.let { println("         ${it.message}") }
-            }
-        }),
-    )
-
-    afterSuite(
-        KotlinClosure2({ desc: TestDescriptor, result: TestResult ->
-            if (desc.parent == null) {
-                val pass = result.successfulTestCount
-                val fail = result.failedTestCount
-                val skip = result.skippedTestCount
-                val total = result.testCount
-                val outcome = if (result.resultType == TestResult.ResultType.SUCCESS) "PASSED" else "FAILED"
-                if (failedClasses.isNotEmpty()) {
-                    println("Failed classes: ${failedClasses.sorted().joinToString(", ")}")
-                }
-                println("Test Results: $outcome")
-                println("Total: $total  |  Passed: $pass  |  Failed: $fail  |  Skipped: $skip")
-            }
-        }),
-    )
-
-    finalizedBy(tasks.jacocoTestReport)
-}
-
-// JaCoCo Code Coverage Configuration
-jacoco {
-    toolVersion = libs.versions.jacoco.get()
-}
-
-val jacocoCoverageExclusions =
-    listOf(
-        "**/*Table.class",
-        "**/*Table$*.class",
-        "**/*Tables.class",
-        "**/*Tables$*.class",
-    )
-
-tasks.withType<JacocoReport>().configureEach {
-    classDirectories.setFrom(
-        files(
-            classDirectories.files.map { directory ->
-                fileTree(directory) {
-                    exclude(jacocoCoverageExclusions)
-                }
-            },
-        ),
-    )
-}
-
-tasks.jacocoTestReport {
-    dependsOn(tasks.test)
-    reports {
-        xml.required.set(true)
-        html.required.set(true)
-    }
-}
-
-// Custom task for running coverage locally
-tasks.register("testCoverage") {
-    group = "verification"
-    description = "Runs all tests and generates a JaCoCo coverage report."
-    dependsOn(tasks.test, tasks.jacocoTestReport)
-}
-
-// Spotless Code Formatting Configuration
-spotless {
-    kotlin {
-        target("src/**/*.kt")
-        ktlint("1.3.1")
-        trimTrailingWhitespace()
-        indentWithSpaces()
-        endWithNewline()
-    }
-    kotlinGradle {
-        target("*.gradle.kts")
-        ktlint()
-    }
-}
+apply(from = "gradle/testing.gradle.kts")
+apply(from = "gradle/jacoco.gradle.kts")
+apply(from = "gradle/spotless.gradle")

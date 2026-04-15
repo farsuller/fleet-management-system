@@ -3,12 +3,18 @@ package com.solodev.fleet.modules.accounts.domain.model
 import java.time.Instant
 import java.util.UUID
 
+enum class PaymentMethodStatus {
+    ACTIVE,
+    INACTIVE,
+    DEPRECATED,
+}
+
 data class PaymentMethod(
     val id: UUID = UUID.randomUUID(),
     val code: String,
     val displayName: String,
     val targetAccountCode: String,
-    val isActive: Boolean = true,
+    val status: PaymentMethodStatus = PaymentMethodStatus.ACTIVE,
     val description: String? = null,
     val createdAt: Instant = Instant.now(),
     val updatedAt: Instant = Instant.now(),

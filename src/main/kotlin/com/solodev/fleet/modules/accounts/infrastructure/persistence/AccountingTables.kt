@@ -50,6 +50,7 @@ object InvoicesTable : UUIDTable("invoices") {
     val rentalId =
         reference("rental_id", RentalsTable, onDelete = ReferenceOption.SET_NULL).nullable()
     val status = varchar("status", 20)
+    val category = varchar("category", 20).default("RENTAL")
 
     // Amounts — balance is a DB-generated column (GENERATED ALWAYS AS) and is NOT written by
     // application code; the domain model computes it as subtotal + tax - paidAmount.
@@ -87,16 +88,18 @@ object PaymentsTable : UUIDTable("payments") {
 
     /** Nullable FK to driver who collected this payment on behalf of the company. */
     val driverId =
-        reference("driver_id", DriversTable, onDelete = ReferenceOption.SET_NULL)
-            .nullable()
+        reference("driver_id", DriversTable, onDelete = ReferenceOption.SET_NULL).nullable()
 
-    /** DIRECT = customer paid company; DRIVER_COLLECTED = collected by driver, awaiting remittance. */
+    /**
+     * DIRECT = customer paid company; DRIVER_COLLECTED = collected by driver, awaiting remittance.
+     */
     val collectionType = varchar("collection_type", 20).default("DIRECT")
     val paymentMethod = varchar("payment_method", 50)
     val amount = integer("amount")
     val currencyCode = varchar("currency_code", 3).default("PHP")
-    val transactionReference = varchar("transaction_reference", 255).nullable()
+    val transactionReference = varchar("transaction_reference", 100).nullable()
     val status = varchar("status", 20)
+    val category = varchar("category", 20).default("RENTAL")
     val paymentDate = timestamp("payment_date").nullable()
     val notes = text("notes").nullable()
     val createdAt = timestamp("created_at")
@@ -108,7 +111,7 @@ object PaymentMethodsTable : UUIDTable("payment_methods") {
     val code = varchar("code", 20).uniqueIndex()
     val displayName = varchar("display_name", 100)
     val targetAccountCode = reference("target_account_code", AccountsTable.accountCode)
-    val isActive = bool("is_active").default(true)
+    val status = varchar("status", 20).default("ACTIVE")
     val description = text("description").nullable()
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
@@ -126,11 +129,12 @@ object DriverRemittancesTable : UUIDTable("driver_remittances") {
 }
 
 /**
- * Junction table linking each remittance to the individual payments it clears.
- * A remittance covers many DRIVER_COLLECTED payments.
+ * Junction table linking each remittance to the individual payments it clears. A remittance covers
+ * many DRIVER_COLLECTED payments.
  */
 object DriverRemittancePaymentsTable : Table("driver_remittance_payments") {
-    val remittanceId = reference("remittance_id", DriverRemittancesTable, onDelete = ReferenceOption.CASCADE)
+    val remittanceId =
+        reference("remittance_id", DriverRemittancesTable, onDelete = ReferenceOption.CASCADE)
     val paymentId = reference("payment_id", PaymentsTable, onDelete = ReferenceOption.RESTRICT)
     override val primaryKey = PrimaryKey(remittanceId, paymentId)
 }

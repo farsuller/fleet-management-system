@@ -123,8 +123,7 @@ fun Application.configureDatabases() {
     // Workaround: Copy migrations to /tmp to bypass classpath scanning issues in Fat JAR
     // Reverted to /tmp because /app proved to be read-only at runtime on Render.
     val migrationDir = java.io.File(System.getProperty("java.io.tmpdir"), "fleet_migrations_v2")
-    if (migrationDir.exists()) migrationDir.deleteRecursively()
-    if (!migrationDir.mkdirs()) {
+    if (!migrationDir.exists() && !migrationDir.mkdirs()) {
         log.error("CRITICAL: Failed to create migration directory at ${migrationDir.absolutePath}")
     }
 
@@ -159,6 +158,12 @@ fun Application.configureDatabases() {
             "V028__create_driver_shifts.sql",
             "V029__add_vehicle_service_mileage.sql",
             "V030__create_vehicle_incidents.sql",
+            "V031__add_invoice_category.sql",
+            "V032__add_driver_id_to_rentals.sql",
+            "V033__add_category_to_payments.sql",
+            "V034__add_status_to_payment_methods.sql",
+            "V035__seed_revenue_ledger_entries.sql",
+            "V036__seed_jan_feb_revenue_ledger_entries.sql",
         )
 
     log.info("Extracting ${migrationFiles.size} migrations to: ${migrationDir.absolutePath}...")

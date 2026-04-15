@@ -43,6 +43,13 @@ enum class InvoiceStatus {
     CANCELLED,
 }
 
+/** Category of business transaction the invoice represents. */
+enum class InvoiceCategory {
+    RENTAL, // Standard vehicle rental
+    MAINTENANCE, // Vehicle repair or service charge
+    DIRECT, // Manual/miscellaneous charge
+}
+
 /**
  * Account domain entity.
  *
@@ -146,6 +153,7 @@ data class Invoice(
     val issueDate: Instant,
     val dueDate: Instant,
     val paidDate: Instant? = null,
+    val category: InvoiceCategory = InvoiceCategory.RENTAL,
     val notes: String? = null,
 ) {
     init {
@@ -190,6 +198,7 @@ data class Payment(
     val status: PaymentStatus,
     val paymentDate: Instant,
     val collectionType: PaymentCollectionType = PaymentCollectionType.DIRECT,
+    val category: InvoiceCategory = InvoiceCategory.RENTAL,
     val notes: String? = null,
 )
 

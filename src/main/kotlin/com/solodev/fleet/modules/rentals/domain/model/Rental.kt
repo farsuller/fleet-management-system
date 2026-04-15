@@ -69,6 +69,10 @@ data class Rental(
     val endOdometerKm: Int? = null,
     /** UUID of the invoice auto-generated when this rental was completed. Null until completed. */
     val invoiceId: java.util.UUID? = null,
+    /** UUID of the driver assigned to this rental. */
+    val driverId: java.util.UUID? = null,
+    /** Text description of the pickup location or GPS coordinates. */
+    val pickupLocation: String? = null,
 ) {
     init {
         require(endDate.isAfter(startDate)) { "End date must be after start date" }

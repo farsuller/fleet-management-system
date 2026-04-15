@@ -27,6 +27,7 @@ class IssueInvoiceUseCaseTest {
             customerId = "cust-001",
             subtotal = 10000,
             tax = 1200,
+            category = "RENTAL",
             dueDate = "2027-12-31T00:00:00Z",
         )
 
@@ -61,6 +62,45 @@ class IssueInvoiceUseCaseTest {
         assertThatThrownBy { runBlocking { useCase.execute(validRequest) } }
             .isInstanceOf(IllegalStateException::class.java)
     }
+
+    @Test
+    fun shouldIssueInvoiceWithRentalCategory_WhenCategoryIsRental(): Unit =
+        runBlocking {
+            // Arrange
+            val rentalRequest = validRequest.copy(rentalId = "rental-001", category = "RENTAL")
+            val arAccount = sampleAccount("1100", AccountType.ASSET)
+            val revenueAccount = sampleAccount("4000", AccountType.REVENUE)
+            coEvery { accountRepo.findByCode("1100") } returns arAccount
+            coEvery { accountRepo.findByCode("4000") } returns revenueAccount
+            coEvery { invoiceRepo.save(any()) } returnsArgument 0
+            coEvery { ledgerRepo.save(any()) } returnsArgument 0
+
+            // Act
+            val result = useCase.execute(rentalRequest)
+
+            // Assert
+            assertThat(result.category.name).isEqualTo("RENTAL")
+            assertThat(result.rentalId?.value).isEqualTo("rental-001")
+        }
+
+    @Test
+    fun shouldIssueInvoiceWithMaintenanceCategory_WhenCategoryIsMaintenance(): Unit =
+        runBlocking {
+            // Arrange
+            val maintenanceRequest = validRequest.copy(category = "MAINTENANCE")
+            val arAccount = sampleAccount("1100", AccountType.ASSET)
+            val revenueAccount = sampleAccount("4000", AccountType.REVENUE)
+            coEvery { accountRepo.findByCode("1100") } returns arAccount
+            coEvery { accountRepo.findByCode("4000") } returns revenueAccount
+            coEvery { invoiceRepo.save(any()) } returnsArgument 0
+            coEvery { ledgerRepo.save(any()) } returnsArgument 0
+
+            // Act
+            val result = useCase.execute(maintenanceRequest)
+
+            // Assert
+            assertThat(result.category.name).isEqualTo("MAINTENANCE")
+        }
 
     private fun sampleAccount(
         code: String,

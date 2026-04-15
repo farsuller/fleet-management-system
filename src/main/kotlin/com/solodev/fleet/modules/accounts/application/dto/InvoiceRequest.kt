@@ -8,5 +8,6 @@ data class InvoiceRequest(
     val rentalId: String? = null,
     val subtotal: Int,
     val tax: Int,
+    val category: String,
     val dueDate: String,
 )
