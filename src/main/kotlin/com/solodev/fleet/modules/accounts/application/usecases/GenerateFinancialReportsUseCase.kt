@@ -3,11 +3,13 @@ package com.solodev.fleet.modules.accounts.application.usecases
 import com.solodev.fleet.modules.accounts.application.dto.AccountBalanceInfo
 import com.solodev.fleet.modules.accounts.application.dto.BalanceSheetResponse
 import com.solodev.fleet.modules.accounts.application.dto.MonthlyPnlBar
+import com.solodev.fleet.modules.accounts.application.dto.MonthlyTotal
 import com.solodev.fleet.modules.accounts.application.dto.PnlCategoryRow
 import com.solodev.fleet.modules.accounts.application.dto.ProfitLossResponse
 import com.solodev.fleet.modules.accounts.application.dto.RevenueDataPoint
 import com.solodev.fleet.modules.accounts.application.dto.RevenueItem
 import com.solodev.fleet.modules.accounts.application.dto.RevenueKpisResponse
+import com.solodev.fleet.modules.accounts.application.dto.RevenueQuarterlyResponse
 import com.solodev.fleet.modules.accounts.application.dto.RevenueReportResponse
 import com.solodev.fleet.modules.accounts.application.dto.RevenueTimeSeriesResponse
 import com.solodev.fleet.modules.accounts.domain.model.AccountType
@@ -88,6 +90,68 @@ class GenerateFinancialReportsUseCase(
             weeklySum = weeklySum,
             monthlySum = monthlySum,
             yearlySum = yearlySum,
+        )
+    }
+
+    /**
+     * Returns per-month and per-quarter revenue totals for the current calendar year.
+     * All amounts are in centavos — divide by 100 on the client to get PHP pesos.
+     */
+    suspend fun revenueQuarterly(): RevenueQuarterlyResponse {
+        val today = LocalDate.now(ZoneOffset.UTC)
+        val year = today.year
+        val accounts = accountRepo.findAll().filter { it.accountType == AccountType.REVENUE }
+
+        suspend fun monthSum(month: Int): Long {
+            val from = LocalDate.of(year, month, 1).atStartOfDay(ZoneOffset.UTC).toInstant()
+            val to =
+                LocalDate
+                    .of(year, month, 1)
+                    .plusMonths(1)
+                    .atStartOfDay(ZoneOffset.UTC)
+                    .toInstant()
+            return accounts.sumOf { acc ->
+                -ledgerRepo.calculateAccountBalanceBetween(acc.id, from, to)
+            }
+        }
+
+        val monthNames = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+        val fullNames =
+            listOf(
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+            )
+
+        val totals = (1..12).map { m -> monthSum(m) }
+
+        val monthlyTotals =
+            totals.mapIndexed { i, amt ->
+                MonthlyTotal(month = monthNames[i], monthNumber = i + 1, amount = amt)
+            }
+
+        val peakIdx = totals.indices.maxByOrNull { totals[it] } ?: 0
+        val peakName = if (totals[peakIdx] > 0L) fullNames[peakIdx] else ""
+        val peakAmt = if (totals[peakIdx] > 0L) totals[peakIdx] else 0L
+
+        return RevenueQuarterlyResponse(
+            year = year,
+            q1 = totals.slice(0..2).sum(),
+            q2 = totals.slice(3..5).sum(),
+            q3 = totals.slice(6..8).sum(),
+            q4 = totals.slice(9..11).sum(),
+            peakMonthName = peakName,
+            peakMonthAmount = peakAmt,
+            monthlyTotals = monthlyTotals,
         )
     }
 

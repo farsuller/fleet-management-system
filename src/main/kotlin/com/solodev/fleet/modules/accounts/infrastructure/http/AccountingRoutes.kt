@@ -706,6 +706,11 @@ fun Route.accountingRoutes(
             call.respond(ApiResponse.success(kpis, call.requestId))
         }
 
+        get("/revenue-quarterly") {
+            val quarterly = reportsUseCase.revenueQuarterly()
+            call.respond(ApiResponse.success(quarterly, call.requestId))
+        }
+
         get("/revenue") {
             // Accept both date-only (yyyy-MM-dd) and full ISO-8601 timestamps
             fun parseDate(
