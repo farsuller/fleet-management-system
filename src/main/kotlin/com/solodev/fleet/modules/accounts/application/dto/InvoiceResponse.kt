@@ -13,6 +13,27 @@ data class CustomerSummary(
     val phoneNumber: String?,
 )
 
+/** Summary of rental details associated with an invoice. */
+@Serializable
+data class RentalSummary(
+    val id: String,
+    val rentalNumber: String,
+    val vehiclePlate: String,
+    val startDate: String,
+    val endDate: String,
+)
+
+/** A single line on an invoice. */
+@Serializable
+data class InvoiceLineItemResponse(
+    val id: String,
+    val description: String,
+    val quantity: Double,
+    val unitPrice: Int,
+    val totalAmount: Int,
+    val currencyCode: String,
+)
+
 @Serializable
 data class InvoiceResponse(
     val id: String,
@@ -29,12 +50,16 @@ data class InvoiceResponse(
     val issueDate: String,
     val dueDate: String,
     val paidDate: String?,
+    val category: String,
+    val rental: RentalSummary? = null,
+    val lineItems: List<InvoiceLineItemResponse> = emptyList(),
     val notes: String?,
 ) {
     companion object {
         fun fromDomain(
             invoice: Invoice,
             customer: Customer? = null,
+            rentalSummary: RentalSummary? = null,
         ) = InvoiceResponse(
             id = invoice.id.toString(),
             invoiceNumber = invoice.invoiceNumber,
@@ -58,6 +83,8 @@ data class InvoiceResponse(
             issueDate = invoice.issueDate.toString(),
             dueDate = invoice.dueDate.toString(),
             paidDate = invoice.paidDate?.toString(),
+            category = invoice.category.name,
+            rental = rentalSummary,
             notes = invoice.notes,
         )
     }

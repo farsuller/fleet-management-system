@@ -101,6 +101,8 @@ data class VehicleStatusSummary(
     val longitude: Double = 0.0,
     val heading: Double = 0.0,
     val timestamp: String,
+    val vehicleState: String = "UNKNOWN",
+    val vehicleType: String = "OTHER",
 )
 
 /** Response DTO for tracking history endpoint. */
@@ -368,6 +370,8 @@ fun Route.trackingRoutes(
                             longitude = state?.longitude ?: 0.0,
                             heading = state?.heading ?: 0.0,
                             timestamp = state?.timestamp?.toString() ?: "",
+                            vehicleState = vehicle.state.name,
+                            vehicleType = vehicle.vehicleType.name,
                         )
                     }
 

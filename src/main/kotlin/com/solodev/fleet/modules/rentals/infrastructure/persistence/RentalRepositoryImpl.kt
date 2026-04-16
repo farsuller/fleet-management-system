@@ -41,6 +41,8 @@ class RentalRepositoryImpl : RentalRepository {
             startOdometerKm = this[RentalsTable.startOdometerKm],
             endOdometerKm = this[RentalsTable.endOdometerKm],
             invoiceId = this[RentalsTable.invoiceId],
+            driverId = this[RentalsTable.driverId],
+            pickupLocation = this[RentalsTable.pickupLocation],
         )
 
     override suspend fun findById(id: RentalId): Rental? =
@@ -103,6 +105,8 @@ class RentalRepositoryImpl : RentalRepository {
                     it[endOdometerKm] = rental.endOdometerKm
                     it[totalAmount] = rental.totalAmount
                     it[invoiceId] = rental.invoiceId
+                    it[driverId] = rental.driverId
+                    it[pickupLocation] = rental.pickupLocation
                     it[updatedAt] = Instant.now()
                 }
             } else {
@@ -117,6 +121,8 @@ class RentalRepositoryImpl : RentalRepository {
                     it[dailyRate] = rental.dailyRateAmount
                     it[totalAmount] = rental.totalAmount
                     it[currencyCode] = rental.currencyCode
+                    it[driverId] = rental.driverId
+                    it[pickupLocation] = rental.pickupLocation
                     it[createdAt] = Instant.now()
                     it[updatedAt] = Instant.now()
                 }
@@ -138,6 +144,35 @@ class RentalRepositoryImpl : RentalRepository {
                 .selectAll()
                 .where { RentalsTable.vehicleId eq UUID.fromString(vehicleId.value) }
                 .map { it.toRental() }
+        }
+
+    override suspend fun findByDriverId(driverId: UUID): List<Rental> =
+        dbQuery {
+            RentalsTable
+                .selectAll()
+                .where { RentalsTable.driverId eq driverId }
+                .map { it.toRental() }
+        }
+
+    override suspend fun findByDriverIdWithDetails(driverId: UUID): List<RentalWithDetails> =
+        dbQuery {
+            RentalsTable
+                .join(VehiclesTable, JoinType.LEFT, RentalsTable.vehicleId, VehiclesTable.id)
+                .join(CustomersTable, JoinType.LEFT, RentalsTable.customerId, CustomersTable.id)
+                .selectAll()
+                .where { RentalsTable.driverId eq driverId }
+                .map { row ->
+                    RentalWithDetails(
+                        rental = row.toRental(),
+                        vehiclePlateNumber = row.getOrNull(VehiclesTable.plateNumber),
+                        vehicleMake = row.getOrNull(VehiclesTable.make),
+                        vehicleModel = row.getOrNull(VehiclesTable.model),
+                        customerName =
+                            row.getOrNull(CustomersTable.firstName)?.let { first ->
+                                row.getOrNull(CustomersTable.lastName)?.let { last -> "$first $last" } ?: first
+                            },
+                    )
+                }
         }
 
     override suspend fun findAll(): List<Rental> =

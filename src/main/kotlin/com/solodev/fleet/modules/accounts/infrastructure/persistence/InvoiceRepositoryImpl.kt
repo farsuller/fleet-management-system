@@ -1,6 +1,7 @@
 package com.solodev.fleet.modules.accounts.infrastructure.persistence
 
 import com.solodev.fleet.modules.accounts.domain.model.Invoice
+import com.solodev.fleet.modules.accounts.domain.model.InvoiceCategory
 import com.solodev.fleet.modules.accounts.domain.model.InvoiceStatus
 import com.solodev.fleet.modules.accounts.domain.repository.InvoiceRepository
 import com.solodev.fleet.modules.rentals.domain.model.CustomerId
@@ -33,6 +34,7 @@ class InvoiceRepositoryImpl : InvoiceRepository {
             dueDate = this[InvoicesTable.dueDate].atStartOfDay().toInstant(ZoneOffset.UTC),
             paidDate =
                 this[InvoicesTable.paidDate]?.atStartOfDay()?.toInstant(ZoneOffset.UTC),
+            category = InvoiceCategory.valueOf(this[InvoicesTable.category]),
             notes = this[InvoicesTable.notes],
         )
 
@@ -95,6 +97,7 @@ class InvoiceRepositoryImpl : InvoiceRepository {
                     it[issueDate] = LocalDate.ofInstant(invoice.issueDate, ZoneOffset.UTC)
                     it[dueDate] = LocalDate.ofInstant(invoice.dueDate, ZoneOffset.UTC)
                     it[paidDate] = invoice.paidDate?.let { LocalDate.ofInstant(it, ZoneOffset.UTC) }
+                    it[category] = invoice.category.name
                     it[notes] = invoice.notes
                     it[updatedAt] = now
                 }
@@ -112,6 +115,7 @@ class InvoiceRepositoryImpl : InvoiceRepository {
                     it[issueDate] = LocalDate.ofInstant(invoice.issueDate, ZoneOffset.UTC)
                     it[dueDate] = LocalDate.ofInstant(invoice.dueDate, ZoneOffset.UTC)
                     it[paidDate] = invoice.paidDate?.let { LocalDate.ofInstant(it, ZoneOffset.UTC) }
+                    it[category] = invoice.category.name
                     it[notes] = invoice.notes
                     it[createdAt] = now
                     it[updatedAt] = now
@@ -119,5 +123,13 @@ class InvoiceRepositoryImpl : InvoiceRepository {
             }
 
             invoice
+        }
+
+    override suspend fun findByCategory(category: InvoiceCategory): List<Invoice> =
+        dbQuery {
+            InvoicesTable
+                .selectAll()
+                .where { InvoicesTable.category eq category.name }
+                .map { it.toInvoice() }
         }
 }

@@ -9,7 +9,7 @@ data class PaymentMethodResponse(
     val code: String,
     val displayName: String,
     val targetAccountCode: String,
-    val isActive: Boolean,
+    val status: String,
     val description: String? = null,
 ) {
     companion object {
@@ -19,7 +19,7 @@ data class PaymentMethodResponse(
                 code = method.code,
                 displayName = method.displayName,
                 targetAccountCode = method.targetAccountCode,
-                isActive = method.isActive,
+                status = method.status.name,
                 description = method.description,
             )
     }
@@ -30,6 +30,6 @@ data class PaymentMethodRequest(
     val code: String,
     val displayName: String,
     val targetAccountCode: String,
-    val isActive: Boolean = true,
+    val status: String = "ACTIVE",
     val description: String? = null,
 )

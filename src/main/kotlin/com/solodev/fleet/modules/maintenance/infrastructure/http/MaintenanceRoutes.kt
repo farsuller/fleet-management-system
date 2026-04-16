@@ -1,5 +1,6 @@
 package com.solodev.fleet.modules.maintenance.infrastructure.http
 
+import com.solodev.fleet.modules.maintenance.application.dto.MaintenancePartResponse
 import com.solodev.fleet.modules.maintenance.application.dto.MaintenanceRequest
 import com.solodev.fleet.modules.maintenance.application.dto.MaintenanceResponse
 import com.solodev.fleet.modules.maintenance.application.dto.MaintenanceStatusUpdateRequest
@@ -7,6 +8,7 @@ import com.solodev.fleet.modules.maintenance.application.dto.VehicleUsageHistory
 import com.solodev.fleet.modules.maintenance.application.usecases.CancelMaintenanceUseCase
 import com.solodev.fleet.modules.maintenance.application.usecases.CompleteMaintenanceUseCase
 import com.solodev.fleet.modules.maintenance.application.usecases.GetMaintenanceJobUseCase
+import com.solodev.fleet.modules.maintenance.application.usecases.GetMaintenancePartsUseCase
 import com.solodev.fleet.modules.maintenance.application.usecases.ListAllMaintenanceUseCase
 import com.solodev.fleet.modules.maintenance.application.usecases.ListVehicleMaintenanceUseCase
 import com.solodev.fleet.modules.maintenance.application.usecases.ScheduleMaintenanceUseCase
@@ -34,6 +36,7 @@ fun Route.maintenanceRoutes(
     val listAllMaintenanceUseCase = ListAllMaintenanceUseCase(maintenanceRepository)
     val listVehicleMaintenanceUseCase = ListVehicleMaintenanceUseCase(maintenanceRepository)
     val getMaintenanceJobUseCase = GetMaintenanceJobUseCase(maintenanceRepository)
+    val getMaintenancePartsUseCase = GetMaintenancePartsUseCase(maintenanceRepository)
     val startMaintenanceUseCase = StartMaintenanceUseCase(maintenanceRepository)
     val completeMaintenanceUseCase = CompleteMaintenanceUseCase(maintenanceRepository)
     val cancelMaintenanceUseCase = CancelMaintenanceUseCase(maintenanceRepository)
@@ -145,6 +148,16 @@ fun Route.maintenanceRoutes(
                             ApiResponse.error("NOT_FOUND", e.message ?: "Job not found", call.requestId),
                         )
                     }
+                }
+
+                get("/parts") {
+                    val id =
+                        call.parameters["id"] ?: return@get call.respond(
+                            HttpStatusCode.BadRequest,
+                            ApiResponse.error("MISSING_ID", "Job ID required", call.requestId),
+                        )
+                    val parts = getMaintenancePartsUseCase.execute(id)
+                    call.respond(ApiResponse.success(parts.map { MaintenancePartResponse.fromDomain(it) }, call.requestId))
                 }
 
                 post("/start") {

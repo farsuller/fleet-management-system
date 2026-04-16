@@ -1,0 +1,13 @@
+spotless {
+    kotlin {
+        target 'src/**/*.kt'
+        ktlint '1.3.1'
+        trimTrailingWhitespace()
+        indentWithSpaces()
+        endWithNewline()
+    }
+    kotlinGradle {
+        target '*.gradle.kts'
+        ktlint()
+    }
+}

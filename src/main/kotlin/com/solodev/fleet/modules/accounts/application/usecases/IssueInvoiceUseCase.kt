@@ -2,6 +2,7 @@ package com.solodev.fleet.modules.accounts.application.usecases
 
 import com.solodev.fleet.modules.accounts.application.dto.InvoiceRequest
 import com.solodev.fleet.modules.accounts.domain.model.Invoice
+import com.solodev.fleet.modules.accounts.domain.model.InvoiceCategory
 import com.solodev.fleet.modules.accounts.domain.model.InvoiceStatus
 import com.solodev.fleet.modules.accounts.domain.model.LedgerEntry
 import com.solodev.fleet.modules.accounts.domain.model.LedgerEntryId
@@ -27,6 +28,7 @@ class IssueInvoiceUseCase(
                 customerId = CustomerId(request.customerId),
                 rentalId = request.rentalId?.let { RentalId(it) },
                 status = InvoiceStatus.ISSUED,
+                category = InvoiceCategory.valueOf(request.category),
                 subtotal = request.subtotal,
                 tax = request.tax,
                 paidAmount = 0,

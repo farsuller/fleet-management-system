@@ -153,4 +153,52 @@ class LedgerRepositoryImpl : LedgerRepository {
                     debit - credit
                 }.sum()
         }
+
+    override suspend fun calculateAccountBalanceBetween(
+        accountId: AccountId,
+        from: Instant,
+        to: Instant,
+    ): Long =
+        dbQuery {
+            val accountUuid = UUID.fromString(accountId.value)
+
+            (LedgerEntryLinesTable innerJoin LedgerEntriesTable)
+                .select(
+                    LedgerEntryLinesTable.debitAmount,
+                    LedgerEntryLinesTable.creditAmount,
+                ).where {
+                    (LedgerEntryLinesTable.accountId eq accountUuid) and
+                        (LedgerEntriesTable.entryDate greaterEq from) and
+                        (LedgerEntriesTable.entryDate less to)
+                }.map {
+                    val debit = it[LedgerEntryLinesTable.debitAmount].toLong()
+                    val credit = it[LedgerEntryLinesTable.creditAmount].toLong()
+                    debit - credit
+                }.sum()
+        }
+
+    override suspend fun getRevenueLinesInRange(
+        accountIds: List<AccountId>,
+        from: Instant,
+        to: Instant,
+    ): List<Pair<Instant, Long>> =
+        dbQuery {
+            if (accountIds.isEmpty()) return@dbQuery emptyList()
+            val uuids = accountIds.map { UUID.fromString(it.value) }
+            (LedgerEntryLinesTable innerJoin LedgerEntriesTable)
+                .select(
+                    LedgerEntriesTable.entryDate,
+                    LedgerEntryLinesTable.debitAmount,
+                    LedgerEntryLinesTable.creditAmount,
+                ).where {
+                    (LedgerEntryLinesTable.accountId inList uuids) and
+                        (LedgerEntriesTable.entryDate greaterEq from) and
+                        (LedgerEntriesTable.entryDate less to)
+                }.map { row ->
+                    val date = row[LedgerEntriesTable.entryDate]
+                    val credit = row[LedgerEntryLinesTable.creditAmount].toLong()
+                    val debit = row[LedgerEntryLinesTable.debitAmount].toLong()
+                    date to (credit - debit)
+                }
+        }
 }

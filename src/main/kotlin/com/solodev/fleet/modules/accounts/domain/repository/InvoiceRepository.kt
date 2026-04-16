@@ -1,6 +1,7 @@
 package com.solodev.fleet.modules.accounts.domain.repository
 
 import com.solodev.fleet.modules.accounts.domain.model.Invoice
+import com.solodev.fleet.modules.accounts.domain.model.InvoiceCategory
 import java.util.UUID
 
 interface InvoiceRepository {
@@ -13,6 +14,8 @@ interface InvoiceRepository {
     suspend fun findByCustomerId(customerId: UUID): List<Invoice>
 
     suspend fun findByRentalId(rentalId: UUID): Invoice?
+
+    suspend fun findByCategory(category: InvoiceCategory): List<Invoice>
 
     suspend fun findAll(): List<Invoice>
 }

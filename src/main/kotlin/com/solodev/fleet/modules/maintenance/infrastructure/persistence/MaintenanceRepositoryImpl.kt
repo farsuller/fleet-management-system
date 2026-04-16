@@ -232,6 +232,14 @@ class MaintenanceRepositoryImpl : MaintenanceRepository {
                 .map { it.toMaintenanceJob() }
         }
 
+    override suspend fun findPartsByJobId(jobId: MaintenanceJobId): List<MaintenancePart> =
+        dbQuery {
+            MaintenancePartsTable
+                .selectAll()
+                .where { MaintenancePartsTable.jobId eq UUID.fromString(jobId.value) }
+                .map { it.toMaintenancePart() }
+        }
+
     // ── Incident methods implementation ──────────────────────────────────────
 
     override suspend fun findIncidentById(id: IncidentId): VehicleIncident? =
