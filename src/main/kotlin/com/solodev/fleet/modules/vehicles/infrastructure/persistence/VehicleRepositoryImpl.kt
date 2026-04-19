@@ -179,6 +179,10 @@ class VehicleRepositoryImpl(
             params.filters["state"]?.let { stateValue ->
                 baseQuery = baseQuery.where { VehiclesTable.status eq stateValue }
             }
+            params.filters["type"]?.let { typeValue ->
+                val types = typeValue.split(",").map { it.trim() }
+                baseQuery = baseQuery.where { VehiclesTable.vehicleType inList types }
+            }
 
             val totalCount = baseQuery.count()
 

@@ -28,7 +28,11 @@ import com.solodev.fleet.modules.tracking.infrastructure.websocket.RedisDeltaBro
 import com.solodev.fleet.modules.users.infrastructure.http.userRoutes
 import com.solodev.fleet.modules.users.infrastructure.persistence.UserRepositoryImpl
 import com.solodev.fleet.modules.users.infrastructure.persistence.VerificationTokenRepositoryImpl
+import com.solodev.fleet.modules.vehicles.infrastructure.http.busRoutes
+import com.solodev.fleet.modules.vehicles.infrastructure.http.truckRoutes
 import com.solodev.fleet.modules.vehicles.infrastructure.http.vehicleRoutes
+import com.solodev.fleet.modules.vehicles.infrastructure.persistence.BusRepositoryImpl
+import com.solodev.fleet.modules.vehicles.infrastructure.persistence.TruckRepositoryImpl
 import com.solodev.fleet.modules.vehicles.infrastructure.persistence.VehicleRepositoryImpl
 import com.solodev.fleet.shared.infrastructure.cache.RedisCacheManager
 import com.solodev.fleet.shared.models.ApiResponse
@@ -59,6 +63,8 @@ fun Application.configureRouting(
     val customerRepo = CustomerRepositoryImpl()
     val maintenanceRepo = MaintenanceRepositoryImpl()
     val driverRepo = DriverRepositoryImpl()
+    val busRepo = BusRepositoryImpl(vehicleRepo)
+    val truckRepo = TruckRepositoryImpl(vehicleRepo)
     val invoiceRepo = InvoiceRepositoryImpl()
     val paymentRepo = PaymentRepositoryImpl()
     val accountRepo = AccountRepositoryImpl()
@@ -101,6 +107,8 @@ fun Application.configureRouting(
 
         rateLimit(RateLimitName("public_api")) {
             vehicleRoutes(vehicleRepo)
+            busRoutes(busRepo, driverRepo)
+            truckRoutes(truckRepo, driverRepo)
             rentalRoutes(
                 rentalRepository = rentalRepo,
                 vehicleRepository = vehicleRepo,
@@ -120,6 +128,8 @@ fun Application.configureRouting(
                 driverRepository = driverRepo,
                 userRepository = userRepo,
                 tokenRepository = tokenRepo,
+                jwtService = jwtService,
+                vehicleRepository = vehicleRepo,
             )
             maintenanceRoutes(maintenanceRepository = maintenanceRepo, rentalRepository = rentalRepo)
             incidentRoutes(maintenanceRepository = maintenanceRepo, vehicleRepository = vehicleRepo)

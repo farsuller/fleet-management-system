@@ -108,11 +108,16 @@ data class DriverResponse(
     val createdAt: Long,
     // Join detail: current vehicle assignment (null if not assigned)
     val currentAssignment: AssignmentResponse?,
+    // Vehicle info from current assignment (null if not assigned)
+    val vehicleType: String? = null,
+    val vehiclePlate: String? = null,
 ) {
     companion object {
         fun fromDomain(
             d: Driver,
             currentAssignment: VehicleDriverAssignment? = null,
+            vehicleType: String? = null,
+            vehiclePlate: String? = null,
         ) = DriverResponse(
             id = d.id.value,
             userId = d.userId?.toString(),
@@ -131,6 +136,8 @@ data class DriverResponse(
             isActive = d.isActive,
             createdAt = d.createdAt.toEpochMilli(),
             currentAssignment = currentAssignment?.let { AssignmentResponse.fromDomain(it) },
+            vehicleType = vehicleType,
+            vehiclePlate = vehiclePlate,
         )
     }
 }

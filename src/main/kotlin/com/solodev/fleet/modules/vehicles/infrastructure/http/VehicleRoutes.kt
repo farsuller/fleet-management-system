@@ -43,13 +43,16 @@ fun Route.vehicleRoutes(repository: VehicleRepository) {
         route("/v1/vehicles") {
             get {
                 val stateFilter = call.request.queryParameters["state"]
+                val typeFilter = call.request.queryParameters["type"]
                 val baseParams = call.paginationParams()
-                val params =
-                    if (stateFilter != null) {
-                        baseParams.copy(filters = baseParams.filters + ("state" to stateFilter))
-                    } else {
-                        baseParams
-                    }
+                var filters = baseParams.filters
+                if (stateFilter != null) {
+                    filters = filters + ("state" to stateFilter)
+                }
+                if (typeFilter != null) {
+                    filters = filters + ("type" to typeFilter)
+                }
+                val params = baseParams.copy(filters = filters)
 
                 val result = listVehiclesUseCase.execute(params)
                 call.respond(ApiResponse.success(result, call.requestId))
