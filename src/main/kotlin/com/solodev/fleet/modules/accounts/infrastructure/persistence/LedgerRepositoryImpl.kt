@@ -100,9 +100,10 @@ class LedgerRepositoryImpl : LedgerRepository {
             // Check if entry exists
             val exists =
                 LedgerEntriesTable
-                    .selectAll()
+                    .select(LedgerEntriesTable.id)
                     .where { LedgerEntriesTable.id eq entryUuid }
-                    .count() > 0
+                    .limit(1)
+                    .singleOrNull() != null
 
             if (!exists) {
                 // Insert new entry

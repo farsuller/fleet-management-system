@@ -35,8 +35,8 @@ class AccountRepositoryImpl : AccountRepository {
             AccountsTable
                 .selectAll()
                 .where { AccountsTable.id eq UUID.fromString(id.value) }
-                .map { it.toAccount() }
                 .singleOrNull()
+                ?.toAccount()
         }
 
     override suspend fun findByCode(accountCode: String): Account? =
@@ -44,8 +44,8 @@ class AccountRepositoryImpl : AccountRepository {
             AccountsTable
                 .selectAll()
                 .where { AccountsTable.accountCode eq accountCode }
-                .map { it.toAccount() }
                 .singleOrNull()
+                ?.toAccount()
         }
 
     override suspend fun save(account: Account): Account =
@@ -53,7 +53,11 @@ class AccountRepositoryImpl : AccountRepository {
             val accountUuid = UUID.fromString(account.id.value)
             val now = Instant.now()
 
-            val exists = AccountsTable.selectAll().where { AccountsTable.id eq accountUuid }.count() > 0
+            val exists = AccountsTable
+                .select(AccountsTable.id)
+                .where { AccountsTable.id eq accountUuid }
+                .limit(1)
+                .singleOrNull() != null
 
             if (exists) {
                 AccountsTable.update({ AccountsTable.id eq accountUuid }) {

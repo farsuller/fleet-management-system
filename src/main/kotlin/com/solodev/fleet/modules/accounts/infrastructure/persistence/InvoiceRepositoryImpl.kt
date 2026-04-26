@@ -48,8 +48,8 @@ class InvoiceRepositoryImpl : InvoiceRepository {
             InvoicesTable
                 .selectAll()
                 .where { InvoicesTable.id eq id }
-                .map { it.toInvoice() }
                 .singleOrNull()
+                ?.toInvoice()
         }
 
     override suspend fun findByInvoiceNumber(invoiceNumber: String): Invoice? =
@@ -57,8 +57,8 @@ class InvoiceRepositoryImpl : InvoiceRepository {
             InvoicesTable
                 .selectAll()
                 .where { InvoicesTable.invoiceNumber eq invoiceNumber }
-                .map { it.toInvoice() }
                 .singleOrNull()
+                ?.toInvoice()
         }
 
     override suspend fun findByCustomerId(customerId: UUID): List<Invoice> =
@@ -74,15 +74,19 @@ class InvoiceRepositoryImpl : InvoiceRepository {
             InvoicesTable
                 .selectAll()
                 .where { InvoicesTable.rentalId eq rentalId }
-                .map { it.toInvoice() }
                 .singleOrNull()
+                ?.toInvoice()
         }
 
     override suspend fun save(invoice: Invoice): Invoice =
         dbQuery {
             val now = Instant.now()
 
-            val exists = InvoicesTable.selectAll().where { InvoicesTable.id eq invoice.id }.count() > 0
+            val exists = InvoicesTable
+                .select(InvoicesTable.id)
+                .where { InvoicesTable.id eq invoice.id }
+                .limit(1)
+                .singleOrNull() != null
 
             if (exists) {
                 InvoicesTable.update({ InvoicesTable.id eq invoice.id }) {
