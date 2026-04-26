@@ -2,6 +2,7 @@ package com.solodev.fleet
 
 import com.solodev.fleet.modules.vehicles.infrastructure.persistence.VehicleRepositoryImpl
 import com.solodev.fleet.shared.infrastructure.cache.RedisCacheManager
+import com.solodev.fleet.shared.infrastructure.email.NuntlyEmailService
 import com.solodev.fleet.shared.plugins.configureDatabases
 import com.solodev.fleet.shared.plugins.configureObservability
 import com.solodev.fleet.shared.plugins.configureRateLimiting
@@ -10,8 +11,12 @@ import com.solodev.fleet.shared.plugins.configureSecurity
 import com.solodev.fleet.shared.plugins.configureSerialization
 import com.solodev.fleet.shared.plugins.configureStatusPages
 import com.solodev.fleet.shared.utils.JwtService
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
+import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.application.log
@@ -138,10 +143,30 @@ fun Application.module() {
 
     val jwtService = JwtService(secret, issuer, audience, expiresIn)
 
+    // Email Service Initialization
+    val httpClient =
+        HttpClient(CIO) {
+            install(ContentNegotiation) {
+                json()
+            }
+        }
+    val emailApiKey = environment.config.propertyOrNull("email.apiKey")?.getString() ?: ""
+    val emailSender = environment.config.propertyOrNull("email.sender")?.getString() ?: "Fleet Drive <noreply@fleetdrive.com>"
+    val emailBaseUrl = environment.config.propertyOrNull("email.baseUrl")?.getString() ?: "https://api.nuntly.com"
+
+    val emailService =
+        NuntlyEmailService(
+            client = httpClient,
+            apiKey = emailApiKey,
+            sender = emailSender,
+            baseUrl = emailBaseUrl,
+        )
+
     configureRouting(
         jwtService = jwtService,
         vehicleRepo = vehicleRepository,
         jedisPool = jedisPool,
         registry = registry,
+        emailService = emailService,
     )
 }

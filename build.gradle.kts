@@ -60,6 +60,9 @@ dependencies {
     implementation(libs.ktor.server.openapi) // OpenAPI spec generation
     implementation(libs.ktor.server.swagger) // Swagger UI for API testing
     implementation(libs.ktor.server.websockets) // WebSocket support for real-time tracking
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.cio)
+    implementation(libs.ktor.client.content.negotiation)
 
     // --- Observability & Configuration ---
     implementation(libs.ktor.server.call.logging) // Request/Response logging
@@ -91,6 +94,7 @@ dependencies {
 
     // --- Testing ---
     testImplementation(libs.ktor.server.test.host) // In-memory Ktor server for integration tests
+    testImplementation(libs.ktor.client.mock)
     testImplementation(libs.ktor.client.content.negotiation) // Ktor client for testing endpoints
     testImplementation(libs.kotlin.test.junit5) // Kotlin-style JUnit 5 testing
     testImplementation(libs.h2) // In-memory DB for fast testing

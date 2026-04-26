@@ -37,8 +37,9 @@ fun Route.userRoutes(
     userRepository: UserRepository,
     tokenRepository: VerificationTokenRepository,
     jwtService: JwtService,
+    emailService: com.solodev.fleet.shared.infrastructure.email.EmailService,
 ) {
-    val registerUserUseCase = RegisterUserUseCase(userRepository, tokenRepository)
+    val registerUserUseCase = RegisterUserUseCase(userRepository, tokenRepository, emailService)
     val verifyEmailUseCase = VerifyEmailUseCase(userRepository, tokenRepository)
     val getUserProfileUseCase = GetUserProfileUseCase(userRepository)
     val updateUserUseCase = UpdateUserUseCase(userRepository)

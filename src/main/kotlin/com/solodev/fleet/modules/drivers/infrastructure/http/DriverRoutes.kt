@@ -47,9 +47,10 @@ fun Route.driverRoutes(
     tokenRepository: VerificationTokenRepository,
     jwtService: JwtService,
     vehicleRepository: VehicleRepository,
+    emailService: com.solodev.fleet.shared.infrastructure.email.EmailService,
 ) {
     val registerDriverUseCase =
-        RegisterDriverUseCase(driverRepository, userRepository, tokenRepository)
+        RegisterDriverUseCase(driverRepository, userRepository, tokenRepository, emailService)
     val loginDriverUseCase = LoginDriverUseCase(userRepository, driverRepository, jwtService)
     val createDriverUseCase = CreateDriverUseCase(driverRepository)
     val getDriverUseCase = GetDriverUseCase(driverRepository)

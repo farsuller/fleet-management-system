@@ -55,8 +55,9 @@ fun Application.configureRouting(
     vehicleRepo: VehicleRepositoryImpl,
     jedisPool: JedisPool?,
     registry: MeterRegistry,
+    emailService: com.solodev.fleet.shared.infrastructure.email.EmailService,
 ) {
-    // Initialize other repositories
+    // ... rest of repository initializations ...
     val rentalRepo = RentalRepositoryImpl()
     val userRepo = UserRepositoryImpl()
     val tokenRepo = VerificationTokenRepositoryImpl()
@@ -73,6 +74,7 @@ fun Application.configureRouting(
     val remittanceRepo = DriverRemittanceRepositoryImpl()
 
     val accountingService = AccountingService(accountRepo = accountRepo, ledgerRepo = ledgerRepo)
+    // ... rest of service initializations ...
     val issueInvoiceUseCase =
         com.solodev.fleet.modules.accounts.application.usecases.IssueInvoiceUseCase(
             invoiceRepo = invoiceRepo,
@@ -130,6 +132,7 @@ fun Application.configureRouting(
                 tokenRepository = tokenRepo,
                 jwtService = jwtService,
                 vehicleRepository = vehicleRepo,
+                emailService = emailService,
             )
             maintenanceRoutes(maintenanceRepository = maintenanceRepo, rentalRepository = rentalRepo)
             incidentRoutes(maintenanceRepository = maintenanceRepo, vehicleRepository = vehicleRepo)
@@ -148,6 +151,7 @@ fun Application.configureRouting(
                 userRepository = userRepo,
                 tokenRepository = tokenRepo,
                 jwtService = jwtService,
+                emailService = emailService,
             )
         }
 

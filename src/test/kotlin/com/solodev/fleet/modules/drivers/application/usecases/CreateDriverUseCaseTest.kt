@@ -20,7 +20,7 @@ class CreateDriverUseCaseTest {
             email = "pedro@fleet.ph",
             firstName = "Pedro",
             lastName = "Reyes",
-            phone = "+63917000001",
+            phone = "+639123456789",
             licenseNumber = "LN-0001",
             licenseExpiry = "2030-12-31",
             licenseClass = "A",

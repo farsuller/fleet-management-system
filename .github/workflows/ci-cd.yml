@@ -95,6 +95,7 @@ jobs:
           DB_PASSWORD: test_password
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: test-secret-for-ci-min-64-chars-required-for-security-testing
+          EMAIL_API_KEY: ${{ secrets.EMAIL_API_KEY }}
         run: ./gradlew test --info --no-daemon
       
       - name: Upload coverage report
