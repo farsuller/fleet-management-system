@@ -53,11 +53,12 @@ class AccountRepositoryImpl : AccountRepository {
             val accountUuid = UUID.fromString(account.id.value)
             val now = Instant.now()
 
-            val exists = AccountsTable
-                .select(AccountsTable.id)
-                .where { AccountsTable.id eq accountUuid }
-                .limit(1)
-                .singleOrNull() != null
+            val exists =
+                AccountsTable
+                    .select(AccountsTable.id)
+                    .where { AccountsTable.id eq accountUuid }
+                    .limit(1)
+                    .singleOrNull() != null
 
             if (exists) {
                 AccountsTable.update({ AccountsTable.id eq accountUuid }) {

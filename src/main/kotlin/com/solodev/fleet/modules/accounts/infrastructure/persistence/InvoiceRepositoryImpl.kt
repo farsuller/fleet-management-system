@@ -82,11 +82,12 @@ class InvoiceRepositoryImpl : InvoiceRepository {
         dbQuery {
             val now = Instant.now()
 
-            val exists = InvoicesTable
-                .select(InvoicesTable.id)
-                .where { InvoicesTable.id eq invoice.id }
-                .limit(1)
-                .singleOrNull() != null
+            val exists =
+                InvoicesTable
+                    .select(InvoicesTable.id)
+                    .where { InvoicesTable.id eq invoice.id }
+                    .limit(1)
+                    .singleOrNull() != null
 
             if (exists) {
                 InvoicesTable.update({ InvoicesTable.id eq invoice.id }) {
