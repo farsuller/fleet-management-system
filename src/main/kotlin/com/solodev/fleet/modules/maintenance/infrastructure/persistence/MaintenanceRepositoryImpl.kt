@@ -40,24 +40,9 @@ class MaintenanceRepositoryImpl : MaintenanceRepository {
             id = MaintenanceJobId(this[MaintenanceJobsTable.id].value.toString()),
             jobNumber = this[MaintenanceJobsTable.jobNumber],
             vehicleId = VehicleId(this[MaintenanceJobsTable.vehicleId].value.toString()),
-            vehiclePlate =
-                try {
-                    this[VehiclesTable.plateNumber]
-                } catch (e: Exception) {
-                    null
-                },
-            vehicleMake =
-                try {
-                    this[VehiclesTable.make]
-                } catch (e: Exception) {
-                    null
-                },
-            vehicleModel =
-                try {
-                    this[VehiclesTable.model]
-                } catch (e: Exception) {
-                    null
-                },
+            vehiclePlate = this.getOrNull(VehiclesTable.plateNumber),
+            vehicleMake = this.getOrNull(VehiclesTable.make),
+            vehicleModel = this.getOrNull(VehiclesTable.model),
             status = MaintenanceStatus.valueOf(this[MaintenanceJobsTable.status]),
             jobType = MaintenanceJobType.fromString(this[MaintenanceJobsTable.jobType]),
             description = this[MaintenanceJobsTable.description],
@@ -128,9 +113,10 @@ class MaintenanceRepositoryImpl : MaintenanceRepository {
         dbQuery {
             val exists =
                 MaintenanceJobsTable
-                    .selectAll()
+                    .select(MaintenanceJobsTable.id)
                     .where { MaintenanceJobsTable.id eq UUID.fromString(job.id.value) }
-                    .count() > 0
+                    .limit(1)
+                    .singleOrNull() != null
 
             if (exists) {
                 MaintenanceJobsTable.update({
@@ -284,9 +270,10 @@ class MaintenanceRepositoryImpl : MaintenanceRepository {
         dbQuery {
             val exists =
                 VehicleIncidentsTable
-                    .selectAll()
+                    .select(VehicleIncidentsTable.id)
                     .where { VehicleIncidentsTable.id eq incident.id.value }
-                    .count() > 0
+                    .limit(1)
+                    .singleOrNull() != null
 
             if (exists) {
                 VehicleIncidentsTable.update({ VehicleIncidentsTable.id eq incident.id.value }) {

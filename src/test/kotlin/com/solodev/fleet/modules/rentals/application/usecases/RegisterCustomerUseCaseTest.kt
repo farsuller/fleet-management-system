@@ -27,7 +27,7 @@ class RegisterCustomerUseCaseTest {
     private val validRequest =
         CustomerRegistrationRequest(
             email = "customer@fleet.ph",
-            passwordRaw = "ValidP@ss123",
+            passwordRaw = "T3st_P@ss",
             firstName = "Ana",
             lastName = "Lim",
             phone = "+639123456789",

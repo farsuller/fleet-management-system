@@ -2,7 +2,8 @@
 
 > **Scope**: `modules/maintenance/infrastructure/persistence/MaintenanceRepositoryImpl.kt`  
 > **Goal**: Eliminate exception-as-control-flow and redundant count queries  
-> **Risk**: None — same query results, same API output
+> **Risk**: None — same query results, same API output  
+> **Status**: Complete ✅ (2026-04-27)
 
 ---
 
@@ -88,9 +89,9 @@
 
 ## Checklist
 
-- [ ] `toMaintenanceJob()` — 3x `try/catch` → `getOrNull()` for vehicle plate/make/model
-- [ ] `saveJob()` — `.count() > 0` → `.select(id).limit(1).singleOrNull() != null`
-- [ ] `saveIncident()` — `.count() > 0` → `.select(id).limit(1).singleOrNull() != null`
+- [x] `toMaintenanceJob()` — 3x `try/catch` → `getOrNull()` for vehicle plate/make/model
+- [x] `saveJob()` — `.count() > 0` → `.select(id).limit(1).singleOrNull() != null`
+- [x] `saveIncident()` — `.count() > 0` → `.select(id).limit(1).singleOrNull() != null`
 
 ---
 
