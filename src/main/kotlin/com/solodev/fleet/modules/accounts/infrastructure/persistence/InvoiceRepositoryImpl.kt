@@ -24,17 +24,17 @@ class InvoiceRepositoryImpl : InvoiceRepository {
             customerId = CustomerId(this[InvoicesTable.customerId].value.toString()),
             rentalId =
                 this[InvoicesTable.rentalId]?.value?.toString()?.let { RentalId(it) },
-            status = InvoiceStatus.valueOf(this[InvoicesTable.status]),
+            status = InvoiceStatus.fromName(this[InvoicesTable.status]),
             subtotal = this[InvoicesTable.subtotal],
             tax = this[InvoicesTable.tax],
             paidAmount = this[InvoicesTable.paidAmount],
-            currencyCode = this[InvoicesTable.currencyCode],
+            currencyCode = this[InvoicesTable.currencyCode].intern(),
             issueDate =
                 this[InvoicesTable.issueDate].atStartOfDay().toInstant(ZoneOffset.UTC),
             dueDate = this[InvoicesTable.dueDate].atStartOfDay().toInstant(ZoneOffset.UTC),
             paidDate =
                 this[InvoicesTable.paidDate]?.atStartOfDay()?.toInstant(ZoneOffset.UTC),
-            category = InvoiceCategory.valueOf(this[InvoicesTable.category]),
+            category = InvoiceCategory.fromName(this[InvoicesTable.category]),
             notes = this[InvoicesTable.notes],
         )
 

@@ -57,6 +57,7 @@ fun Application.configureRouting(
     registry: MeterRegistry,
     emailService: com.solodev.fleet.shared.infrastructure.email.EmailService,
     cacheManager: RedisCacheManager?,
+    idempotencyManager: com.solodev.fleet.modules.tracking.infrastructure.idempotency.IdempotencyKeyManager,
 ) {
     // ... rest of repository initializations ...
     val rentalRepo = RentalRepositoryImpl()
@@ -144,6 +145,7 @@ fun Application.configureRouting(
                 vehicleRepository = vehicleRepo,
                 historyRepository = locationHistoryRepository,
                 receptionService = coordinateReceptionService,
+                idempotencyManager = idempotencyManager,
             )
         }
 

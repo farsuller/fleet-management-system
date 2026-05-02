@@ -121,13 +121,29 @@ fun Route.busRoutes(
                                     ApiResponse.error("MISSING_ID", "Bus ID required", call.requestId),
                                 )
 
-                        val deleted = deleteBusUseCase.execute(id)
-                        if (deleted) {
-                            call.respond(HttpStatusCode.NoContent)
-                        } else {
+                        try {
+                            val deleted = deleteBusUseCase.execute(id)
+                            if (deleted) {
+                                call.respond(
+                                    ApiResponse.success(
+                                        mapOf("message" to "Bus deleted successfully"),
+                                        call.requestId,
+                                    ),
+                                )
+                            } else {
+                                call.respond(
+                                    HttpStatusCode.NotFound,
+                                    ApiResponse.error("NOT_FOUND", "Bus not found", call.requestId),
+                                )
+                            }
+                        } catch (e: IllegalStateException) {
                             call.respond(
-                                HttpStatusCode.NotFound,
-                                ApiResponse.error("NOT_FOUND", "Bus not found", call.requestId),
+                                HttpStatusCode.BadRequest,
+                                ApiResponse.error(
+                                    "INVALID_STATE",
+                                    e.message ?: "Cannot delete bus in current state",
+                                    call.requestId,
+                                ),
                             )
                         }
                     }

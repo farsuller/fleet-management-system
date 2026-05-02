@@ -1,5 +1,6 @@
 package com.solodev.fleet
 
+import com.solodev.fleet.modules.tracking.infrastructure.idempotency.IdempotencyKeyManager
 import com.solodev.fleet.modules.vehicles.infrastructure.persistence.VehicleRepositoryImpl
 import com.solodev.fleet.shared.infrastructure.cache.RedisCacheManager
 import com.solodev.fleet.shared.infrastructure.email.NuntlyEmailService
@@ -27,9 +28,14 @@ import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
 import java.net.URI
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -143,24 +149,41 @@ fun Application.module() {
 
     val jwtService = JwtService(secret, issuer, audience, expiresIn)
 
-    // Email Service Initialization
-    val httpClient =
-        HttpClient(CIO) {
-            install(ContentNegotiation) {
-                json()
+    // Email Service Initialization (Lazy)
+    val emailService: com.solodev.fleet.shared.infrastructure.email.EmailService by lazy {
+        val httpClient =
+            HttpClient(CIO) {
+                install(ContentNegotiation) {
+                    json()
+                }
             }
-        }
-    val emailApiKey = environment.config.propertyOrNull("email.apiKey")?.getString() ?: ""
-    val emailSender = environment.config.propertyOrNull("email.sender")?.getString() ?: "Fleet Drive <noreply@fleetdrive.com>"
-    val emailBaseUrl = environment.config.propertyOrNull("email.baseUrl")?.getString() ?: "https://api.nuntly.com"
+        val emailApiKey = environment.config.propertyOrNull("email.apiKey")?.getString() ?: ""
+        val emailSender = environment.config.propertyOrNull("email.sender")?.getString() ?: "Fleet Drive <noreply@fleetdrive.com>"
+        val emailBaseUrl = environment.config.propertyOrNull("email.baseUrl")?.getString() ?: "https://api.nuntly.com"
 
-    val emailService =
         NuntlyEmailService(
             client = httpClient,
             apiKey = emailApiKey,
             sender = emailSender,
             baseUrl = emailBaseUrl,
         )
+    }
+
+    // Phase 2: Background Cleanup Tasks
+    val idempotencyManager = IdempotencyKeyManager(ttlMinutes = 24 * 60)
+
+    // Launch cleanup job on a low-priority background dispatcher
+    launch(Dispatchers.Default) {
+        while (isActive) {
+            delay(1.hours) // Clean up every hour
+            try {
+                log.info("Running background cleanup for IdempotencyKeyManager...")
+                idempotencyManager.cleanup()
+            } catch (e: Exception) {
+                log.error("Idempotency cleanup failed", e)
+            }
+        }
+    }
 
     configureRouting(
         jwtService = jwtService,
@@ -169,5 +192,6 @@ fun Application.module() {
         registry = registry,
         emailService = emailService,
         cacheManager = cacheManager,
+        idempotencyManager = idempotencyManager,
     )
 }

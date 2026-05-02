@@ -2,52 +2,16 @@ package com.solodev.fleet.modules.accounts.infrastructure.persistence
 
 import com.solodev.fleet.modules.accounts.domain.model.AccountId
 import com.solodev.fleet.modules.accounts.domain.model.LedgerEntry
-import com.solodev.fleet.modules.accounts.domain.model.LedgerEntryId
-import com.solodev.fleet.modules.accounts.domain.model.LedgerEntryLine
 import com.solodev.fleet.modules.accounts.domain.repository.LedgerRepository
 import com.solodev.fleet.shared.helpers.dbQuery
-import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.sum
 import java.time.Instant
 import java.util.UUID
 
 class LedgerRepositoryImpl : LedgerRepository {
-    private suspend fun ResultRow.toLedgerEntry(): LedgerEntry {
-        val entryId = LedgerEntryId(this[LedgerEntriesTable.id].value.toString())
-
-        // Fetch associated lines
-        val lines =
-            LedgerEntryLinesTable
-                .selectAll()
-                .where { LedgerEntryLinesTable.entryId eq UUID.fromString(entryId.value) }
-                .map { it.toLedgerEntryLine() }
-
-        return LedgerEntry(
-            id = entryId,
-            entryNumber = this[LedgerEntriesTable.entryNumber],
-            externalReference = this[LedgerEntriesTable.externalReference],
-            entryDate = this[LedgerEntriesTable.entryDate],
-            description = this[LedgerEntriesTable.description],
-            lines = lines,
-            createdByUserId = this[LedgerEntriesTable.createdByUserId],
-        )
-    }
-
-    private fun ResultRow.toLedgerEntryLine() =
-        LedgerEntryLine(
-            id = this[LedgerEntryLinesTable.id].value,
-            entryId = LedgerEntryId(this[LedgerEntryLinesTable.entryId].value.toString()),
-            accountId = AccountId(this[LedgerEntryLinesTable.accountId].value.toString()),
-            debitAmount = this[LedgerEntryLinesTable.debitAmount],
-            creditAmount = this[LedgerEntryLinesTable.creditAmount],
-            currencyCode = this[LedgerEntryLinesTable.currencyCode],
-            description = this[LedgerEntryLinesTable.description],
-        )
-
     override suspend fun calculateSumForReference(
         reference: String,
         accountId: AccountId,
@@ -141,18 +105,19 @@ class LedgerRepositoryImpl : LedgerRepository {
         dbQuery {
             val accountUuid = UUID.fromString(accountId.value)
 
-            (LedgerEntryLinesTable innerJoin LedgerEntriesTable)
-                .select(
-                    LedgerEntryLinesTable.debitAmount,
-                    LedgerEntryLinesTable.creditAmount,
-                ).where {
-                    (LedgerEntryLinesTable.accountId eq accountUuid) and
-                        (LedgerEntriesTable.entryDate lessEq upToDate)
-                }.map {
-                    val debit = it[LedgerEntryLinesTable.debitAmount].toLong()
-                    val credit = it[LedgerEntryLinesTable.creditAmount].toLong()
-                    debit - credit
-                }.sum()
+            val (debits, credits) =
+                (LedgerEntryLinesTable innerJoin LedgerEntriesTable)
+                    .select(
+                        LedgerEntryLinesTable.debitAmount.sum(),
+                        LedgerEntryLinesTable.creditAmount.sum(),
+                    ).where {
+                        (LedgerEntryLinesTable.accountId eq accountUuid) and
+                            (LedgerEntriesTable.entryDate lessEq upToDate)
+                    }.map {
+                        it[LedgerEntryLinesTable.debitAmount.sum()] to it[LedgerEntryLinesTable.creditAmount.sum()]
+                    }.singleOrNull() ?: (0L to 0L)
+
+            (debits ?: 0L).toLong() - (credits ?: 0L).toLong()
         }
 
     override suspend fun calculateAccountBalanceBetween(
@@ -163,19 +128,20 @@ class LedgerRepositoryImpl : LedgerRepository {
         dbQuery {
             val accountUuid = UUID.fromString(accountId.value)
 
-            (LedgerEntryLinesTable innerJoin LedgerEntriesTable)
-                .select(
-                    LedgerEntryLinesTable.debitAmount,
-                    LedgerEntryLinesTable.creditAmount,
-                ).where {
-                    (LedgerEntryLinesTable.accountId eq accountUuid) and
-                        (LedgerEntriesTable.entryDate greaterEq from) and
-                        (LedgerEntriesTable.entryDate less to)
-                }.map {
-                    val debit = it[LedgerEntryLinesTable.debitAmount].toLong()
-                    val credit = it[LedgerEntryLinesTable.creditAmount].toLong()
-                    debit - credit
-                }.sum()
+            val (debits, credits) =
+                (LedgerEntryLinesTable innerJoin LedgerEntriesTable)
+                    .select(
+                        LedgerEntryLinesTable.debitAmount.sum(),
+                        LedgerEntryLinesTable.creditAmount.sum(),
+                    ).where {
+                        (LedgerEntryLinesTable.accountId eq accountUuid) and
+                            (LedgerEntriesTable.entryDate greaterEq from) and
+                            (LedgerEntriesTable.entryDate less to)
+                    }.map {
+                        it[LedgerEntryLinesTable.debitAmount.sum()] to it[LedgerEntryLinesTable.creditAmount.sum()]
+                    }.singleOrNull() ?: (0L to 0L)
+
+            (debits ?: 0L).toLong() - (credits ?: 0L).toLong()
         }
 
     override suspend fun getRevenueLinesInRange(

@@ -13,6 +13,8 @@ import com.solodev.fleet.shared.models.PaginationParams
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
+import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
@@ -38,8 +40,8 @@ class BusRepositoryImpl(
             model = this[VehiclesTable.model],
             year = this[VehiclesTable.year],
             color = this[VehiclesTable.color],
-            vehicleType = VehicleType.valueOf(this[VehiclesTable.vehicleType]),
-            state = VehicleState.valueOf(this[VehiclesTable.status]),
+            vehicleType = VehicleType.fromName(this[VehiclesTable.vehicleType]),
+            state = VehicleState.fromName(this[VehiclesTable.status]),
             mileageKm = this[VehiclesTable.currentOdometerKm],
             dailyRateAmount = this[VehiclesTable.dailyRate],
             currencyCode = this[VehiclesTable.currencyCode],
@@ -88,7 +90,7 @@ class BusRepositoryImpl(
 
             var query = baseQuery
             params.cursor?.let { lastId ->
-                query = query.where { BusesTable.vehicleId greater UUID.fromString(lastId) }
+                query.andWhere { BusesTable.vehicleId greater UUID.fromString(lastId) }
             }
 
             val items =

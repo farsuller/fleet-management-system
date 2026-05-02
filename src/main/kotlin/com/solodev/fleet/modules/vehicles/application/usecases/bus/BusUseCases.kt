@@ -4,6 +4,7 @@ import com.solodev.fleet.modules.vehicles.application.dto.BusRequest
 import com.solodev.fleet.modules.vehicles.application.dto.BusResponse
 import com.solodev.fleet.modules.vehicles.application.dto.BusUpdateRequest
 import com.solodev.fleet.modules.vehicles.domain.model.Bus
+import com.solodev.fleet.modules.vehicles.domain.model.VehicleState
 import com.solodev.fleet.modules.vehicles.domain.repository.BusRepository
 import com.solodev.fleet.shared.models.PaginatedResponse
 import com.solodev.fleet.shared.models.PaginationParams
@@ -86,5 +87,11 @@ class UpdateBusUseCase(
 class DeleteBusUseCase(
     private val repository: BusRepository,
 ) {
-    suspend fun execute(id: String): Boolean = repository.deleteById(id)
+    suspend fun execute(id: String): Boolean {
+        val bus = repository.findById(id) ?: return false
+        if (bus.vehicle.state == VehicleState.RENTED || bus.vehicle.state == VehicleState.MAINTENANCE) {
+            throw IllegalStateException("Cannot delete bus while it is in ${bus.vehicle.state} status")
+        }
+        return repository.deleteById(id)
+    }
 }

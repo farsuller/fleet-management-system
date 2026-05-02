@@ -13,7 +13,10 @@ import com.solodev.fleet.shared.models.PaginationParams
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
@@ -37,15 +40,15 @@ class VehicleRepositoryImpl(
             id = VehicleId(this[VehiclesTable.id].value.toString()),
             vin = this[VehiclesTable.vin],
             licensePlate = this[VehiclesTable.plateNumber],
-            make = this[VehiclesTable.make],
+            make = this[VehiclesTable.make].intern(),
             model = this[VehiclesTable.model],
             year = this[VehiclesTable.year],
-            color = this[VehiclesTable.color],
-            vehicleType = VehicleType.valueOf(this[VehiclesTable.vehicleType]),
-            state = VehicleState.valueOf(this[VehiclesTable.status]),
+            color = this[VehiclesTable.color]?.intern(),
+            vehicleType = VehicleType.fromName(this[VehiclesTable.vehicleType]),
+            state = VehicleState.fromName(this[VehiclesTable.status]),
             mileageKm = this[VehiclesTable.currentOdometerKm],
             dailyRateAmount = this[VehiclesTable.dailyRate],
-            currencyCode = this[VehiclesTable.currencyCode],
+            currencyCode = this[VehiclesTable.currencyCode].intern(),
             passengerCapacity = this[VehiclesTable.passengerCapacity],
             lastLocation = this[VehiclesTable.lastLocation]?.toLocation(),
             routeProgress = this[VehiclesTable.routeProgress],
@@ -186,7 +189,7 @@ class VehicleRepositoryImpl(
             }
             params.filters["type"]?.let { typeValue ->
                 val types = typeValue.split(",").map { it.trim() }
-                baseQuery = baseQuery.where { VehiclesTable.vehicleType inList types }
+                baseQuery.andWhere { VehiclesTable.vehicleType inList types }
             }
 
             val totalCount = baseQuery.count()
@@ -194,7 +197,7 @@ class VehicleRepositoryImpl(
             var query = baseQuery
 
             params.cursor?.let { lastId ->
-                query = query.where { VehiclesTable.id greater UUID.fromString(lastId) }
+                query.andWhere { VehiclesTable.id greater UUID.fromString(lastId) }
             }
 
             val items =

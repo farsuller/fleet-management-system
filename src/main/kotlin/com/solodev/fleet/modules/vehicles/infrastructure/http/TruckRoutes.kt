@@ -121,13 +121,29 @@ fun Route.truckRoutes(
                                     ApiResponse.error("MISSING_ID", "Truck ID required", call.requestId),
                                 )
 
-                        val deleted = deleteTruckUseCase.execute(id)
-                        if (deleted) {
-                            call.respond(HttpStatusCode.NoContent)
-                        } else {
+                        try {
+                            val deleted = deleteTruckUseCase.execute(id)
+                            if (deleted) {
+                                call.respond(
+                                    ApiResponse.success(
+                                        mapOf("message" to "Truck deleted successfully"),
+                                        call.requestId,
+                                    ),
+                                )
+                            } else {
+                                call.respond(
+                                    HttpStatusCode.NotFound,
+                                    ApiResponse.error("NOT_FOUND", "Truck not found", call.requestId),
+                                )
+                            }
+                        } catch (e: IllegalStateException) {
                             call.respond(
-                                HttpStatusCode.NotFound,
-                                ApiResponse.error("NOT_FOUND", "Truck not found", call.requestId),
+                                HttpStatusCode.BadRequest,
+                                ApiResponse.error(
+                                    "INVALID_STATE",
+                                    e.message ?: "Cannot delete truck in current state",
+                                    call.requestId,
+                                ),
                             )
                         }
                     }

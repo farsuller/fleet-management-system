@@ -60,7 +60,7 @@ class DriverRemittanceRepositoryImpl : DriverRemittanceRepository {
                 driverId = row[DriverRemittancesTable.driverId].value,
                 remittanceDate = row[DriverRemittancesTable.remittanceDate],
                 totalAmount = row[DriverRemittancesTable.totalAmount],
-                status = RemittanceStatus.valueOf(row[DriverRemittancesTable.status]),
+                status = RemittanceStatus.fromName(row[DriverRemittancesTable.status]),
                 paymentIds = paymentIds,
                 notes = row[DriverRemittancesTable.notes],
             )
@@ -74,22 +74,28 @@ class DriverRemittanceRepositoryImpl : DriverRemittanceRepository {
                     .where { DriverRemittancesTable.driverId eq driverId }
                     .toList()
 
-            rows.map { row ->
-                val remittanceId = row[DriverRemittancesTable.id].value
-                val paymentIds =
-                    DriverRemittancePaymentsTable
-                        .selectAll()
-                        .where { DriverRemittancePaymentsTable.remittanceId eq remittanceId }
-                        .map { it[DriverRemittancePaymentsTable.paymentId].value }
+            if (rows.isEmpty()) return@dbQuery emptyList()
 
+            val remittanceIds = rows.map { it[DriverRemittancesTable.id].value }
+            val paymentsMap =
+                DriverRemittancePaymentsTable
+                    .selectAll()
+                    .where { DriverRemittancePaymentsTable.remittanceId inList remittanceIds }
+                    .toList()
+                    .groupBy({ it[DriverRemittancePaymentsTable.remittanceId].value }) {
+                        it[DriverRemittancePaymentsTable.paymentId].value
+                    }
+
+            rows.map { row ->
+                val id = row[DriverRemittancesTable.id].value
                 DriverRemittance(
-                    id = remittanceId,
+                    id = id,
                     remittanceNumber = row[DriverRemittancesTable.remittanceNumber],
                     driverId = row[DriverRemittancesTable.driverId].value,
                     remittanceDate = row[DriverRemittancesTable.remittanceDate],
                     totalAmount = row[DriverRemittancesTable.totalAmount],
-                    status = RemittanceStatus.valueOf(row[DriverRemittancesTable.status]),
-                    paymentIds = paymentIds,
+                    status = RemittanceStatus.fromName(row[DriverRemittancesTable.status]),
+                    paymentIds = paymentsMap[id] ?: emptyList(),
                     notes = row[DriverRemittancesTable.notes],
                 )
             }
@@ -98,23 +104,28 @@ class DriverRemittanceRepositoryImpl : DriverRemittanceRepository {
     override suspend fun findAll(): List<DriverRemittance> =
         dbQuery {
             val rows = DriverRemittancesTable.selectAll().toList()
+            if (rows.isEmpty()) return@dbQuery emptyList()
+
+            val remittanceIds = rows.map { it[DriverRemittancesTable.id].value }
+            val paymentsMap =
+                DriverRemittancePaymentsTable
+                    .selectAll()
+                    .where { DriverRemittancePaymentsTable.remittanceId inList remittanceIds }
+                    .toList()
+                    .groupBy({ it[DriverRemittancePaymentsTable.remittanceId].value }) {
+                        it[DriverRemittancePaymentsTable.paymentId].value
+                    }
 
             rows.map { row ->
-                val remittanceId = row[DriverRemittancesTable.id].value
-                val paymentIds =
-                    DriverRemittancePaymentsTable
-                        .selectAll()
-                        .where { DriverRemittancePaymentsTable.remittanceId eq remittanceId }
-                        .map { it[DriverRemittancePaymentsTable.paymentId].value }
-
+                val id = row[DriverRemittancesTable.id].value
                 DriverRemittance(
-                    id = remittanceId,
+                    id = id,
                     remittanceNumber = row[DriverRemittancesTable.remittanceNumber],
                     driverId = row[DriverRemittancesTable.driverId].value,
                     remittanceDate = row[DriverRemittancesTable.remittanceDate],
                     totalAmount = row[DriverRemittancesTable.totalAmount],
-                    status = RemittanceStatus.valueOf(row[DriverRemittancesTable.status]),
-                    paymentIds = paymentIds,
+                    status = RemittanceStatus.fromName(row[DriverRemittancesTable.status]),
+                    paymentIds = paymentsMap[id] ?: emptyList(),
                     notes = row[DriverRemittancesTable.notes],
                 )
             }

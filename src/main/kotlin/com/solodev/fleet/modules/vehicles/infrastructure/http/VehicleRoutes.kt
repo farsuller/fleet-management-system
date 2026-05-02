@@ -157,15 +157,31 @@ fun Route.vehicleRoutes(repository: VehicleRepository) {
                                     ),
                                 )
 
-                        val deleted = deleteVehicleUseCase.execute(id)
-                        if (deleted) {
-                            call.respond(HttpStatusCode.NoContent)
-                        } else {
+                        try {
+                            val deleted = deleteVehicleUseCase.execute(id)
+                            if (deleted) {
+                                call.respond(
+                                    ApiResponse.success(
+                                        mapOf("message" to "Vehicle deleted successfully"),
+                                        call.requestId,
+                                    ),
+                                )
+                            } else {
+                                call.respond(
+                                    HttpStatusCode.NotFound,
+                                    ApiResponse.error(
+                                        "NOT_FOUND",
+                                        "Vehicle not found",
+                                        call.requestId,
+                                    ),
+                                )
+                            }
+                        } catch (e: IllegalStateException) {
                             call.respond(
-                                HttpStatusCode.NotFound,
+                                HttpStatusCode.BadRequest,
                                 ApiResponse.error(
-                                    "NOT_FOUND",
-                                    "Vehicle not found",
+                                    "INVALID_STATE",
+                                    e.message ?: "Cannot delete vehicle in current state",
                                     call.requestId,
                                 ),
                             )

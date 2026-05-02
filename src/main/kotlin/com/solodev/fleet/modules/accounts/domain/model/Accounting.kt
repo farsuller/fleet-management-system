@@ -32,6 +32,13 @@ enum class AccountType {
     EQUITY,
     REVENUE,
     EXPENSE,
+    ;
+
+    companion object {
+        private val map = entries.associateBy { it.name }
+
+        fun fromName(name: String?): AccountType = map[name] ?: ASSET
+    }
 }
 
 /** Invoice status. */
@@ -41,6 +48,13 @@ enum class InvoiceStatus {
     PAID,
     OVERDUE,
     CANCELLED,
+    ;
+
+    companion object {
+        private val map = entries.associateBy { it.name }
+
+        fun fromName(name: String?): InvoiceStatus = map[name] ?: DRAFT
+    }
 }
 
 /** Category of business transaction the invoice represents. */
@@ -48,6 +62,13 @@ enum class InvoiceCategory {
     RENTAL, // Standard vehicle rental
     MAINTENANCE, // Vehicle repair or service charge
     DIRECT, // Manual/miscellaneous charge
+    ;
+
+    companion object {
+        private val map = entries.associateBy { it.name }
+
+        fun fromName(name: String?): InvoiceCategory = map[name] ?: RENTAL
+    }
 }
 
 /**
@@ -183,6 +204,13 @@ data class Invoice(
 enum class PaymentCollectionType {
     DIRECT, // customer paid company directly (online, bank, walk-in)
     DRIVER_COLLECTED, // driver collected on behalf of company; awaits remittance
+    ;
+
+    companion object {
+        private val map = entries.associateBy { it.name }
+
+        fun fromName(name: String?): PaymentCollectionType = map[name] ?: DIRECT
+    }
 }
 
 /** Payment domain entity. */
@@ -208,6 +236,13 @@ enum class PaymentStatus {
     COMPLETED,
     FAILED,
     REFUNDED,
+    ;
+
+    companion object {
+        private val map = entries.associateBy { it.name }
+
+        fun fromName(name: String?): PaymentStatus = map[name] ?: PENDING
+    }
 }
 
 /** Result object for payment processing. */
