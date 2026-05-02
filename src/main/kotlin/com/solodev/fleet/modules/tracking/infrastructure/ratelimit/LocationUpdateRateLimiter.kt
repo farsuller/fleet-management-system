@@ -19,7 +19,7 @@ class LocationUpdateRateLimiter(
     private val maxUpdatesPerMinute: Int = 60,
     private val windowSizeSeconds: Int = 60,
 ) {
-    private val vehicleTimestamps = ConcurrentHashMap<String, MutableList<Instant>>()
+    private val vehicleTimestamps = ConcurrentHashMap<String, ArrayDeque<Instant>>()
 
     /**
      * Check if vehicle is allowed to send location update.
@@ -30,10 +30,12 @@ class LocationUpdateRateLimiter(
         val windowStart = now.minusSeconds(windowSizeSeconds.toLong())
 
         // Get or create timestamp list for this vehicle
-        val timestamps = vehicleTimestamps.getOrPut(vehicleId) { mutableListOf() }
+        val timestamps = vehicleTimestamps.getOrPut(vehicleId) { ArrayDeque(maxUpdatesPerMinute) }
 
-        // Remove old timestamps outside the window
-        timestamps.removeAll { it < windowStart }
+        // Remove old timestamps outside the window (O(1) front-eviction)
+        while (timestamps.isNotEmpty() && timestamps.first() < windowStart) {
+            timestamps.removeFirst()
+        }
 
         // Check if within rate limit
         if (timestamps.size >= maxUpdatesPerMinute) {
@@ -41,7 +43,7 @@ class LocationUpdateRateLimiter(
         }
 
         // Add current timestamp and allow
-        timestamps.add(now)
+        timestamps.addLast(now)
         return true
     }
 
@@ -68,14 +70,14 @@ class LocationUpdateRateLimiter(
         val windowStart = now.minusSeconds(windowSizeSeconds.toLong())
 
         val timestamps = vehicleTimestamps[vehicleId] ?: return 0
-        val recentTimestamps = timestamps.filter { it >= windowStart }
+        val recentCount = timestamps.count { it >= windowStart }
 
-        if (recentTimestamps.size < maxUpdatesPerMinute) {
+        if (recentCount < maxUpdatesPerMinute) {
             return 0 // Can update immediately
         }
 
         // Find oldest timestamp in window and calculate wait time
-        val oldestInWindow = recentTimestamps.minOrNull() ?: return 0
+        val oldestInWindow = timestamps.firstOrNull { it >= windowStart } ?: return 0
         val windowExpireTime = oldestInWindow.plusSeconds(windowSizeSeconds.toLong())
         val waitSeconds =
             java.time.temporal.ChronoUnit.SECONDS

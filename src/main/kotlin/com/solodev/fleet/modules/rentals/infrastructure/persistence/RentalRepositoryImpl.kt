@@ -50,8 +50,8 @@ class RentalRepositoryImpl : RentalRepository {
             RentalsTable
                 .selectAll()
                 .where { RentalsTable.id eq UUID.fromString(id.value) }
-                .map { it.toRental() }
                 .singleOrNull()
+                ?.toRental()
         }
 
     override suspend fun findByIdWithDetails(id: RentalId): RentalWithDetails? =
@@ -80,17 +80,18 @@ class RentalRepositoryImpl : RentalRepository {
             RentalsTable
                 .selectAll()
                 .where { RentalsTable.rentalNumber eq rentalNumber }
-                .map { it.toRental() }
                 .singleOrNull()
+                ?.toRental()
         }
 
     override suspend fun save(rental: Rental): Rental =
         dbQuery {
             val exists =
                 RentalsTable
-                    .selectAll()
+                    .select(RentalsTable.id)
                     .where { RentalsTable.id eq UUID.fromString(rental.id.value) }
-                    .count() > 0
+                    .limit(1)
+                    .singleOrNull() != null
             if (exists) {
                 RentalsTable.update({ RentalsTable.id eq UUID.fromString(rental.id.value) }) {
                     it[customerId] = UUID.fromString(rental.customerId.value)

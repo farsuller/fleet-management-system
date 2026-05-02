@@ -1,13 +1,13 @@
 package com.solodev.fleet.shared.infrastructure.cache
 
+import com.solodev.fleet.shared.infrastructure.serialization.JsonConfig
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import redis.clients.jedis.JedisPool
 
 class RedisCacheManager(
     @PublishedApi internal val jedisPool: JedisPool?,
 ) {
-    @PublishedApi internal val json = Json { ignoreUnknownKeys = true }
+    @PublishedApi internal val json = JsonConfig.instance
 
     suspend inline fun <reified T> getOrSet(
         key: String,

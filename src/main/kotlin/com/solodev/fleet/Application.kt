@@ -168,5 +168,6 @@ fun Application.module() {
         jedisPool = jedisPool,
         registry = registry,
         emailService = emailService,
+        cacheManager = cacheManager,
     )
 }

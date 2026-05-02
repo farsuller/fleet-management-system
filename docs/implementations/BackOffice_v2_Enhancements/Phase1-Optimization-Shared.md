@@ -2,7 +2,8 @@
 
 > **Scope**: `shared/` directory + `Application.kt` / `Routing.kt` bootstrap  
 > **Goal**: Reduce heap allocations in foundational code used by every request  
-> **Risk**: None — internal refactors only, same API output
+> **Risk**: None — internal refactors only, same API output  
+> **Status**: Complete ✅ (2026-05-02)
 
 ---
 
@@ -206,11 +207,11 @@ In `Routing.kt`:
 
 ## Checklist
 
-- [ ] Hoist `emailRegex` / `phoneRegex` to companion `val` in `ValidationUtils.kt`
-- [ ] Gate `prettyPrint` behind config in `Serialization.kt`
-- [ ] Extract `JsonConfig` object, wire into `RedisCacheManager` and `Serialization`
-- [ ] Extract inline `errorResponse()` helper in `StatusPages.kt`
-- [ ] Pass `cacheManager` from `Application.kt` → `Routing.kt`, remove duplicate
+- [x] Hoist `emailRegex` / `phoneRegex` to companion `val` in `ValidationUtils.kt`
+- [x] Gate `prettyPrint` behind config in `Serialization.kt`
+- [x] Extract `JsonConfig` object, wire into `RedisCacheManager` and `Serialization`
+- [x] Extract inline `errorResponse()` helper in `StatusPages.kt`
+- [x] Pass `cacheManager` from `Application.kt` → `Routing.kt`, remove duplicate
 
 ---
 

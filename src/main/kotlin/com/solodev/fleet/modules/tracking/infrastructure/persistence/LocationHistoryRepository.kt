@@ -58,6 +58,31 @@ object LocationHistoryTable : Table("location_history") {
  * LocationHistoryRepository - Persists and retrieves location tracking records
  */
 class LocationHistoryRepository {
+    private fun ResultRow.toVehicleRouteState() =
+        VehicleRouteState(
+            vehicleId = this[LocationHistoryTable.vehicleId],
+            routeId = this[LocationHistoryTable.routeId] ?: "",
+            progress = this[LocationHistoryTable.progress],
+            segmentId = this[LocationHistoryTable.segmentId] ?: "",
+            speed = this[LocationHistoryTable.speed],
+            heading = this[LocationHistoryTable.heading],
+            status = VehicleStatus.valueOf(this[LocationHistoryTable.status]),
+            distanceFromRoute = this[LocationHistoryTable.distanceFromRoute],
+            latitude = this[LocationHistoryTable.latitude],
+            longitude = this[LocationHistoryTable.longitude],
+            timestamp = this[LocationHistoryTable.timestamp],
+            accelX = this[LocationHistoryTable.accelX],
+            accelY = this[LocationHistoryTable.accelY],
+            accelZ = this[LocationHistoryTable.accelZ],
+            gyroX = this[LocationHistoryTable.gyroX],
+            gyroY = this[LocationHistoryTable.gyroY],
+            gyroZ = this[LocationHistoryTable.gyroZ],
+            batteryLevel = this[LocationHistoryTable.batteryLevel]?.toInt(),
+            harshBrake = this[LocationHistoryTable.harshBrake],
+            harshAccel = this[LocationHistoryTable.harshAccel],
+            sharpTurn = this[LocationHistoryTable.sharpTurn],
+        )
+
     /**
      * Save a tracking record to the history table
      */
@@ -106,31 +131,7 @@ class LocationHistoryRepository {
                 .where { LocationHistoryTable.vehicleId eq vehicleId }
                 .orderBy(LocationHistoryTable.timestamp, SortOrder.DESC) // Most recent first
                 .limit(limit, offset.toLong())
-                .map { row: ResultRow ->
-                    VehicleRouteState(
-                        vehicleId = row[LocationHistoryTable.vehicleId],
-                        routeId = row[LocationHistoryTable.routeId] ?: "",
-                        progress = row[LocationHistoryTable.progress],
-                        segmentId = row[LocationHistoryTable.segmentId] ?: "",
-                        speed = row[LocationHistoryTable.speed],
-                        heading = row[LocationHistoryTable.heading],
-                        status = VehicleStatus.valueOf(row[LocationHistoryTable.status]),
-                        distanceFromRoute = row[LocationHistoryTable.distanceFromRoute],
-                        latitude = row[LocationHistoryTable.latitude],
-                        longitude = row[LocationHistoryTable.longitude],
-                        timestamp = row[LocationHistoryTable.timestamp],
-                        accelX = row[LocationHistoryTable.accelX],
-                        accelY = row[LocationHistoryTable.accelY],
-                        accelZ = row[LocationHistoryTable.accelZ],
-                        gyroX = row[LocationHistoryTable.gyroX],
-                        gyroY = row[LocationHistoryTable.gyroY],
-                        gyroZ = row[LocationHistoryTable.gyroZ],
-                        batteryLevel = row[LocationHistoryTable.batteryLevel]?.toInt(),
-                        harshBrake = row[LocationHistoryTable.harshBrake],
-                        harshAccel = row[LocationHistoryTable.harshAccel],
-                        sharpTurn = row[LocationHistoryTable.sharpTurn],
-                    )
-                }
+                .map { it.toVehicleRouteState() }
         }
 
     /**
@@ -155,31 +156,8 @@ class LocationHistoryRepository {
                 .where { LocationHistoryTable.vehicleId eq vehicleId }
                 .orderBy(LocationHistoryTable.timestamp, SortOrder.DESC)
                 .limit(1)
-                .map { row: ResultRow ->
-                    VehicleRouteState(
-                        vehicleId = row[LocationHistoryTable.vehicleId],
-                        routeId = row[LocationHistoryTable.routeId] ?: "",
-                        progress = row[LocationHistoryTable.progress],
-                        segmentId = row[LocationHistoryTable.segmentId] ?: "",
-                        speed = row[LocationHistoryTable.speed],
-                        heading = row[LocationHistoryTable.heading],
-                        status = VehicleStatus.valueOf(row[LocationHistoryTable.status]),
-                        distanceFromRoute = row[LocationHistoryTable.distanceFromRoute],
-                        latitude = row[LocationHistoryTable.latitude],
-                        longitude = row[LocationHistoryTable.longitude],
-                        timestamp = row[LocationHistoryTable.timestamp],
-                        accelX = row[LocationHistoryTable.accelX],
-                        accelY = row[LocationHistoryTable.accelY],
-                        accelZ = row[LocationHistoryTable.accelZ],
-                        gyroX = row[LocationHistoryTable.gyroX],
-                        gyroY = row[LocationHistoryTable.gyroY],
-                        gyroZ = row[LocationHistoryTable.gyroZ],
-                        batteryLevel = row[LocationHistoryTable.batteryLevel]?.toInt(),
-                        harshBrake = row[LocationHistoryTable.harshBrake],
-                        harshAccel = row[LocationHistoryTable.harshAccel],
-                        sharpTurn = row[LocationHistoryTable.sharpTurn],
-                    )
-                }.firstOrNull()
+                .singleOrNull()
+                ?.toVehicleRouteState()
         }
 
     /**

@@ -92,8 +92,8 @@ class VehicleRepositoryImpl(
             VehiclesTable
                 .selectAll()
                 .where { VehiclesTable.plateNumber eq plateNumber }
-                .map { it.toVehicle() }
                 .singleOrNull()
+                ?.toVehicle()
         }
 
     override suspend fun save(vehicle: Vehicle): Vehicle =
@@ -102,7 +102,12 @@ class VehicleRepositoryImpl(
             val now = Instant.now()
 
             // Check if vehicle exists
-            val exists = VehiclesTable.selectAll().where { VehiclesTable.id eq vehicleUuid }.count() > 0
+            val exists =
+                VehiclesTable
+                    .select(VehiclesTable.id)
+                    .where { VehiclesTable.id eq vehicleUuid }
+                    .limit(1)
+                    .singleOrNull() != null
 
             if (exists) {
                 // Update existing vehicle with optimistic locking check

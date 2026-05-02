@@ -2,7 +2,8 @@
 
 > **Scope**: `modules/tracking/` — rate limiter, idempotency, broadcaster, location history  
 > **Goal**: Reduce per-ping heap allocations on the hottest code path  
-> **Risk**: None — internal refactors only, same API output
+> **Risk**: None — internal refactors only, same API output  
+> **Status**: Complete ✅ (2026-05-02)
 
 ---
 
@@ -187,12 +188,12 @@ Apply same to `getLatestVehicleState()`. The raw SQL `getAllLatestVehicleStates(
 
 ## Checklist
 
-- [ ] Replace `MutableList` → `ArrayDeque` + front-eviction in `LocationUpdateRateLimiter`
-- [ ] Remove intermediate `.filter {}` in `getWaitTimeSeconds()`
-- [ ] Replace `cleanup()` filter+forEach → `removeIf` in `IdempotencyKeyManager`
-- [ ] Hoist regex to companion `val` in `IdempotencyKeyManager`
-- [ ] Replace `getOrSet` → `set` in `RedisDeltaBroadcaster` line 85
-- [ ] Extract `ResultRow.toVehicleRouteState()` in `LocationHistoryRepository`
+- [x] Replace `MutableList` → `ArrayDeque` + front-eviction in `LocationUpdateRateLimiter`
+- [x] Remove intermediate `.filter {}` in `getWaitTimeSeconds()`
+- [x] Replace `cleanup()` filter+forEach → `removeIf` in `IdempotencyKeyManager`
+- [x] Hoist regex to companion `val` in `IdempotencyKeyManager`
+- [x] Replace `getOrSet` → `set` in `RedisDeltaBroadcaster` line 85
+- [x] Extract `ResultRow.toVehicleRouteState()` in `LocationHistoryRepository`
 
 ---
 

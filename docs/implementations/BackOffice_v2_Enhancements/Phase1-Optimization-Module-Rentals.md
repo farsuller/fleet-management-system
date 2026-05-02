@@ -2,7 +2,8 @@
 
 > **Scope**: `modules/rentals/` — `RentalRepositoryImpl.kt`, `Rental.kt`  
 > **Goal**: Eliminate intermediate list allocations, redundant count queries, and temporary object creation  
-> **Risk**: None — same query results, same API output
+> **Risk**: None — same query results, same API output  
+> **Status**: Complete ✅ (2026-05-02)
 
 ---
 
@@ -52,10 +53,10 @@ Replace `java.time.Duration.between(start, end).toDays().toInt()` → `ChronoUni
 
 ## Checklist
 
-- [ ] `findById()` — `.map{}.singleOrNull()` → `.singleOrNull()?.toRental()`
-- [ ] `findByRentalNumber()` — same pattern
-- [ ] `save()` — `.count() > 0` → `.select(id).limit(1).singleOrNull() != null`
-- [ ] `Rental.durationDays()` — `Duration.between()` → `ChronoUnit.DAYS.between()`
+- [x] `findById()` — `.map{}.singleOrNull()` → `.singleOrNull()?.toRental()`
+- [x] `findByRentalNumber()` — same pattern
+- [x] `save()` — `.count() > 0` → `.select(id).limit(1).singleOrNull() != null`
+- [x] `Rental.durationDays()` — `Duration.between()` → `ChronoUnit.DAYS.between()`
 
 ---
 

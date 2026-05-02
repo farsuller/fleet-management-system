@@ -2,7 +2,8 @@
 
 > **Scope**: `modules/users/infrastructure/persistence/UserRepositoryImpl.kt`  
 > **Goal**: Eliminate intermediate list allocations and redundant count queries  
-> **Risk**: None — same query results, same API output
+> **Risk**: None — same query results, same API output  
+> **Status**: Complete ✅ (2026-05-02)
 
 ---
 
@@ -80,12 +81,12 @@ Same pattern — `.singleOrNull()?.toStaffProfile()`
 
 ## Checklist
 
-- [ ] `findById()` staffProfile — `.map{}.singleOrNull()` → `.singleOrNull()?.toStaffProfile()`
-- [ ] `findByEmail()` staffProfile — same pattern
-- [ ] `findAll()` inner staffProfile — same pattern
-- [ ] `findRoleByName()` — `.map{}.singleOrNull()` → `.singleOrNull()?.toRole()`
-- [ ] `save()` user exists — `.count() > 0` → `.select(id).limit(1).singleOrNull() != null`
-- [ ] `save()` profile exists — `.count() > 0` → `.select(id).limit(1).singleOrNull() != null`
+- [x] `findById()` staffProfile — `.map{}.singleOrNull()` → `.singleOrNull()?.toStaffProfile()`
+- [x] `findByEmail()` staffProfile — same pattern
+- [x] `findAll()` inner staffProfile — same pattern
+- [x] `findRoleByName()` — `.map{}.singleOrNull()` → `.singleOrNull()?.toRole()`
+- [x] `save()` user exists — `.count() > 0` → `.select(id).limit(1).singleOrNull() != null`
+- [x] `save()` profile exists — `.count() > 0` → `.select(id).limit(1).singleOrNull() != null`
 
 ---
 

@@ -2,7 +2,8 @@
 
 > **Scope**: `modules/vehicles/infrastructure/persistence/VehicleRepositoryImpl.kt`  
 > **Goal**: Eliminate intermediate list allocations and redundant full-count queries  
-> **Risk**: None — same query results, same API output
+> **Risk**: None — same query results, same API output  
+> **Status**: Complete ✅ (2026-05-02)
 
 ---
 
@@ -49,8 +50,8 @@
 
 ## Checklist
 
-- [ ] `findByPlateNumber()` — `.map{}.singleOrNull()` → `.singleOrNull()?.toVehicle()`
-- [ ] `save()` — `.count() > 0` → `.select(id).limit(1).singleOrNull() != null`
+- [x] `findByPlateNumber()` — `.map{}.singleOrNull()` → `.singleOrNull()?.toVehicle()`
+- [x] `save()` — `.count() > 0` → `.select(id).limit(1).singleOrNull() != null`
 
 ---
 

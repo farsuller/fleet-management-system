@@ -56,6 +56,7 @@ fun Application.configureRouting(
     jedisPool: JedisPool?,
     registry: MeterRegistry,
     emailService: com.solodev.fleet.shared.infrastructure.email.EmailService,
+    cacheManager: RedisCacheManager?,
 ) {
     // ... rest of repository initializations ...
     val rentalRepo = RentalRepositoryImpl()
@@ -90,7 +91,7 @@ fun Application.configureRouting(
 
     // Phase 7: Tracking & Live Broadcasting
     val spatialAdapter = PostGisAdapter()
-    val redisCache = RedisCacheManager(jedisPool)
+    val redisCache = cacheManager ?: RedisCacheManager(jedisPool)
     val spatialMetrics = SpatialMetrics(registry) // Micrometer registry from observability
     val deltaBroadcaster = RedisDeltaBroadcaster(redisCache, vehicleRepo, jedisPool)
     val locationHistoryRepository = LocationHistoryRepository() // Persist tracking records

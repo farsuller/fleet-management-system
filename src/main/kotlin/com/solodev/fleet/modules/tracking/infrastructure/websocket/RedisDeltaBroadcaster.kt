@@ -82,7 +82,7 @@ open class RedisDeltaBroadcaster(
             publishToRedis(message)
 
             // Update cache for next comparison
-            redisCache.getOrSet(redisKey, 3600) { newState }
+            redisCache.set(redisKey, newState, 3600)
         }
     }
 

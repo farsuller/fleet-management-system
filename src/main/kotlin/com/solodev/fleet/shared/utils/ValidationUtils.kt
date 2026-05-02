@@ -8,15 +8,16 @@ object ValidationUtils {
     private const val MAX_NAME_LENGTH = 30
     private const val MIN_PASSWORD_LENGTH = 6
 
+    private val EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+    private val PHONE_REGEX = Regex("^\\+63\\d{10}$")
+
     fun validateEmail(email: String) {
-        val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
-        require(emailRegex.matches(email)) { "Valid email address required" }
+        require(EMAIL_REGEX.matches(email)) { "Valid email address required" }
     }
 
     fun validatePhone(phone: String?) {
         if (phone == null) return
-        val phoneRegex = Regex("^\\+63\\d{10}$")
-        require(phoneRegex.matches(phone)) { "Phone must start with +63 followed by 10 digits" }
+        require(PHONE_REGEX.matches(phone)) { "Phone must start with +63 followed by 10 digits" }
     }
 
     fun validateName(
