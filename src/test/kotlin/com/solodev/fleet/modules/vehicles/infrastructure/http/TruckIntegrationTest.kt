@@ -31,6 +31,7 @@ import java.math.BigDecimal
 import java.time.Instant
 import java.util.UUID
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class TruckIntegrationTest : IntegrationTestBase() {
@@ -59,7 +60,7 @@ class TruckIntegrationTest : IntegrationTestBase() {
             TrucksTable.insert {
                 it[vehicleId] = id
                 it[payloadCapacityTons] = BigDecimal("25.5")
-                it[cargoType] = "General"
+                it[cargoType] = "BOX"
                 it[axleCount] = 4
                 it[grossVehicleWeightKg] = 40000
                 it[hasTrailerHitch] = true
@@ -91,7 +92,7 @@ class TruckIntegrationTest : IntegrationTestBase() {
                     model = "R500",
                     year = 2023,
                     payloadCapacityTons = 30.0,
-                    cargoType = "Refrigerated",
+                    cargoType = "REFRIGERATED",
                     axleCount = 3,
                     grossVehicleWeightKg = 35000,
                     hasTrailerHitch = true,
@@ -107,7 +108,43 @@ class TruckIntegrationTest : IntegrationTestBase() {
                     val apiResponse = response.body<ApiResponse<TruckResponse>>()
                     assertTrue(apiResponse.success)
                     assertEquals("TRK-789", apiResponse.data!!.vehicleId)
-                    assertEquals("Refrigerated", apiResponse.data!!.cargoType)
+                    assertEquals("REFRIGERATED", apiResponse.data!!.cargoType)
+                }
+        }
+
+    @Test
+    fun `should fail to create a truck with invalid cargo type`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
+
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+
+            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
+            val request =
+                TruckRequest(
+                    licensePlate = "TRK-INV",
+                    make = "Scania",
+                    model = "R500",
+                    year = 2023,
+                    cargoType = "INVALID_TYPE",
+                )
+
+            client
+                .post("/v1/trucks") {
+                    bearerAuth(token)
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.BadRequest, response.status)
+                    val apiResponse = response.body<ApiResponse<Unit>>()
+                    assertFalse(apiResponse.success)
+                    assertTrue(apiResponse.error!!.message.contains("Invalid cargo type"))
                 }
         }
 
@@ -160,7 +197,7 @@ class TruckIntegrationTest : IntegrationTestBase() {
                     assertEquals(HttpStatusCode.OK, response.status)
                     val apiResponse = response.body<ApiResponse<TruckResponse>>()
                     assertEquals("TRK-GET-123", apiResponse.data!!.licensePlate)
-                    assertEquals("General", apiResponse.data!!.cargoType)
+                    assertEquals("BOX", apiResponse.data!!.cargoType)
                 }
         }
 
@@ -180,7 +217,7 @@ class TruckIntegrationTest : IntegrationTestBase() {
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
             val updateRequest =
                 TruckUpdateRequest(
-                    cargoType = "Hazardous",
+                    cargoType = "TANKER",
                     payloadCapacityTons = 15.0,
                 )
 
@@ -192,7 +229,7 @@ class TruckIntegrationTest : IntegrationTestBase() {
                 }.let { response ->
                     assertEquals(HttpStatusCode.OK, response.status)
                     val apiResponse = response.body<ApiResponse<TruckResponse>>()
-                    assertEquals("Hazardous", apiResponse.data!!.cargoType)
+                    assertEquals("TANKER", apiResponse.data!!.cargoType)
                     assertEquals(15.0, apiResponse.data!!.payloadCapacityTons)
                 }
         }

@@ -13,6 +13,7 @@ import com.solodev.fleet.modules.drivers.application.dto.StartShiftRequest
 import com.solodev.fleet.modules.drivers.application.dto.UpdateDriverRequest
 import com.solodev.fleet.modules.drivers.application.usecases.CreateDriverUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.DeactivateDriverUseCase
+import com.solodev.fleet.modules.drivers.application.usecases.DeleteDriverUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.EndShiftUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.GetActiveShiftUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.GetDriverUseCase
@@ -36,6 +37,7 @@ import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.patch
 import io.ktor.server.routing.post

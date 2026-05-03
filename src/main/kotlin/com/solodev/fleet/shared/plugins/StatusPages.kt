@@ -108,6 +108,13 @@ fun Application.configureStatusPages() {
             )
         }
 
+        exception<IllegalArgumentException> { call, cause ->
+            call.respond(
+                HttpStatusCode.BadRequest,
+                errorResponse("BAD_REQUEST", cause.message ?: "Invalid argument", call.requestId),
+            )
+        }
+
         // Catch-all for unexpected errors (500)
         exception<Throwable> { call, cause ->
             // Log the full error for debugging but don't expose internals to client
