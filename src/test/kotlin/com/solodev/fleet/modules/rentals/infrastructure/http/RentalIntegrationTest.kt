@@ -216,7 +216,7 @@ class RentalIntegrationTest : IntegrationTestBase() {
                 .delete("/v1/rentals/$rId") {
                     bearerAuth(token)
                 }.let { response ->
-                    assertEquals(HttpStatusCode.NoContent, response.status)
+                    assertEquals(HttpStatusCode.OK, response.status)
                 }
 
             // Verify it's gone

@@ -48,6 +48,7 @@ fun Route.customerRoutes(
     val getCustomerUseCase = GetCustomerUseCase(customerRepository)
     val listCustomersUseCase = ListCustomersUseCase(customerRepository)
     val updateCustomerUseCase = UpdateCustomerUseCase(customerRepository)
+    val deleteCustomerUseCase = DeleteCustomerUseCase(customerRepository)
 
     // ── Public: mobile-app customer self-registration ─────────────────────────
     if (userRepository != null && tokenRepository != null) {
@@ -201,6 +202,30 @@ fun Route.customerRoutes(
                                 ApiResponse.error("NOT_FOUND", "Customer not found", call.requestId),
                             )
                     call.respond(ApiResponse.success(CustomerResponse.fromDomain(updated), call.requestId))
+                }
+
+                delete {
+                    val id =
+                        call.parameters["id"]
+                            ?: return@delete call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse.error("MISSING_ID", "Customer ID required", call.requestId),
+                            )
+
+                    val deleted = deleteCustomerUseCase.execute(id)
+                    if (deleted) {
+                        call.respond(
+                            ApiResponse.success(
+                                mapOf("message" to "Customer deleted successfully"),
+                                call.requestId,
+                            ),
+                        )
+                    } else {
+                        call.respond(
+                            HttpStatusCode.NotFound,
+                            ApiResponse.error("NOT_FOUND", "Customer not found", call.requestId),
+                        )
+                    }
                 }
             }
         }

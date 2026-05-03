@@ -60,6 +60,7 @@ fun Route.driverRoutes(
     val startShiftUseCase = StartShiftUseCase(driverRepository)
     val endShiftUseCase = EndShiftUseCase(driverRepository)
     val getActiveShiftUseCase = GetActiveShiftUseCase(driverRepository)
+    val deleteDriverUseCase = DeleteDriverUseCase(driverRepository)
 
     // ── Public: mobile-app driver self-registration ───────────────────────────
     route("/v1/drivers/register") {
@@ -441,6 +442,30 @@ fun Route.driverRoutes(
                             call.requestId,
                         ),
                     )
+                }
+
+                delete {
+                    val id =
+                        call.parameters["id"]
+                            ?: return@delete call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse.error("MISSING_ID", "Driver ID required", call.requestId),
+                            )
+
+                    val deleted = deleteDriverUseCase.execute(id)
+                    if (deleted) {
+                        call.respond(
+                            ApiResponse.success(
+                                mapOf("message" to "Driver deleted successfully"),
+                                call.requestId,
+                            ),
+                        )
+                    } else {
+                        call.respond(
+                            HttpStatusCode.NotFound,
+                            ApiResponse.error("NOT_FOUND", "Driver not found", call.requestId),
+                        )
+                    }
                 }
             }
         }

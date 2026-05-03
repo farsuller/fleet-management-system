@@ -160,7 +160,12 @@ fun Route.vehicleRoutes(repository: VehicleRepository) {
                         try {
                             val deleted = deleteVehicleUseCase.execute(id)
                             if (deleted) {
-                                call.respond(HttpStatusCode.NoContent)
+                                call.respond(
+                                    ApiResponse.success(
+                                        mapOf("message" to "Vehicle deleted successfully"),
+                                        call.requestId,
+                                    ),
+                                )
                             } else {
                                 call.respond(
                                     HttpStatusCode.NotFound,

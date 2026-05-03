@@ -357,7 +357,12 @@ fun Route.rentalRoutes(
 
                     val deleted = deleteRentalUseCase.execute(id)
                     if (deleted) {
-                        call.respond(HttpStatusCode.NoContent)
+                        call.respond(
+                            ApiResponse.success(
+                                mapOf("message" to "Rental deleted successfully"),
+                                call.requestId,
+                            ),
+                        )
                     } else {
                         call.respond(
                             HttpStatusCode.NotFound,
