@@ -88,7 +88,7 @@ class RentalIntegrationTest : IntegrationTestBase() {
                 it[rentalNumber] = "RENT-" + UUID.randomUUID().toString().take(8)
                 it[RentalsTable.vehicleId] = vehicleId
                 it[RentalsTable.customerId] = customerId
-                it[status] = "PENDING"
+                it[status] = "RESERVED"
                 it[startDate] = Instant.now().plus(1, ChronoUnit.DAYS)
                 it[endDate] = Instant.now().plus(3, ChronoUnit.DAYS)
                 it[dailyRate] = 250000 // 2500.00
