@@ -82,7 +82,7 @@ class DriverShiftIntegrationTest : IntegrationTestBase() {
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
 
@@ -166,7 +166,7 @@ class DriverShiftIntegrationTest : IntegrationTestBase() {
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
 

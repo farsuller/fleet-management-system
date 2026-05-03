@@ -111,7 +111,7 @@ class RentalIntegrationTest : IntegrationTestBase() {
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
 
@@ -152,7 +152,7 @@ class RentalIntegrationTest : IntegrationTestBase() {
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
@@ -180,7 +180,7 @@ class RentalIntegrationTest : IntegrationTestBase() {
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
@@ -207,7 +207,7 @@ class RentalIntegrationTest : IntegrationTestBase() {
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")

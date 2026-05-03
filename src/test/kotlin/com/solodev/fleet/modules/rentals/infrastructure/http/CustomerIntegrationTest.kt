@@ -71,7 +71,7 @@ class CustomerIntegrationTest : IntegrationTestBase() {
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
 
@@ -110,7 +110,7 @@ class CustomerIntegrationTest : IntegrationTestBase() {
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
@@ -136,7 +136,7 @@ class CustomerIntegrationTest : IntegrationTestBase() {
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
@@ -146,7 +146,7 @@ class CustomerIntegrationTest : IntegrationTestBase() {
                     bearerAuth(token)
                 }.let { response ->
                     assertEquals(HttpStatusCode.OK, response.status)
-                    val apiResponse = response.body<ApiResponse<CustomerResponse>>()
+                    val apiResponse = response.body<ApiResponse<com.solodev.fleet.modules.rentals.application.dto.CustomerDetailResponse>>()
                     assertEquals("get@example.com", apiResponse.data!!.email)
                 }
         }
@@ -161,7 +161,7 @@ class CustomerIntegrationTest : IntegrationTestBase() {
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
@@ -192,7 +192,7 @@ class CustomerIntegrationTest : IntegrationTestBase() {
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")

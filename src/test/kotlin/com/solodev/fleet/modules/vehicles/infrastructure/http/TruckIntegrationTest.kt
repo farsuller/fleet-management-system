@@ -80,7 +80,7 @@ class TruckIntegrationTest : IntegrationTestBase() {
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
 
@@ -107,7 +107,7 @@ class TruckIntegrationTest : IntegrationTestBase() {
                     assertEquals(HttpStatusCode.Created, response.status)
                     val apiResponse = response.body<ApiResponse<TruckResponse>>()
                     assertTrue(apiResponse.success)
-                    assertEquals("TRK-789", apiResponse.data!!.vehicleId)
+                    assertEquals("TRK-789", apiResponse.data!!.licensePlate)
                     assertEquals("REFRIGERATED", apiResponse.data!!.cargoType)
                 }
         }
@@ -121,7 +121,7 @@ class TruckIntegrationTest : IntegrationTestBase() {
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
 
@@ -159,7 +159,7 @@ class TruckIntegrationTest : IntegrationTestBase() {
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
@@ -185,7 +185,7 @@ class TruckIntegrationTest : IntegrationTestBase() {
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
@@ -211,7 +211,7 @@ class TruckIntegrationTest : IntegrationTestBase() {
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
@@ -244,7 +244,7 @@ class TruckIntegrationTest : IntegrationTestBase() {
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
