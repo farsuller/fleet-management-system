@@ -212,4 +212,40 @@ class DriverIntegrationTest : IntegrationTestBase() {
                     assertEquals(HttpStatusCode.NotFound, response.status)
                 }
         }
+
+    @Test
+    fun `should deactivate driver`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
+            val id = seedDriver("deactivate-int@fleet.ph", "LDEA")
+
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
+
+            client
+                .patch("/v1/drivers/$id/deactivate") {
+                    bearerAuth(token)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.OK, response.status)
+                    val apiResponse = response.body<ApiResponse<DriverResponse>>()
+                    assertTrue(apiResponse.success)
+                    assertEquals(false, apiResponse.data!!.isActive)
+                }
+
+            // Toggle back
+            client
+                .patch("/v1/drivers/$id/deactivate") {
+                    bearerAuth(token)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.OK, response.status)
+                    val apiResponse = response.body<ApiResponse<DriverResponse>>()
+                    assertEquals(true, apiResponse.data!!.isActive)
+                }
+        }
 }
