@@ -63,7 +63,7 @@ class LoginUserUseCaseTest {
             val user =
                 sampleUser(
                     isVerified = true,
-                    passwordHash = "hashed_secret123",
+                    passwordHash = "hashed_Test123Pass!",
                     roles = listOf(Role(RoleId("role-001"), "STAFF")),
                 )
             coEvery { userRepository.findByEmail("juan@fleet.ph") } returns user
@@ -74,7 +74,7 @@ class LoginUserUseCaseTest {
                     roles = listOf("STAFF"),
                 )
             } returns "jwt-token-abc"
-            val request = LoginRequest(email = "juan@fleet.ph", passwordRaw = "secret123")
+            val request = LoginRequest(email = "juan@fleet.ph", passwordRaw = "Test123Pass!")
 
             // Act
             val (returnedUser, token) = useCase.execute(request)

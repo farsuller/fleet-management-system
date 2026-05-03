@@ -25,7 +25,7 @@ class RegisterUserUseCaseTest {
             email = "juan@fleet.ph",
             firstName = "Juan",
             lastName = "dela Cruz",
-            passwordRaw = "T3st_P@ss",
+            passwordRaw = "TestPass123!",
             phone = "+639123456789",
         )
 

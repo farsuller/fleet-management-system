@@ -28,7 +28,7 @@ class RegisterDriverUseCaseTest {
     private val validRequest =
         DriverRegistrationRequest(
             email = "driver@fleet.ph",
-            passwordRaw = "T3st_P@ss",
+            passwordRaw = "TestPass123!",
             firstName = "Jose",
             lastName = "Cruz",
             phone = "+639123456789",
