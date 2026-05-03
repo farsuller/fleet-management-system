@@ -81,6 +81,64 @@ class RentalTest {
         assertEquals(RentalStatus.CANCELLED, cancelled.status)
     }
 
+    // --- durationDays() ---
+
+    @Test
+    fun `durationDays uses booked dates when actual dates are missing`() {
+        val rental = sampleRental(startDate = now, endDate = now.plus(3, ChronoUnit.DAYS))
+        assertEquals(3, rental.durationDays())
+    }
+
+    @Test
+    fun `durationDays uses actual dates when present`() {
+        val rental =
+            sampleRental(startDate = now, endDate = now.plus(7, ChronoUnit.DAYS))
+                .copy(
+                    actualStartDate = now,
+                    actualEndDate = now.plus(2, ChronoUnit.DAYS),
+                )
+        assertEquals(2, rental.durationDays())
+    }
+
+    @Test
+    fun `durationDays is at least 1 day even if start and end are the same`() {
+        val rental =
+            sampleRental().copy(
+                actualStartDate = now,
+                actualEndDate = now,
+            )
+        assertEquals(1, rental.durationDays())
+    }
+
+    @Test
+    fun `throws when endDate is equal to startDate`() {
+        assertFailsWith<IllegalArgumentException> {
+            sampleRental(startDate = now, endDate = now)
+        }
+    }
+
+    @Test
+    fun `durationDays returns 1 for short durations`() {
+        val rental = sampleRental(startDate = now, endDate = now.plus(1, ChronoUnit.HOURS))
+        assertEquals(1, rental.durationDays())
+    }
+
+    // --- ID Validations ---
+
+    @Test
+    fun `RentalId throws when blank`() {
+        assertFailsWith<IllegalArgumentException> {
+            RentalId(" ")
+        }
+    }
+
+    @Test
+    fun `CustomerId throws when blank`() {
+        assertFailsWith<IllegalArgumentException> {
+            CustomerId("")
+        }
+    }
+
     private fun sampleRental(
         status: RentalStatus = RentalStatus.RESERVED,
         startDate: Instant = now,

@@ -17,15 +17,16 @@ import org.junit.jupiter.api.Test
 class RegisterUserUseCaseTest {
     private val userRepository = mockk<UserRepository>()
     private val tokenRepository = mockk<VerificationTokenRepository>()
-    private val useCase = RegisterUserUseCase(userRepository, tokenRepository)
+    private val emailService = mockk<com.solodev.fleet.shared.infrastructure.email.EmailService>(relaxed = true)
+    private val useCase = RegisterUserUseCase(userRepository, tokenRepository, emailService)
 
     private val validRequest =
         UserRegistrationRequest(
             email = "juan@fleet.ph",
             firstName = "Juan",
             lastName = "dela Cruz",
-            passwordRaw = "test-password-raw",
-            phone = "+63912345678",
+            passwordRaw = "TestPass123!",
+            phone = "+639123456789",
         )
 
     private val customerSupportRole = Role(id = RoleId("role-cs"), name = "CUSTOMER_SUPPORT")

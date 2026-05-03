@@ -160,3 +160,9 @@ class UpdateDriverUseCase(
         return driverRepository.save(updated)
     }
 }
+
+class DeleteDriverUseCase(
+    private val driverRepository: DriverRepository,
+) {
+    suspend fun execute(id: String): Boolean = driverRepository.deleteById(DriverId(id))
+}

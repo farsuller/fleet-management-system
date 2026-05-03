@@ -9,6 +9,14 @@ enum class RemittanceStatus {
     SUBMITTED, // driver submitted; awaiting back-office verification
     VERIFIED, // back-office verified amounts match; GL entries posted
     DISCREPANCY, // submitted amount differs from recorded collections; requires manual review
+    ;
+
+    companion object {
+        private val map = entries.associateBy { it.name }
+
+        /** Fast lookup by name avoiding valueOf() overhead. Returns PENDING if not found. */
+        fun fromName(name: String?): RemittanceStatus = map[name] ?: PENDING
+    }
 }
 
 /**

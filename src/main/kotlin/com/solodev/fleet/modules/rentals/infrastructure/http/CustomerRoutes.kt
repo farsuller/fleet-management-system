@@ -11,6 +11,7 @@ import com.solodev.fleet.modules.rentals.application.dto.CustomerVehicleSummary
 import com.solodev.fleet.modules.rentals.application.dto.UpdateCustomerRequest
 import com.solodev.fleet.modules.rentals.application.usecases.CreateCustomerUseCase
 import com.solodev.fleet.modules.rentals.application.usecases.DeactivateCustomerUseCase
+import com.solodev.fleet.modules.rentals.application.usecases.DeleteCustomerUseCase
 import com.solodev.fleet.modules.rentals.application.usecases.GetCustomerUseCase
 import com.solodev.fleet.modules.rentals.application.usecases.ListCustomersUseCase
 import com.solodev.fleet.modules.rentals.application.usecases.RegisterCustomerUseCase
@@ -30,6 +31,7 @@ import io.ktor.server.auth.authenticate
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
@@ -48,6 +50,7 @@ fun Route.customerRoutes(
     val getCustomerUseCase = GetCustomerUseCase(customerRepository)
     val listCustomersUseCase = ListCustomersUseCase(customerRepository)
     val updateCustomerUseCase = UpdateCustomerUseCase(customerRepository)
+    val deleteCustomerUseCase = DeleteCustomerUseCase(customerRepository)
 
     // ── Public: mobile-app customer self-registration ─────────────────────────
     if (userRepository != null && tokenRepository != null) {
@@ -201,6 +204,30 @@ fun Route.customerRoutes(
                                 ApiResponse.error("NOT_FOUND", "Customer not found", call.requestId),
                             )
                     call.respond(ApiResponse.success(CustomerResponse.fromDomain(updated), call.requestId))
+                }
+
+                delete {
+                    val id =
+                        call.parameters["id"]
+                            ?: return@delete call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse.error("MISSING_ID", "Customer ID required", call.requestId),
+                            )
+
+                    val deleted = deleteCustomerUseCase.execute(id)
+                    if (deleted) {
+                        call.respond(
+                            ApiResponse.success(
+                                mapOf("message" to "Customer deleted successfully"),
+                                call.requestId,
+                            ),
+                        )
+                    } else {
+                        call.respond(
+                            HttpStatusCode.NotFound,
+                            ApiResponse.error("NOT_FOUND", "Customer not found", call.requestId),
+                        )
+                    }
                 }
             }
         }

@@ -1,0 +1,35 @@
+name: Semgrep Analysis
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main"]
+  schedule:
+    - cron: '0 0 * * *' # Daily midnight scan
+
+jobs:
+  semgrep:
+    name: Scan
+    runs-on: ubuntu-latest
+    # Skip for dependabot to save minutes
+    if: (github.actor != 'dependabot[bot]')
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Semgrep Analysis
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/kotlin
+            p/java
+            p/owasp-top-10
+        env:
+          # If you ever want to see results in a dashboard, 
+          # you can add SEMGREP_APP_TOKEN to your repo secrets.
+          # Otherwise, it will just show results in the GitHub Action logs.
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}

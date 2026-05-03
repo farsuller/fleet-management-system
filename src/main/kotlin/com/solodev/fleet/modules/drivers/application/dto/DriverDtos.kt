@@ -2,6 +2,7 @@ package com.solodev.fleet.modules.drivers.application.dto
 
 import com.solodev.fleet.modules.drivers.domain.model.Driver
 import com.solodev.fleet.modules.drivers.domain.model.VehicleDriverAssignment
+import com.solodev.fleet.shared.utils.ValidationUtils
 import kotlinx.serialization.Serializable
 
 /** Used by back-office CRUD (no password — driver account created separately via /register). */
@@ -21,10 +22,10 @@ data class DriverRequest(
     val country: String? = null,
 ) {
     init {
-        require(email.isNotBlank() && email.contains("@")) { "Valid email required" }
-        require(firstName.isNotBlank()) { "First name cannot be blank" }
-        require(lastName.isNotBlank()) { "Last name cannot be blank" }
-        require(phone.isNotBlank()) { "Phone cannot be blank" }
+        ValidationUtils.validateEmail(email)
+        ValidationUtils.validateName(firstName, "First name")
+        ValidationUtils.validateName(lastName, "Last name")
+        ValidationUtils.validatePhone(phone)
         require(licenseNumber.isNotBlank()) { "License number cannot be blank" }
         require(licenseExpiry.isNotBlank()) { "License expiry cannot be blank" }
     }
@@ -48,11 +49,11 @@ data class DriverRegistrationRequest(
     val country: String? = null,
 ) {
     init {
-        require(email.isNotBlank() && email.contains("@")) { "Valid email required" }
-        require(passwordRaw.length >= 8) { "Password must be at least 8 characters" }
-        require(firstName.isNotBlank()) { "First name cannot be blank" }
-        require(lastName.isNotBlank()) { "Last name cannot be blank" }
-        require(phone.isNotBlank()) { "Phone cannot be blank" }
+        ValidationUtils.validateEmail(email)
+        ValidationUtils.validatePassword(passwordRaw)
+        ValidationUtils.validateName(firstName, "First name")
+        ValidationUtils.validateName(lastName, "Last name")
+        ValidationUtils.validatePhone(phone)
         require(licenseNumber.isNotBlank()) { "License number cannot be blank" }
         require(licenseExpiry.isNotBlank()) { "License expiry cannot be blank" }
     }
@@ -108,11 +109,16 @@ data class DriverResponse(
     val createdAt: Long,
     // Join detail: current vehicle assignment (null if not assigned)
     val currentAssignment: AssignmentResponse?,
+    // Vehicle info from current assignment (null if not assigned)
+    val vehicleType: String? = null,
+    val vehiclePlate: String? = null,
 ) {
     companion object {
         fun fromDomain(
             d: Driver,
             currentAssignment: VehicleDriverAssignment? = null,
+            vehicleType: String? = null,
+            vehiclePlate: String? = null,
         ) = DriverResponse(
             id = d.id.value,
             userId = d.userId?.toString(),
@@ -131,6 +137,8 @@ data class DriverResponse(
             isActive = d.isActive,
             createdAt = d.createdAt.toEpochMilli(),
             currentAssignment = currentAssignment?.let { AssignmentResponse.fromDomain(it) },
+            vehicleType = vehicleType,
+            vehiclePlate = vehiclePlate,
         )
     }
 }
@@ -150,4 +158,11 @@ data class UpdateDriverRequest(
     val postalCode: String? = null,
     val country: String? = null,
     val isActive: Boolean? = null,
-)
+) {
+    init {
+        email?.let { ValidationUtils.validateEmail(it) }
+        firstName?.let { ValidationUtils.validateName(it, "First name") }
+        lastName?.let { ValidationUtils.validateName(it, "Last name") }
+        phone?.let { ValidationUtils.validatePhone(it) }
+    }
+}

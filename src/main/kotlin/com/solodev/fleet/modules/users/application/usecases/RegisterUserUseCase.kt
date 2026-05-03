@@ -9,6 +9,7 @@ import java.util.UUID
 class RegisterUserUseCase(
     private val repository: UserRepository,
     private val tokenRepository: com.solodev.fleet.modules.users.domain.repository.VerificationTokenRepository,
+    private val emailService: com.solodev.fleet.shared.infrastructure.email.EmailService,
 ) {
     suspend fun execute(request: UserRegistrationRequest): User {
         // Business Rule: Email must be unique
@@ -56,10 +57,8 @@ class RegisterUserUseCase(
             )
         tokenRepository.save(verificationToken)
 
-        // Simulate sending email (TODO: Replace with real EmailService)
-        println("----------------------------------------------------------------")
-        println("VERIFICATION LINK: http://localhost:8080/v1/auth/verify?token=$token")
-        println("----------------------------------------------------------------")
+        // Send real verification email via Nuntly
+        emailService.sendVerificationEmail(savedUser.email, token)
 
         return savedUser
     }

@@ -23,7 +23,6 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.time.LocalDate
@@ -74,7 +73,6 @@ class DriverShiftIntegrationTest : IntegrationTestBase() {
         }
     }
 
-    @Disabled("Temporarily disabled pending module enhancements")
     @Test
     fun `should manage shift lifecycle`() =
         testApplication {
@@ -84,7 +82,7 @@ class DriverShiftIntegrationTest : IntegrationTestBase() {
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
 
@@ -135,7 +133,10 @@ class DriverShiftIntegrationTest : IntegrationTestBase() {
                 .post("/v1/drivers/shifts/end") {
                     bearerAuth(token)
                     contentType(ContentType.Application.Json)
-                    setBody(mapOf("notes" to "Ending test shift"))
+                    setBody(
+                        com.solodev.fleet.modules.drivers.application.dto
+                            .EndShiftRequest("Ending test shift"),
+                    )
                 }.let { response ->
                     assertEquals(HttpStatusCode.OK, response.status)
                     val apiResponse = response.body<ApiResponse<ShiftResponse>>()
@@ -165,7 +166,7 @@ class DriverShiftIntegrationTest : IntegrationTestBase() {
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
 

@@ -2,6 +2,7 @@ package com.solodev.fleet.modules.rentals.domain.model
 
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 /** Value object representing a unique rental identifier. */
 @JvmInline
@@ -110,9 +111,8 @@ data class Rental(
         val start = actualStartDate ?: startDate
         val end = actualEndDate ?: endDate
         return (
-            java.time.Duration
+            ChronoUnit.DAYS
                 .between(start, end)
-                .toDays()
                 .toInt()
         ).coerceAtLeast(1)
     }

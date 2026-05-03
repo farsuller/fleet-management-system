@@ -1,5 +1,6 @@
 package com.solodev.fleet.modules.rentals.application.dto
 
+import com.solodev.fleet.shared.utils.ValidationUtils
 import kotlinx.serialization.Serializable
 
 /** Public registration endpoint — creates a user (CUSTOMER role) + customer record atomically. */
@@ -19,11 +20,11 @@ data class CustomerRegistrationRequest(
     val country: String? = null,
 ) {
     init {
-        require(email.isNotBlank() && email.contains("@")) { "Valid email required" }
-        require(passwordRaw.length >= 8) { "Password must be at least 8 characters" }
-        require(firstName.isNotBlank()) { "First name cannot be blank" }
-        require(lastName.isNotBlank()) { "Last name cannot be blank" }
-        require(phone.isNotBlank()) { "Phone cannot be blank" }
+        ValidationUtils.validateEmail(email)
+        ValidationUtils.validatePassword(passwordRaw)
+        ValidationUtils.validateName(firstName, "First name")
+        ValidationUtils.validateName(lastName, "Last name")
+        ValidationUtils.validatePhone(phone)
         require(driversLicense.isNotBlank()) { "Driver's license cannot be blank" }
         require(driverLicenseExpiry.isNotBlank()) { "License expiry cannot be blank" }
     }

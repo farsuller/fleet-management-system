@@ -2,27 +2,34 @@ package com.solodev.fleet.modules.drivers.infrastructure.http
 
 import com.solodev.fleet.modules.drivers.application.dto.AssignDriverRequest
 import com.solodev.fleet.modules.drivers.application.dto.AssignmentResponse
+import com.solodev.fleet.modules.drivers.application.dto.DriverLoginRequest
 import com.solodev.fleet.modules.drivers.application.dto.DriverRegistrationRequest
 import com.solodev.fleet.modules.drivers.application.dto.DriverRequest
 import com.solodev.fleet.modules.drivers.application.dto.DriverResponse
 import com.solodev.fleet.modules.drivers.application.dto.EndShiftRequest
+import com.solodev.fleet.modules.drivers.application.dto.RefreshTokenRequest
 import com.solodev.fleet.modules.drivers.application.dto.ShiftResponse
 import com.solodev.fleet.modules.drivers.application.dto.StartShiftRequest
 import com.solodev.fleet.modules.drivers.application.dto.UpdateDriverRequest
 import com.solodev.fleet.modules.drivers.application.usecases.CreateDriverUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.DeactivateDriverUseCase
+import com.solodev.fleet.modules.drivers.application.usecases.DeleteDriverUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.EndShiftUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.GetActiveShiftUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.GetDriverUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.ListDriversUseCase
+import com.solodev.fleet.modules.drivers.application.usecases.LoginDriverUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.RegisterDriverUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.StartShiftUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.UpdateDriverUseCase
 import com.solodev.fleet.modules.drivers.domain.repository.DriverRepository
 import com.solodev.fleet.modules.users.domain.repository.UserRepository
 import com.solodev.fleet.modules.users.domain.repository.VerificationTokenRepository
+import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
+import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.requestId
+import com.solodev.fleet.shared.utils.JwtService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.auth.authenticate
@@ -30,6 +37,7 @@ import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
@@ -39,9 +47,13 @@ fun Route.driverRoutes(
     driverRepository: DriverRepository,
     userRepository: UserRepository,
     tokenRepository: VerificationTokenRepository,
+    jwtService: JwtService,
+    vehicleRepository: VehicleRepository,
+    emailService: com.solodev.fleet.shared.infrastructure.email.EmailService,
 ) {
     val registerDriverUseCase =
-        RegisterDriverUseCase(driverRepository, userRepository, tokenRepository)
+        RegisterDriverUseCase(driverRepository, userRepository, tokenRepository, emailService)
+    val loginDriverUseCase = LoginDriverUseCase(userRepository, driverRepository, jwtService)
     val createDriverUseCase = CreateDriverUseCase(driverRepository)
     val getDriverUseCase = GetDriverUseCase(driverRepository)
     val listDriversUseCase = ListDriversUseCase(driverRepository)
@@ -50,6 +62,7 @@ fun Route.driverRoutes(
     val startShiftUseCase = StartShiftUseCase(driverRepository)
     val endShiftUseCase = EndShiftUseCase(driverRepository)
     val getActiveShiftUseCase = GetActiveShiftUseCase(driverRepository)
+    val deleteDriverUseCase = DeleteDriverUseCase(driverRepository)
 
     // ── Public: mobile-app driver self-registration ───────────────────────────
     route("/v1/drivers/register") {
@@ -76,6 +89,65 @@ fun Route.driverRoutes(
                     ApiResponse.error(
                         "CONFLICT",
                         e.message ?: "Driver already exists",
+                        call.requestId,
+                    ),
+                )
+            }
+        }
+    }
+
+    // ── Public: driver mobile-app login ──────────────────────────────────────
+    route("/v1/auth/token") {
+        post {
+            try {
+                val request = call.receive<DriverLoginRequest>()
+                val response = loginDriverUseCase.execute(request.email, request.password)
+                call.respond(response)
+            } catch (e: IllegalArgumentException) {
+                call.respond(
+                    HttpStatusCode.Unauthorized,
+                    ApiResponse.error(
+                        "UNAUTHORIZED",
+                        e.message ?: "Invalid credentials",
+                        call.requestId,
+                    ),
+                )
+            } catch (e: IllegalStateException) {
+                call.respond(
+                    HttpStatusCode.Forbidden,
+                    ApiResponse.error(
+                        "FORBIDDEN",
+                        e.message ?: "Access denied",
+                        call.requestId,
+                    ),
+                )
+            }
+        }
+
+        post("/refresh") {
+            try {
+                val request = call.receive<RefreshTokenRequest>()
+                val claims =
+                    jwtService.validateRefreshToken(request.refreshToken)
+                        ?: return@post call.respond(
+                            HttpStatusCode.Unauthorized,
+                            ApiResponse.error(
+                                "INVALID_REFRESH_TOKEN",
+                                "Refresh token is invalid or expired",
+                                call.requestId,
+                            ),
+                        )
+                val (id, email, roles) = claims
+                val newAccessToken = jwtService.generateToken(id = id, email = email, roles = roles)
+                val newRefreshToken = jwtService.generateRefreshToken(id = id, email = email, roles = roles)
+                // Return only token fields; driverId is already held by the client
+                call.respond(mapOf("accessToken" to newAccessToken, "refreshToken" to newRefreshToken))
+            } catch (e: Exception) {
+                call.respond(
+                    HttpStatusCode.Unauthorized,
+                    ApiResponse.error(
+                        "INVALID_REFRESH_TOKEN",
+                        "Refresh token is invalid or expired",
                         call.requestId,
                     ),
                 )
@@ -151,9 +223,18 @@ fun Route.driverRoutes(
                                 ),
                             )
                     val assignment = driverRepository.findActiveAssignmentByDriver(driver.id)
+                    val vehicle =
+                        assignment?.let {
+                            vehicleRepository.findById(VehicleId(it.vehicleId))
+                        }
                     call.respond(
                         ApiResponse.success(
-                            DriverResponse.fromDomain(driver, assignment),
+                            DriverResponse.fromDomain(
+                                driver,
+                                assignment,
+                                vehicleType = vehicle?.vehicleType?.name,
+                                vehiclePlate = vehicle?.licensePlate,
+                            ),
                             call.requestId,
                         ),
                     )
@@ -363,6 +444,30 @@ fun Route.driverRoutes(
                             call.requestId,
                         ),
                     )
+                }
+
+                delete {
+                    val id =
+                        call.parameters["id"]
+                            ?: return@delete call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse.error("MISSING_ID", "Driver ID required", call.requestId),
+                            )
+
+                    val deleted = deleteDriverUseCase.execute(id)
+                    if (deleted) {
+                        call.respond(
+                            ApiResponse.success(
+                                mapOf("message" to "Driver deleted successfully"),
+                                call.requestId,
+                            ),
+                        )
+                    } else {
+                        call.respond(
+                            HttpStatusCode.NotFound,
+                            ApiResponse.error("NOT_FOUND", "Driver not found", call.requestId),
+                        )
+                    }
                 }
             }
         }

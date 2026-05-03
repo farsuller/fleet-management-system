@@ -24,17 +24,17 @@ class InvoiceRepositoryImpl : InvoiceRepository {
             customerId = CustomerId(this[InvoicesTable.customerId].value.toString()),
             rentalId =
                 this[InvoicesTable.rentalId]?.value?.toString()?.let { RentalId(it) },
-            status = InvoiceStatus.valueOf(this[InvoicesTable.status]),
+            status = InvoiceStatus.fromName(this[InvoicesTable.status]),
             subtotal = this[InvoicesTable.subtotal],
             tax = this[InvoicesTable.tax],
             paidAmount = this[InvoicesTable.paidAmount],
-            currencyCode = this[InvoicesTable.currencyCode],
+            currencyCode = this[InvoicesTable.currencyCode].intern(),
             issueDate =
                 this[InvoicesTable.issueDate].atStartOfDay().toInstant(ZoneOffset.UTC),
             dueDate = this[InvoicesTable.dueDate].atStartOfDay().toInstant(ZoneOffset.UTC),
             paidDate =
                 this[InvoicesTable.paidDate]?.atStartOfDay()?.toInstant(ZoneOffset.UTC),
-            category = InvoiceCategory.valueOf(this[InvoicesTable.category]),
+            category = InvoiceCategory.fromName(this[InvoicesTable.category]),
             notes = this[InvoicesTable.notes],
         )
 
@@ -48,8 +48,8 @@ class InvoiceRepositoryImpl : InvoiceRepository {
             InvoicesTable
                 .selectAll()
                 .where { InvoicesTable.id eq id }
-                .map { it.toInvoice() }
                 .singleOrNull()
+                ?.toInvoice()
         }
 
     override suspend fun findByInvoiceNumber(invoiceNumber: String): Invoice? =
@@ -57,8 +57,8 @@ class InvoiceRepositoryImpl : InvoiceRepository {
             InvoicesTable
                 .selectAll()
                 .where { InvoicesTable.invoiceNumber eq invoiceNumber }
-                .map { it.toInvoice() }
                 .singleOrNull()
+                ?.toInvoice()
         }
 
     override suspend fun findByCustomerId(customerId: UUID): List<Invoice> =
@@ -74,15 +74,20 @@ class InvoiceRepositoryImpl : InvoiceRepository {
             InvoicesTable
                 .selectAll()
                 .where { InvoicesTable.rentalId eq rentalId }
-                .map { it.toInvoice() }
                 .singleOrNull()
+                ?.toInvoice()
         }
 
     override suspend fun save(invoice: Invoice): Invoice =
         dbQuery {
             val now = Instant.now()
 
-            val exists = InvoicesTable.selectAll().where { InvoicesTable.id eq invoice.id }.count() > 0
+            val exists =
+                InvoicesTable
+                    .select(InvoicesTable.id)
+                    .where { InvoicesTable.id eq invoice.id }
+                    .limit(1)
+                    .singleOrNull() != null
 
             if (exists) {
                 InvoicesTable.update({ InvoicesTable.id eq invoice.id }) {

@@ -1,5 +1,6 @@
 package com.solodev.fleet.modules.users.application.dto
 
+import com.solodev.fleet.shared.utils.ValidationUtils
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -11,7 +12,8 @@ data class UserUpdateRequest(
     val staffProfile: StaffProfileUpdateRequest? = null,
 ) {
     init {
-        firstName?.let { require(it.isNotBlank()) { "First name cannot be blank" } }
-        lastName?.let { require(it.isNotBlank()) { "Last name cannot be blank" } }
+        firstName?.let { ValidationUtils.validateName(it, "First name") }
+        lastName?.let { ValidationUtils.validateName(it, "Last name") }
+        phone?.let { ValidationUtils.validatePhone(it) }
     }
 }

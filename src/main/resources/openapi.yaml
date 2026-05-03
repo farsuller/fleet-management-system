@@ -572,6 +572,95 @@ components:
         endedAt: { type: string, format: date-time, nullable: true }
         isActive: { type: boolean }
 
+    # --- Driver App Specific ---
+    DriverRegistrationRequest:
+      type: object
+      required: [email, passwordRaw, firstName, lastName, phone, licenseNumber, licenseExpiry]
+      properties:
+        email: { type: string, format: email }
+        passwordRaw: { type: string, format: password }
+        firstName: { type: string }
+        lastName: { type: string }
+        phone: { type: string }
+        licenseNumber: { type: string }
+        licenseExpiry: { type: string, format: date, example: "2029-12-31" }
+        licenseClass: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+        city: { type: string, nullable: true }
+        state: { type: string, nullable: true }
+        postalCode: { type: string, nullable: true }
+        country: { type: string, nullable: true }
+    DriverLoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+    DriverLoginResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+        driverId: { type: string, format: uuid }
+    DriverResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid, nullable: true }
+        firstName: { type: string }
+        lastName: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        licenseNumber: { type: string }
+        licenseExpiryMs: { type: integer, format: int64 }
+        licenseClass: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdAt: { type: integer, format: int64 }
+        currentAssignment: { $ref: '#/components/schemas/AssignmentResponse', nullable: true }
+        vehicleType: { type: string, nullable: true }
+        vehiclePlate: { type: string, nullable: true }
+    AssignmentResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicleId: { type: string, format: uuid }
+        driverId: { type: string, format: uuid }
+        assignedAt: { type: integer, format: int64 }
+        releasedAt: { type: integer, format: int64, nullable: true }
+        isActive: { type: boolean }
+        notes: { type: string, nullable: true }
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string }
+    ReportIncidentRequest:
+      type: object
+      required: [title, description, severity]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        severity: { type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL] }
+        odometerKm: { type: integer, nullable: true }
+        latitude: { type: number, format: double, nullable: true }
+        longitude: { type: number, format: double, nullable: true }
+    IncidentResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicleId: { type: string, format: uuid }
+        vehiclePlate: { type: string, nullable: true }
+        title: { type: string }
+        description: { type: string }
+        status: { type: string, enum: [OPEN, IN_PROGRESS, RESOLVED, CLOSED] }
+        severity: { type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL] }
+        reportedAt: { type: string, format: date-time }
+        reportedByUserId: { type: string, format: uuid, nullable: true }
+        maintenanceJobId: { type: string, format: uuid, nullable: true }
+        odometerKm: { type: integer, nullable: true }
+        latitude: { type: number, format: double, nullable: true }
+        longitude: { type: number, format: double, nullable: true }
+
 paths:
   # --- Authentication & Users ---
   /v1/auth/verify:
@@ -591,7 +680,7 @@ paths:
 
   /v1/users/register:
     post:
-      summary: Register new user
+      summary: Register new user (General)
       tags: [Authentication]
       requestBody:
         content:
@@ -601,9 +690,28 @@ paths:
         '201':
           description: Created
 
+  /v1/drivers/register:
+    post:
+      summary: Register new driver (Mobile App)
+      tags: [Authentication]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DriverRegistrationRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/UserResponse' }
+
   /v1/users/login:
     post:
-      summary: User login
+      summary: User login (General)
       tags: [Authentication]
       requestBody:
         content:
@@ -619,6 +727,41 @@ paths:
                   - $ref: '#/components/schemas/ApiResponse'
                   - properties:
                       data: { $ref: '#/components/schemas/LoginResponse' }
+
+  /v1/auth/token:
+    post:
+      summary: Driver login (Mobile App)
+      tags: [Authentication]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DriverLoginRequest' }
+      responses:
+        '200':
+          description: Token response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverLoginResponse' }
+
+  /v1/auth/token/refresh:
+    post:
+      summary: Refresh driver tokens (Mobile App)
+      tags: [Authentication]
+      operationId: refreshToken
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RefreshTokenRequest' }
+      responses:
+        '200':
+          description: New token pair
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken: { type: string }
+                  refreshToken: { type: string }
 
   /v1/users:
     get:
@@ -766,6 +909,27 @@ paths:
       responses:
         '200':
           description: Ok
+
+  /v1/vehicles/{plate}/incidents:
+    parameters: [{ name: plate, in: path, required: true, schema: { type: string } }]
+    post:
+      summary: Report vehicle incident (Mobile App)
+      tags: [Maintenance]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReportIncidentRequest' }
+      responses:
+        '201':
+          description: Reported
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties:
+                      data: { $ref: '#/components/schemas/IncidentResponse' }
 
   # --- Rentals ---
   /v1/rentals:

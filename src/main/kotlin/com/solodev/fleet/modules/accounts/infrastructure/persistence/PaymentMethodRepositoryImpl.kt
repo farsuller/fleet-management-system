@@ -61,8 +61,8 @@ class PaymentMethodRepositoryImpl : PaymentMethodRepository {
             PaymentMethodsTable
                 .selectAll()
                 .where { PaymentMethodsTable.id eq id }
-                .map { it.toPaymentMethod() }
                 .singleOrNull()
+                ?.toPaymentMethod()
         }
 
     override suspend fun findByCode(code: String): PaymentMethod? =
@@ -71,8 +71,8 @@ class PaymentMethodRepositoryImpl : PaymentMethodRepository {
             PaymentMethodsTable
                 .selectAll()
                 .where { PaymentMethodsTable.code eq code }
-                .map { it.toPaymentMethod() }
                 .singleOrNull()
+                ?.toPaymentMethod()
         }
 
     override suspend fun findAll(): List<PaymentMethod> =
@@ -95,9 +95,10 @@ class PaymentMethodRepositoryImpl : PaymentMethodRepository {
             val now = Instant.now()
             val exists =
                 PaymentMethodsTable
-                    .selectAll()
+                    .select(PaymentMethodsTable.id)
                     .where { PaymentMethodsTable.id eq paymentMethod.id }
-                    .count() > 0
+                    .limit(1)
+                    .singleOrNull() != null
 
             if (exists) {
                 PaymentMethodsTable.update({ PaymentMethodsTable.id eq paymentMethod.id }) {

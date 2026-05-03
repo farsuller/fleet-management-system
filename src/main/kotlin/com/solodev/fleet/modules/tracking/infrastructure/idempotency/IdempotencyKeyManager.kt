@@ -22,6 +22,10 @@ import java.util.concurrent.ConcurrentHashMap
 class IdempotencyKeyManager(
     private val ttlMinutes: Int = 1440,
 ) {
+    companion object {
+        private val KEY_PATTERN = Regex("^[a-zA-Z0-9-]{1,256}$")
+    }
+
     data class CachedResponse(
         val responseBody: String,
         val timestamp: Instant,
@@ -73,7 +77,7 @@ class IdempotencyKeyManager(
     /**
      * Validate idempotency key format. Keys should be UUID-like format (alphanumeric with hyphens).
      */
-    fun isValidKey(key: String): Boolean = key.matches(Regex("^[a-zA-Z0-9-]{1,256}$"))
+    fun isValidKey(key: String): Boolean = key.matches(KEY_PATTERN)
 
     /** Check if cached response has expired. */
     private fun isExpired(cached: CachedResponse): Boolean {
@@ -83,9 +87,7 @@ class IdempotencyKeyManager(
 
     /** Clean up expired entries from cache. Call periodically to prevent memory leak. */
     fun cleanup() {
-        val expiredKeys = cache.entries.filter { isExpired(it.value) }.map { it.key }
-
-        expiredKeys.forEach { cache.remove(it) }
+        cache.entries.removeIf { isExpired(it.value) }
     }
 
     /** Get cache statistics for monitoring. */

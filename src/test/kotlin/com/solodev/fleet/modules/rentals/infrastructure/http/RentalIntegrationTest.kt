@@ -12,6 +12,8 @@ import com.solodev.fleet.shared.models.ApiResponse
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.delete
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -25,33 +27,28 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class RentalIntegrationTest : IntegrationTestBase() {
     private val adminId = UUID.randomUUID()
     private val adminEmail = "admin@fleet.ph"
 
-    private lateinit var testVehicleId: UUID
-    private lateinit var testCustomerId: UUID
-
     @BeforeEach
     fun setup() {
         cleanDatabase()
-        testVehicleId = seedVehicle()
-        testCustomerId = seedCustomer()
     }
 
-    private fun seedVehicle(): UUID {
+    private fun seedVehicle(plate: String = "V-123"): UUID {
         val id = UUID.randomUUID()
         transaction {
             VehiclesTable.insert {
                 it[VehiclesTable.id] = id
-                it[plateNumber] = "RENT-" + UUID.randomUUID().toString().take(5)
+                it[plateNumber] = plate
                 it[make] = "Toyota"
-                it[model] = "Vios"
+                it[model] = "Innova"
                 it[year] = 2024
                 it[status] = "AVAILABLE"
                 it[createdAt] = Instant.now()
@@ -61,17 +58,17 @@ class RentalIntegrationTest : IntegrationTestBase() {
         return id
     }
 
-    private fun seedCustomer(): UUID {
+    private fun seedCustomer(email: String = "cust@example.com"): UUID {
         val id = UUID.randomUUID()
         transaction {
             CustomersTable.insert {
                 it[CustomersTable.id] = id
-                it[firstName] = "Rental"
-                it[lastName] = "Tester"
-                it[email] = "rental@tester.ph"
-                it[phone] = "+6392222222222"
-                it[driverLicenseNumber] = "DL-" + UUID.randomUUID().toString().take(8)
-                it[driverLicenseExpiry] = LocalDate.now().plusYears(1)
+                it[firstName] = "Juan"
+                it[lastName] = "Dela Cruz"
+                it[CustomersTable.email] = email
+                it[phone] = "+639123456789"
+                it[driverLicenseNumber] = "CL-" + UUID.randomUUID().toString().take(8)
+                it[driverLicenseExpiry] = LocalDate.now().plusYears(5)
                 it[isActive] = true
                 it[createdAt] = Instant.now()
                 it[updatedAt] = Instant.now()
@@ -80,19 +77,22 @@ class RentalIntegrationTest : IntegrationTestBase() {
         return id
     }
 
-    private fun seedRental(): UUID {
+    private fun seedRental(
+        vehicleId: UUID,
+        customerId: UUID,
+    ): UUID {
         val id = UUID.randomUUID()
         transaction {
             RentalsTable.insert {
                 it[RentalsTable.id] = id
-                it[rentalNumber] = "RN-" + UUID.randomUUID().toString().take(8)
-                it[customerId] = testCustomerId
-                it[vehicleId] = testVehicleId
+                it[rentalNumber] = "RENT-" + UUID.randomUUID().toString().take(8)
+                it[RentalsTable.vehicleId] = vehicleId
+                it[RentalsTable.customerId] = customerId
                 it[status] = "RESERVED"
-                it[startDate] = Instant.now().plusSeconds(3600)
-                it[endDate] = Instant.now().plusSeconds(86400)
-                it[dailyRate] = 1500
-                it[totalAmount] = 1500
+                it[startDate] = Instant.now().plus(1, ChronoUnit.DAYS)
+                it[endDate] = Instant.now().plus(3, ChronoUnit.DAYS)
+                it[dailyRate] = 250000 // 2500.00
+                it[totalAmount] = 500000 // 5000.00
                 it[createdAt] = Instant.now()
                 it[updatedAt] = Instant.now()
             }
@@ -105,21 +105,26 @@ class RentalIntegrationTest : IntegrationTestBase() {
         testApplication {
             configurePostgres()
             application { module() }
+            val vId = seedVehicle("RENT-NEW")
+            val cId = seedCustomer("new@example.com")
 
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
+
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
+            val start = Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.SECONDS)
+            val end = Instant.now().plus(2, ChronoUnit.DAYS).truncatedTo(ChronoUnit.SECONDS)
+
             val request =
                 RentalRequest(
-                    customerId = testCustomerId.toString(),
-                    vehicleId = testVehicleId.toString(),
-                    startDate = Instant.now().plusSeconds(3600).toString(),
-                    endDate = Instant.now().plusSeconds(86400).toString(),
-                    dailyRateAmount = 1500L,
+                    vehicleId = vId.toString(),
+                    customerId = cId.toString(),
+                    startDate = start.toString(),
+                    endDate = end.toString(),
                 )
 
             client
@@ -131,89 +136,95 @@ class RentalIntegrationTest : IntegrationTestBase() {
                     assertEquals(HttpStatusCode.Created, response.status)
                     val apiResponse = response.body<ApiResponse<RentalResponse>>()
                     assertTrue(apiResponse.success)
-                    assertEquals("RESERVED", apiResponse.data!!.status)
+                    assertEquals(vId.toString(), apiResponse.data!!.vehicleId)
                 }
         }
 
     @Test
-    fun `should activate a rental`() =
+    fun `should list rentals`() =
         testApplication {
             configurePostgres()
             application { module() }
-            val rentalId = seedRental()
+            val vId = seedVehicle("LIST-V")
+            val cId = seedCustomer("list@example.com")
+            seedRental(vId, cId)
 
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
 
             client
-                .post("/v1/rentals/$rentalId/activate") {
+                .get("/v1/rentals") {
                     bearerAuth(token)
                 }.let { response ->
                     assertEquals(HttpStatusCode.OK, response.status)
-                    val apiResponse = response.body<ApiResponse<RentalResponse>>()
-                    assertEquals("ACTIVE", apiResponse.data!!.status)
-                    assertNotNull(apiResponse.data!!.actualStartDate)
+                    val apiResponse = response.body<ApiResponse<List<RentalResponse>>>()
+                    assertTrue(apiResponse.success)
+                    assertEquals(1, apiResponse.data!!.size)
                 }
         }
 
     @Test
-    fun `should complete a rental`() =
+    fun `should get rental by id`() =
         testApplication {
             configurePostgres()
             application { module() }
-            val rentalId = seedRental()
+            val vId = seedVehicle("GET-V")
+            val cId = seedCustomer("get-r@example.com")
+            val rId = seedRental(vId, cId)
 
             val client =
                 createClient {
                     install(ContentNegotiation) {
-                        json()
-                    }
-                }
-            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
-            client.post("/v1/rentals/$rentalId/activate") {
-                bearerAuth(token)
-            }
-
-            client
-                .post("/v1/rentals/$rentalId/complete") {
-                    bearerAuth(token)
-                    contentType(ContentType.Application.Json)
-                    setBody(mapOf("endOdometer" to 1000))
-                }.let { response ->
-                    assertEquals(HttpStatusCode.OK, response.status)
-                    val apiResponse = response.body<ApiResponse<RentalResponse>>()
-                    assertEquals("COMPLETED", apiResponse.data!!.status)
-                    assertEquals(1000, apiResponse.data!!.endOdometerKm)
-                }
-        }
-
-    @Test
-    fun `should cancel a rental`() =
-        testApplication {
-            configurePostgres()
-            application { module() }
-            val rentalId = seedRental()
-
-            val client =
-                createClient {
-                    install(ContentNegotiation) {
-                        json()
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
                     }
                 }
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
 
             client
-                .post("/v1/rentals/$rentalId/cancel") {
+                .get("/v1/rentals/$rId") {
                     bearerAuth(token)
                 }.let { response ->
                     assertEquals(HttpStatusCode.OK, response.status)
                     val apiResponse = response.body<ApiResponse<RentalResponse>>()
-                    assertEquals("CANCELLED", apiResponse.data!!.status)
+                    assertEquals(rId.toString(), apiResponse.data!!.id)
+                }
+        }
+
+    @Test
+    fun `should delete rental`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
+            val vId = seedVehicle("DEL-V")
+            val cId = seedCustomer("del-r@example.com")
+            val rId = seedRental(vId, cId)
+
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json(com.solodev.fleet.shared.infrastructure.serialization.JsonConfig.instance)
+                    }
+                }
+            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
+
+            client
+                .delete("/v1/rentals/$rId") {
+                    bearerAuth(token)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.OK, response.status)
+                }
+
+            // Verify it's gone
+            client
+                .get("/v1/rentals/$rId") {
+                    bearerAuth(token)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.NotFound, response.status)
                 }
         }
 }

@@ -55,7 +55,7 @@ class UpdateUserUseCaseTest {
     fun shouldPreserveExistingFields_WhenPartialUpdateProvided(): Unit =
         runBlocking {
             // Arrange
-            val request = UserUpdateRequest(phone = "+63-912-345-6789")
+            val request = UserUpdateRequest(phone = "+639123456789")
             coEvery { repository.findById(UserId("user-1")) } returns existingUser
             coEvery { repository.save(any()) } returnsArgument 0
 
@@ -66,7 +66,7 @@ class UpdateUserUseCaseTest {
             assertThat(result).isNotNull()
             assertThat(result!!.firstName).isEqualTo("Juan") // unchanged
             assertThat(result.lastName).isEqualTo("dela Cruz") // unchanged
-            assertThat(result.phone).isEqualTo("+63-912-345-6789")
+            assertThat(result.phone).isEqualTo("+639123456789")
         }
 
     @Test

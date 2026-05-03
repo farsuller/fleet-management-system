@@ -20,6 +20,8 @@ on:
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
+    # Only run on public repositories unless GitHub Advanced Security is enabled
+    if: github.event.repository.private == false
     # Runner size impacts CodeQL analysis time. To learn more, please see:
     #   - https://gh.io/recommended-hardware-resources-for-running-codeql
     #   - https://gh.io/supported-runners-and-hardware-resources

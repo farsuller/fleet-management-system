@@ -20,17 +20,18 @@ class RegisterDriverUseCaseTest {
     private val driverRepository = mockk<DriverRepository>()
     private val userRepository = mockk<UserRepository>()
     private val tokenRepository = mockk<VerificationTokenRepository>()
-    private val useCase = RegisterDriverUseCase(driverRepository, userRepository, tokenRepository)
+    private val emailService = mockk<com.solodev.fleet.shared.infrastructure.email.EmailService>(relaxed = true)
+    private val useCase = RegisterDriverUseCase(driverRepository, userRepository, tokenRepository, emailService)
 
     private val driverRole = Role(id = RoleId("role-driver"), name = "DRIVER")
 
     private val validRequest =
         DriverRegistrationRequest(
             email = "driver@fleet.ph",
-            passwordRaw = "secret-pass",
+            passwordRaw = "TestPass123!",
             firstName = "Jose",
             lastName = "Cruz",
-            phone = "+63917000002",
+            phone = "+639123456789",
             licenseNumber = "LN-MOB-001",
             licenseExpiry = "2030-12-31",
             licenseClass = "B",

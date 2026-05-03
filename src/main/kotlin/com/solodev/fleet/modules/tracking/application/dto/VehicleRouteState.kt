@@ -40,4 +40,12 @@ enum class VehicleStatus {
     IN_TRANSIT,
     IDLE,
     OFF_ROUTE,
+    ;
+
+    companion object {
+        private val map = entries.associateBy { it.name }
+
+        /** Fast lookup by name avoiding valueOf() overhead. Returns IDLE if not found. */
+        fun fromName(name: String?): VehicleStatus = map[name] ?: IDLE
+    }
 }

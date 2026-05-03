@@ -69,8 +69,8 @@ class UserRepositoryImpl : UserRepository {
                 StaffProfilesTable
                     .selectAll()
                     .where { StaffProfilesTable.userId eq UUID.fromString(id.value) }
-                    .map { it.toStaffProfile() }
                     .singleOrNull()
+                    ?.toStaffProfile()
 
             userRow.toUser(roles, staffProfile)
         }
@@ -92,8 +92,8 @@ class UserRepositoryImpl : UserRepository {
                 StaffProfilesTable
                     .selectAll()
                     .where { StaffProfilesTable.userId eq userId }
-                    .map { it.toStaffProfile() }
                     .singleOrNull()
+                    ?.toStaffProfile()
 
             userRow.toUser(roles, staffProfile)
         }
@@ -103,7 +103,12 @@ class UserRepositoryImpl : UserRepository {
             val userUuid = UUID.fromString(user.id.value)
             val now = Instant.now()
 
-            val exists = UsersTable.selectAll().where { UsersTable.id eq userUuid }.count() > 0
+            val exists =
+                UsersTable
+                    .select(UsersTable.id)
+                    .where { UsersTable.id eq userUuid }
+                    .limit(1)
+                    .singleOrNull() != null
 
             if (exists) {
                 UsersTable.update({ UsersTable.id eq userUuid }) {
@@ -145,9 +150,10 @@ class UserRepositoryImpl : UserRepository {
             user.staffProfile?.let { profile ->
                 val profileExists =
                     StaffProfilesTable
-                        .selectAll()
+                        .select(StaffProfilesTable.id)
                         .where { StaffProfilesTable.id eq profile.id }
-                        .count() > 0
+                        .limit(1)
+                        .singleOrNull() != null
                 if (profileExists) {
                     StaffProfilesTable.update({ StaffProfilesTable.id eq profile.id }) {
                         it[employeeId] = profile.employeeId
@@ -191,8 +197,8 @@ class UserRepositoryImpl : UserRepository {
                     StaffProfilesTable
                         .selectAll()
                         .where { StaffProfilesTable.userId eq userId }
-                        .map { it.toStaffProfile() }
                         .singleOrNull()
+                        ?.toStaffProfile()
                 userRow.toUser(roles, staffProfile)
             }
         }
@@ -207,8 +213,8 @@ class UserRepositoryImpl : UserRepository {
             RolesTable
                 .selectAll()
                 .where { RolesTable.name eq name }
-                .map { it.toRole() }
                 .singleOrNull()
+                ?.toRole()
         }
 
     override suspend fun updatePassword(

@@ -6,6 +6,7 @@ import com.solodev.fleet.modules.tracking.application.dto.diff
 import com.solodev.fleet.modules.tracking.application.dto.full
 import com.solodev.fleet.modules.vehicles.domain.repository.VehicleRepository
 import com.solodev.fleet.shared.infrastructure.cache.RedisCacheManager
+import com.solodev.fleet.shared.infrastructure.serialization.JsonConfig
 import com.solodev.fleet.shared.models.PaginationParams
 import io.ktor.server.websocket.DefaultWebSocketServerSession
 import io.ktor.websocket.Frame
@@ -14,7 +15,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPubSub
 import java.util.UUID
@@ -67,7 +67,7 @@ open class RedisDeltaBroadcaster(
             }
 
         if (delta.hasChanges()) {
-            val message = Json.encodeToString(delta)
+            val message = JsonConfig.instance.encodeToString(delta)
 
             // Broadcast to local sessions
             sessions.values.forEach { session ->
@@ -82,7 +82,7 @@ open class RedisDeltaBroadcaster(
             publishToRedis(message)
 
             // Update cache for next comparison
-            redisCache.getOrSet(redisKey, 3600) { newState }
+            redisCache.set(redisKey, newState, 3600)
         }
     }
 
@@ -101,7 +101,7 @@ open class RedisDeltaBroadcaster(
             if (state != null) {
                 try {
                     val delta = VehicleStateDelta.full(state)
-                    session.send(Frame.Text(Json.encodeToString(delta)))
+                    session.send(Frame.Text(JsonConfig.instance.encodeToString(delta)))
                 } catch (e: Exception) {
                     // Session closed, ignore
                 }

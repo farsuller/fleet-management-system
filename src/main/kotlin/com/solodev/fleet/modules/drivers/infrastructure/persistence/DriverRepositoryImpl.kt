@@ -66,8 +66,8 @@ class DriverRepositoryImpl : DriverRepository {
             DriversTable
                 .selectAll()
                 .where { DriversTable.id eq UUID.fromString(id.value) }
-                .map { it.toDriver() }
                 .singleOrNull()
+                ?.toDriver()
         }
 
     override suspend fun findByEmail(email: String): Driver? =
@@ -75,8 +75,8 @@ class DriverRepositoryImpl : DriverRepository {
             DriversTable
                 .selectAll()
                 .where { DriversTable.email eq email }
-                .map { it.toDriver() }
                 .singleOrNull()
+                ?.toDriver()
         }
 
     override suspend fun findByLicenseNumber(licenseNumber: String): Driver? =
@@ -84,8 +84,8 @@ class DriverRepositoryImpl : DriverRepository {
             DriversTable
                 .selectAll()
                 .where { DriversTable.licenseNumber eq licenseNumber }
-                .map { it.toDriver() }
                 .singleOrNull()
+                ?.toDriver()
         }
 
     override suspend fun findAll(): List<Driver> =
@@ -100,7 +100,12 @@ class DriverRepositoryImpl : DriverRepository {
         dbQuery {
             val uuid = UUID.fromString(driver.id.value)
             val now = Instant.now()
-            val exists = DriversTable.selectAll().where { DriversTable.id eq uuid }.count() > 0
+            val exists =
+                DriversTable
+                    .select(DriversTable.id)
+                    .where { DriversTable.id eq uuid }
+                    .limit(1)
+                    .singleOrNull() != null
 
             if (exists) {
                 DriversTable.update({ DriversTable.id eq uuid }) {
@@ -205,8 +210,8 @@ class DriverRepositoryImpl : DriverRepository {
                 .where {
                     (VehicleDriverAssignmentsTable.vehicleId eq UUID.fromString(vehicleId)) and
                         (VehicleDriverAssignmentsTable.releasedAt.isNull())
-                }.map { it.toAssignment() }
-                .singleOrNull()
+                }.singleOrNull()
+                ?.toAssignment()
         }
 
     override suspend fun findActiveAssignmentByDriver(driverId: DriverId): VehicleDriverAssignment? =
@@ -216,8 +221,8 @@ class DriverRepositoryImpl : DriverRepository {
                 .where {
                     (VehicleDriverAssignmentsTable.driverId eq UUID.fromString(driverId.value)) and
                         (VehicleDriverAssignmentsTable.releasedAt.isNull())
-                }.map { it.toAssignment() }
-                .singleOrNull()
+                }.singleOrNull()
+                ?.toAssignment()
         }
 
     override suspend fun findAssignmentHistoryByVehicle(vehicleId: String): List<VehicleDriverAssignment> =
@@ -245,8 +250,8 @@ class DriverRepositoryImpl : DriverRepository {
             DriverShiftsTable
                 .selectAll()
                 .where { (DriverShiftsTable.driverId eq UUID.fromString(driverId)) and (DriverShiftsTable.endedAt.isNull()) }
-                .map { it.toDriverShift() }
                 .singleOrNull()
+                ?.toDriverShift()
         }
 
     override suspend fun startShift(

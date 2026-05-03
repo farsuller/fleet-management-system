@@ -1,5 +1,6 @@
 package com.solodev.fleet.modules.users.application.dto
 
+import com.solodev.fleet.shared.utils.ValidationUtils
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -9,7 +10,7 @@ data class LoginRequest(
     @SerialName("password") val passwordRaw: String,
 ) {
     init {
-        require(email.isNotBlank() && email.contains("@")) { "Valid email required" }
+        ValidationUtils.validateEmail(email)
         require(passwordRaw.isNotBlank()) { "Password cannot be blank" }
     }
 }

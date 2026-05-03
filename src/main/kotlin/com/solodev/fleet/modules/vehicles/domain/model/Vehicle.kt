@@ -16,6 +16,7 @@ value class VehicleId(
 /** Classification of the vehicle by body/use type. */
 @Serializable
 enum class VehicleType {
+    CAR,
     SEDAN,
     SUV,
     VAN,
@@ -24,6 +25,14 @@ enum class VehicleType {
     MOTORCYCLE,
     AMBULANCE,
     OTHER,
+    ;
+
+    companion object {
+        private val map = entries.associateBy { it.name }
+
+        /** Fast lookup by name avoiding valueOf() overhead. Returns OTHER if not found. */
+        fun fromName(name: String?): VehicleType = map[name] ?: OTHER
+    }
 }
 
 /** Vehicle state in the fleet lifecycle. */
@@ -33,6 +42,14 @@ enum class VehicleState {
     RENTED,
     MAINTENANCE,
     RETIRED,
+    ;
+
+    companion object {
+        private val map = entries.associateBy { it.name }
+
+        /** Fast lookup by name avoiding valueOf() overhead. Returns AVAILABLE if not found. */
+        fun fromName(name: String?): VehicleState = map[name] ?: AVAILABLE
+    }
 }
 
 /**

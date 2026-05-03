@@ -28,7 +28,11 @@ import com.solodev.fleet.modules.tracking.infrastructure.websocket.RedisDeltaBro
 import com.solodev.fleet.modules.users.infrastructure.http.userRoutes
 import com.solodev.fleet.modules.users.infrastructure.persistence.UserRepositoryImpl
 import com.solodev.fleet.modules.users.infrastructure.persistence.VerificationTokenRepositoryImpl
+import com.solodev.fleet.modules.vehicles.infrastructure.http.busRoutes
+import com.solodev.fleet.modules.vehicles.infrastructure.http.truckRoutes
 import com.solodev.fleet.modules.vehicles.infrastructure.http.vehicleRoutes
+import com.solodev.fleet.modules.vehicles.infrastructure.persistence.BusRepositoryImpl
+import com.solodev.fleet.modules.vehicles.infrastructure.persistence.TruckRepositoryImpl
 import com.solodev.fleet.modules.vehicles.infrastructure.persistence.VehicleRepositoryImpl
 import com.solodev.fleet.shared.infrastructure.cache.RedisCacheManager
 import com.solodev.fleet.shared.models.ApiResponse
@@ -51,14 +55,19 @@ fun Application.configureRouting(
     vehicleRepo: VehicleRepositoryImpl,
     jedisPool: JedisPool?,
     registry: MeterRegistry,
+    emailService: com.solodev.fleet.shared.infrastructure.email.EmailService,
+    cacheManager: RedisCacheManager?,
+    idempotencyManager: com.solodev.fleet.modules.tracking.infrastructure.idempotency.IdempotencyKeyManager,
 ) {
-    // Initialize other repositories
+    // ... rest of repository initializations ...
     val rentalRepo = RentalRepositoryImpl()
     val userRepo = UserRepositoryImpl()
     val tokenRepo = VerificationTokenRepositoryImpl()
     val customerRepo = CustomerRepositoryImpl()
     val maintenanceRepo = MaintenanceRepositoryImpl()
     val driverRepo = DriverRepositoryImpl()
+    val busRepo = BusRepositoryImpl(vehicleRepo)
+    val truckRepo = TruckRepositoryImpl(vehicleRepo)
     val invoiceRepo = InvoiceRepositoryImpl()
     val paymentRepo = PaymentRepositoryImpl()
     val accountRepo = AccountRepositoryImpl()
@@ -67,6 +76,7 @@ fun Application.configureRouting(
     val remittanceRepo = DriverRemittanceRepositoryImpl()
 
     val accountingService = AccountingService(accountRepo = accountRepo, ledgerRepo = ledgerRepo)
+    // ... rest of service initializations ...
     val issueInvoiceUseCase =
         com.solodev.fleet.modules.accounts.application.usecases.IssueInvoiceUseCase(
             invoiceRepo = invoiceRepo,
@@ -82,7 +92,7 @@ fun Application.configureRouting(
 
     // Phase 7: Tracking & Live Broadcasting
     val spatialAdapter = PostGisAdapter()
-    val redisCache = RedisCacheManager(jedisPool)
+    val redisCache = cacheManager ?: RedisCacheManager(jedisPool)
     val spatialMetrics = SpatialMetrics(registry) // Micrometer registry from observability
     val deltaBroadcaster = RedisDeltaBroadcaster(redisCache, vehicleRepo, jedisPool)
     val locationHistoryRepository = LocationHistoryRepository() // Persist tracking records
@@ -101,6 +111,8 @@ fun Application.configureRouting(
 
         rateLimit(RateLimitName("public_api")) {
             vehicleRoutes(vehicleRepo)
+            busRoutes(busRepo, driverRepo)
+            truckRoutes(truckRepo, driverRepo)
             rentalRoutes(
                 rentalRepository = rentalRepo,
                 vehicleRepository = vehicleRepo,
@@ -120,6 +132,9 @@ fun Application.configureRouting(
                 driverRepository = driverRepo,
                 userRepository = userRepo,
                 tokenRepository = tokenRepo,
+                jwtService = jwtService,
+                vehicleRepository = vehicleRepo,
+                emailService = emailService,
             )
             maintenanceRoutes(maintenanceRepository = maintenanceRepo, rentalRepository = rentalRepo)
             incidentRoutes(maintenanceRepository = maintenanceRepo, vehicleRepository = vehicleRepo)
@@ -130,6 +145,7 @@ fun Application.configureRouting(
                 vehicleRepository = vehicleRepo,
                 historyRepository = locationHistoryRepository,
                 receptionService = coordinateReceptionService,
+                idempotencyManager = idempotencyManager,
             )
         }
 
@@ -138,6 +154,7 @@ fun Application.configureRouting(
                 userRepository = userRepo,
                 tokenRepository = tokenRepo,
                 jwtService = jwtService,
+                emailService = emailService,
             )
         }
 

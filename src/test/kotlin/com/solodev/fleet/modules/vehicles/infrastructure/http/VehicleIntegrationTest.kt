@@ -199,7 +199,7 @@ class VehicleIntegrationTest : IntegrationTestBase() {
                 .delete("/v1/vehicles/$id") {
                     bearerAuth(token)
                 }.let { response ->
-                    assertEquals(HttpStatusCode.NoContent, response.status)
+                    assertEquals(HttpStatusCode.OK, response.status)
                 }
 
             // Verify it's gone

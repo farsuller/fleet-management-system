@@ -28,6 +28,7 @@ class RegisterDriverUseCase(
     private val driverRepository: DriverRepository,
     private val userRepository: UserRepository,
     private val tokenRepository: VerificationTokenRepository,
+    private val emailService: com.solodev.fleet.shared.infrastructure.email.EmailService,
 ) {
     suspend fun execute(request: DriverRegistrationRequest): Driver {
         require(driverRepository.findByEmail(request.email) == null) {
@@ -75,9 +76,8 @@ class RegisterDriverUseCase(
                 expiresAt = Instant.now().plus(24, ChronoUnit.HOURS),
             ),
         )
-        println("----------------------------------------------------------------")
-        println("DRIVER VERIFICATION LINK: http://localhost:8080/v1/auth/verify?token=$token")
-        println("----------------------------------------------------------------")
+        // Send real verification email via Nuntly
+        emailService.sendVerificationEmail(savedUser.email, token)
 
         val driver =
             Driver(

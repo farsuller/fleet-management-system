@@ -164,6 +164,8 @@ fun Application.configureDatabases() {
             "V034__add_status_to_payment_methods.sql",
             "V035__seed_revenue_ledger_entries.sql",
             "V036__seed_jan_feb_revenue_ledger_entries.sql",
+            "V037__create_bus_truck_tables.sql",
+            "V038__update_vehicle_types.sql",
         )
 
     log.info("Extracting ${migrationFiles.size} migrations to: ${migrationDir.absolutePath}...")

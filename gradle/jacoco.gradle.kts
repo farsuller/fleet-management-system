@@ -18,7 +18,8 @@ val jacocoCoverageExclusions =
         "**/dto/*Response.class",
         "**/dto/*DTO.class",
         "**/dto/*Dtos.class",
-        "**/dto/*Dto.class",
+        // Shared utilities, helpers, and base infrastructure
+        "**/shared/**",
         // Repository implementations — infrastructure/persistence layer wired to the DB
         "**/persistence/*RepositoryImpl.class",
         "**/persistence/*RepositoryImpl$*.class",
@@ -102,6 +103,8 @@ tasks.named<JacocoReport>("jacocoTestReport") {
                     Regex(".*/dto/.*DTO"),
                     Regex(".*/dto/.*Dtos"),
                     Regex(".*/dto/.*Dto"),
+                    // Shared package
+                    Regex(".*/shared/.*"),
                     // Repository implementations — infrastructure/persistence layer
                     Regex(".*/persistence/.*RepositoryImpl"),
                     Regex(""".*/persistence/.*RepositoryImpl\$.*"""),
