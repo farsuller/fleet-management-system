@@ -3,17 +3,17 @@ package com.solodev.fleet.modules.rentals.infrastructure.http
 import com.solodev.fleet.IntegrationTestBase
 import com.solodev.fleet.configurePostgres
 import com.solodev.fleet.module
-import com.solodev.fleet.modules.rentals.application.dto.RentalRequest
-import com.solodev.fleet.modules.rentals.application.dto.RentalResponse
+import com.solodev.fleet.modules.rentals.application.dto.CustomerRequest
+import com.solodev.fleet.modules.rentals.application.dto.CustomerResponse
+import com.solodev.fleet.modules.rentals.application.dto.UpdateCustomerRequest
 import com.solodev.fleet.modules.rentals.infrastructure.persistence.CustomersTable
-import com.solodev.fleet.modules.rentals.infrastructure.persistence.RentalsTable
-import com.solodev.fleet.modules.vehicles.infrastructure.persistence.VehiclesTable
 import com.solodev.fleet.shared.models.ApiResponse
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -27,12 +27,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.time.LocalDate
-import java.time.temporal.ChronoUnit
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class RentalIntegrationTest : IntegrationTestBase() {
+class CustomerIntegrationTest : IntegrationTestBase() {
     private val adminId = UUID.randomUUID()
     private val adminEmail = "admin@fleet.ph"
 
@@ -41,24 +40,10 @@ class RentalIntegrationTest : IntegrationTestBase() {
         cleanDatabase()
     }
 
-    private fun seedVehicle(plate: String = "V-123"): UUID {
-        val id = UUID.randomUUID()
-        transaction {
-            VehiclesTable.insert {
-                it[VehiclesTable.id] = id
-                it[plateNumber] = plate
-                it[make] = "Toyota"
-                it[model] = "Innova"
-                it[year] = 2024
-                it[status] = "AVAILABLE"
-                it[createdAt] = Instant.now()
-                it[updatedAt] = Instant.now()
-            }
-        }
-        return id
-    }
-
-    private fun seedCustomer(email: String = "cust@example.com"): UUID {
+    private fun seedCustomer(
+        email: String = "customer@example.com",
+        license: String = "CL12345",
+    ): UUID {
         val id = UUID.randomUUID()
         transaction {
             CustomersTable.insert {
@@ -67,7 +52,7 @@ class RentalIntegrationTest : IntegrationTestBase() {
                 it[lastName] = "Dela Cruz"
                 it[CustomersTable.email] = email
                 it[phone] = "+639123456789"
-                it[driverLicenseNumber] = "CL-" + UUID.randomUUID().toString().take(8)
+                it[driverLicenseNumber] = license
                 it[driverLicenseExpiry] = LocalDate.now().plusYears(5)
                 it[isActive] = true
                 it[createdAt] = Instant.now()
@@ -77,36 +62,11 @@ class RentalIntegrationTest : IntegrationTestBase() {
         return id
     }
 
-    private fun seedRental(
-        vehicleId: UUID,
-        customerId: UUID,
-    ): UUID {
-        val id = UUID.randomUUID()
-        transaction {
-            RentalsTable.insert {
-                it[RentalsTable.id] = id
-                it[rentalNumber] = "RENT-" + UUID.randomUUID().toString().take(8)
-                it[RentalsTable.vehicleId] = vehicleId
-                it[RentalsTable.customerId] = customerId
-                it[status] = "PENDING"
-                it[startDate] = Instant.now().plus(1, ChronoUnit.DAYS)
-                it[endDate] = Instant.now().plus(3, ChronoUnit.DAYS)
-                it[dailyRate] = 250000 // 2500.00
-                it[totalAmount] = 500000 // 5000.00
-                it[createdAt] = Instant.now()
-                it[updatedAt] = Instant.now()
-            }
-        }
-        return id
-    }
-
     @Test
-    fun `should create a rental`() =
+    fun `should create a customer`() =
         testApplication {
             configurePostgres()
             application { module() }
-            val vId = seedVehicle("RENT-NEW")
-            val cId = seedCustomer("new@example.com")
 
             val client =
                 createClient {
@@ -116,38 +76,36 @@ class RentalIntegrationTest : IntegrationTestBase() {
                 }
 
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
-            val start = Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.SECONDS)
-            val end = Instant.now().plus(2, ChronoUnit.DAYS).truncatedTo(ChronoUnit.SECONDS)
-
             val request =
-                RentalRequest(
-                    vehicleId = vId.toString(),
-                    customerId = cId.toString(),
-                    startDate = start.toString(),
-                    endDate = end.toString(),
+                CustomerRequest(
+                    email = "new-customer@example.com",
+                    firstName = "Maria",
+                    lastName = "Santos",
+                    phone = "+639987654321",
+                    driversLicense = "CN54321",
+                    driverLicenseExpiry = "2029-12-31",
                 )
 
             client
-                .post("/v1/rentals") {
+                .post("/v1/customers") {
                     bearerAuth(token)
                     contentType(ContentType.Application.Json)
                     setBody(request)
                 }.let { response ->
                     assertEquals(HttpStatusCode.Created, response.status)
-                    val apiResponse = response.body<ApiResponse<RentalResponse>>()
+                    val apiResponse = response.body<ApiResponse<CustomerResponse>>()
                     assertTrue(apiResponse.success)
-                    assertEquals(vId.toString(), apiResponse.data!!.vehicleId)
+                    assertEquals("new-customer@example.com", apiResponse.data!!.email)
                 }
         }
 
     @Test
-    fun `should list rentals`() =
+    fun `should list customers`() =
         testApplication {
             configurePostgres()
             application { module() }
-            val vId = seedVehicle("LIST-V")
-            val cId = seedCustomer("list@example.com")
-            seedRental(vId, cId)
+            seedCustomer("cust1@example.com", "L1")
+            seedCustomer("cust2@example.com", "L2")
 
             val client =
                 createClient {
@@ -158,24 +116,22 @@ class RentalIntegrationTest : IntegrationTestBase() {
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
 
             client
-                .get("/v1/rentals") {
+                .get("/v1/customers") {
                     bearerAuth(token)
                 }.let { response ->
                     assertEquals(HttpStatusCode.OK, response.status)
-                    val apiResponse = response.body<ApiResponse<List<RentalResponse>>>()
+                    val apiResponse = response.body<ApiResponse<List<CustomerResponse>>>()
                     assertTrue(apiResponse.success)
-                    assertEquals(1, apiResponse.data!!.size)
+                    assertEquals(2, apiResponse.data!!.size)
                 }
         }
 
     @Test
-    fun `should get rental by id`() =
+    fun `should get customer by id`() =
         testApplication {
             configurePostgres()
             application { module() }
-            val vId = seedVehicle("GET-V")
-            val cId = seedCustomer("get-r@example.com")
-            val rId = seedRental(vId, cId)
+            val id = seedCustomer("get@example.com", "LGET")
 
             val client =
                 createClient {
@@ -186,23 +142,52 @@ class RentalIntegrationTest : IntegrationTestBase() {
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
 
             client
-                .get("/v1/rentals/$rId") {
+                .get("/v1/customers/$id") {
                     bearerAuth(token)
                 }.let { response ->
                     assertEquals(HttpStatusCode.OK, response.status)
-                    val apiResponse = response.body<ApiResponse<RentalResponse>>()
-                    assertEquals(rId.toString(), apiResponse.data!!.id)
+                    val apiResponse = response.body<ApiResponse<CustomerResponse>>()
+                    assertEquals("get@example.com", apiResponse.data!!.email)
                 }
         }
 
     @Test
-    fun `should delete rental`() =
+    fun `should update customer`() =
         testApplication {
             configurePostgres()
             application { module() }
-            val vId = seedVehicle("DEL-V")
-            val cId = seedCustomer("del-r@example.com")
-            val rId = seedRental(vId, cId)
+            val id = seedCustomer("update@example.com", "LUP")
+
+            val client =
+                createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
+            val updateRequest =
+                UpdateCustomerRequest(
+                    firstName = "Maria Updated",
+                )
+
+            client
+                .patch("/v1/customers/$id") {
+                    bearerAuth(token)
+                    contentType(ContentType.Application.Json)
+                    setBody(updateRequest)
+                }.let { response ->
+                    assertEquals(HttpStatusCode.OK, response.status)
+                    val apiResponse = response.body<ApiResponse<CustomerResponse>>()
+                    assertEquals("Maria Updated", apiResponse.data!!.firstName)
+                }
+        }
+
+    @Test
+    fun `should delete customer`() =
+        testApplication {
+            configurePostgres()
+            application { module() }
+            val id = seedCustomer("delete@example.com", "LDEL")
 
             val client =
                 createClient {
@@ -213,15 +198,15 @@ class RentalIntegrationTest : IntegrationTestBase() {
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
 
             client
-                .delete("/v1/rentals/$rId") {
+                .delete("/v1/customers/$id") {
                     bearerAuth(token)
                 }.let { response ->
-                    assertEquals(HttpStatusCode.NoContent, response.status)
+                    assertEquals(HttpStatusCode.OK, response.status)
                 }
 
             // Verify it's gone
             client
-                .get("/v1/rentals/$rId") {
+                .get("/v1/customers/$id") {
                     bearerAuth(token)
                 }.let { response ->
                     assertEquals(HttpStatusCode.NotFound, response.status)

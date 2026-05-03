@@ -3,11 +3,10 @@ package com.solodev.fleet.modules.vehicles.infrastructure.http
 import com.solodev.fleet.IntegrationTestBase
 import com.solodev.fleet.configurePostgres
 import com.solodev.fleet.module
-import com.solodev.fleet.modules.vehicles.application.dto.OdometerRequest
-import com.solodev.fleet.modules.vehicles.application.dto.VehicleRequest
-import com.solodev.fleet.modules.vehicles.application.dto.VehicleResponse
-import com.solodev.fleet.modules.vehicles.application.dto.VehicleStateRequest
-import com.solodev.fleet.modules.vehicles.application.dto.VehicleUpdateRequest
+import com.solodev.fleet.modules.vehicles.application.dto.BusRequest
+import com.solodev.fleet.modules.vehicles.application.dto.BusResponse
+import com.solodev.fleet.modules.vehicles.application.dto.BusUpdateRequest
+import com.solodev.fleet.modules.vehicles.infrastructure.persistence.BusesTable
 import com.solodev.fleet.modules.vehicles.infrastructure.persistence.VehiclesTable
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.models.PaginatedResponse
@@ -33,7 +32,7 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class VehicleIntegrationTest : IntegrationTestBase() {
+class BusIntegrationTest : IntegrationTestBase() {
     private val adminId = UUID.randomUUID()
     private val adminEmail = "admin@fleet.ph"
 
@@ -42,16 +41,27 @@ class VehicleIntegrationTest : IntegrationTestBase() {
         cleanDatabase()
     }
 
-    private fun seedVehicle(plate: String = "TEST-123"): UUID {
+    private fun seedBus(plate: String = "BUS-123"): UUID {
         val id = UUID.randomUUID()
         transaction {
             VehiclesTable.insert {
                 it[VehiclesTable.id] = id
                 it[plateNumber] = plate
-                it[make] = "Toyota"
-                it[model] = "Innova"
+                it[make] = "Hino"
+                it[model] = "Grand Coach"
                 it[year] = 2024
+                it[vehicleType] = "BUS"
                 it[status] = "AVAILABLE"
+                it[createdAt] = Instant.now()
+                it[updatedAt] = Instant.now()
+            }
+            BusesTable.insert {
+                it[vehicleId] = id
+                it[routeNumber] = "RT-101"
+                it[doorCount] = 2
+                it[standingCapacity] = 20
+                it[hasAccessibilityRamp] = true
+                it[hasAirConditioning] = true
                 it[createdAt] = Instant.now()
                 it[updatedAt] = Instant.now()
             }
@@ -60,7 +70,7 @@ class VehicleIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should create a vehicle`() =
+    fun `should create a bus`() =
         testApplication {
             configurePostgres()
             application { module() }
@@ -74,34 +84,40 @@ class VehicleIntegrationTest : IntegrationTestBase() {
 
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
             val request =
-                VehicleRequest(
-                    licensePlate = "NEW-789",
-                    make = "Honda",
-                    model = "Civic",
+                BusRequest(
+                    licensePlate = "BUS-789",
+                    make = "Isuzu",
+                    model = "F-Series",
                     year = 2023,
-                    vehicleType = "SEDAN",
+                    passengerCapacity = 50,
+                    routeNumber = "RT-202",
+                    doorCount = 2,
+                    standingCapacity = 15,
+                    hasAccessibilityRamp = true,
+                    hasAirConditioning = true,
                 )
 
             client
-                .post("/v1/vehicles") {
+                .post("/v1/buses") {
                     bearerAuth(token)
                     contentType(ContentType.Application.Json)
                     setBody(request)
                 }.let { response ->
                     assertEquals(HttpStatusCode.Created, response.status)
-                    val apiResponse = response.body<ApiResponse<VehicleResponse>>()
+                    val apiResponse = response.body<ApiResponse<BusResponse>>()
                     assertTrue(apiResponse.success)
-                    assertEquals("NEW-789", apiResponse.data!!.licensePlate)
+                    assertEquals("BUS-789", apiResponse.data!!.licensePlate)
+                    assertEquals("RT-202", apiResponse.data!!.routeNumber)
                 }
         }
 
     @Test
-    fun `should list vehicles`() =
+    fun `should list buses`() =
         testApplication {
             configurePostgres()
             application { module() }
-            seedVehicle("LIST-001")
-            seedVehicle("LIST-002")
+            seedBus("BUS-001")
+            seedBus("BUS-002")
 
             val client =
                 createClient {
@@ -112,22 +128,22 @@ class VehicleIntegrationTest : IntegrationTestBase() {
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
 
             client
-                .get("/v1/vehicles") {
+                .get("/v1/buses") {
                     bearerAuth(token)
                 }.let { response ->
                     assertEquals(HttpStatusCode.OK, response.status)
-                    val apiResponse = response.body<ApiResponse<PaginatedResponse<VehicleResponse>>>()
+                    val apiResponse = response.body<ApiResponse<PaginatedResponse<BusResponse>>>()
                     assertTrue(apiResponse.success)
                     assertEquals(2, apiResponse.data!!.items.size)
                 }
         }
 
     @Test
-    fun `should get vehicle by id`() =
+    fun `should get bus by id`() =
         testApplication {
             configurePostgres()
             application { module() }
-            val id = seedVehicle("GET-123")
+            val id = seedBus("BUS-GET-123")
 
             val client =
                 createClient {
@@ -138,21 +154,22 @@ class VehicleIntegrationTest : IntegrationTestBase() {
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
 
             client
-                .get("/v1/vehicles/$id") {
+                .get("/v1/buses/$id") {
                     bearerAuth(token)
                 }.let { response ->
                     assertEquals(HttpStatusCode.OK, response.status)
-                    val apiResponse = response.body<ApiResponse<VehicleResponse>>()
-                    assertEquals("GET-123", apiResponse.data!!.licensePlate)
+                    val apiResponse = response.body<ApiResponse<BusResponse>>()
+                    assertEquals("BUS-GET-123", apiResponse.data!!.licensePlate)
+                    assertEquals("RT-101", apiResponse.data!!.routeNumber)
                 }
         }
 
     @Test
-    fun `should update vehicle`() =
+    fun `should update bus`() =
         testApplication {
             configurePostgres()
             application { module() }
-            val id = seedVehicle("UPDATE-123")
+            val id = seedBus("BUS-UPDATE-123")
 
             val client =
                 createClient {
@@ -162,30 +179,30 @@ class VehicleIntegrationTest : IntegrationTestBase() {
                 }
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
             val updateRequest =
-                VehicleUpdateRequest(
-                    make = "Mitsubishi",
-                    model = "Montero",
+                BusUpdateRequest(
+                    routeNumber = "RT-999",
+                    standingCapacity = 30,
                 )
 
             client
-                .patch("/v1/vehicles/$id") {
+                .patch("/v1/buses/$id") {
                     bearerAuth(token)
                     contentType(ContentType.Application.Json)
                     setBody(updateRequest)
                 }.let { response ->
                     assertEquals(HttpStatusCode.OK, response.status)
-                    val apiResponse = response.body<ApiResponse<VehicleResponse>>()
-                    assertEquals("Mitsubishi", apiResponse.data!!.make)
-                    assertEquals("Montero", apiResponse.data!!.model)
+                    val apiResponse = response.body<ApiResponse<BusResponse>>()
+                    assertEquals("RT-999", apiResponse.data!!.routeNumber)
+                    assertEquals(30, apiResponse.data!!.standingCapacity)
                 }
         }
 
     @Test
-    fun `should delete vehicle`() =
+    fun `should delete bus`() =
         testApplication {
             configurePostgres()
             application { module() }
-            val id = seedVehicle("DELETE-123")
+            val id = seedBus("BUS-DELETE-123")
 
             val client =
                 createClient {
@@ -196,7 +213,7 @@ class VehicleIntegrationTest : IntegrationTestBase() {
             val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
 
             client
-                .delete("/v1/vehicles/$id") {
+                .delete("/v1/buses/$id") {
                     bearerAuth(token)
                 }.let { response ->
                     assertEquals(HttpStatusCode.OK, response.status)
@@ -204,66 +221,10 @@ class VehicleIntegrationTest : IntegrationTestBase() {
 
             // Verify it's gone
             client
-                .get("/v1/vehicles/$id") {
+                .get("/v1/buses/$id") {
                     bearerAuth(token)
                 }.let { response ->
                     assertEquals(HttpStatusCode.NotFound, response.status)
-                }
-        }
-
-    @Test
-    fun `should update vehicle state`() =
-        testApplication {
-            configurePostgres()
-            application { module() }
-            val id = seedVehicle("STATE-123")
-
-            val client =
-                createClient {
-                    install(ContentNegotiation) {
-                        json()
-                    }
-                }
-            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
-            val stateRequest = VehicleStateRequest(state = "RENTED")
-
-            client
-                .patch("/v1/vehicles/$id/state") {
-                    bearerAuth(token)
-                    contentType(ContentType.Application.Json)
-                    setBody(stateRequest)
-                }.let { response ->
-                    assertEquals(HttpStatusCode.OK, response.status)
-                    val apiResponse = response.body<ApiResponse<VehicleResponse>>()
-                    assertEquals("RENTED", apiResponse.data!!.state)
-                }
-        }
-
-    @Test
-    fun `should record odometer reading`() =
-        testApplication {
-            configurePostgres()
-            application { module() }
-            val id = seedVehicle("ODO-123")
-
-            val client =
-                createClient {
-                    install(ContentNegotiation) {
-                        json()
-                    }
-                }
-            val token = tokenFor(adminId.toString(), adminEmail, "ADMIN")
-            val odoRequest = OdometerRequest(mileageKm = 5000)
-
-            client
-                .post("/v1/vehicles/$id/odometer") {
-                    bearerAuth(token)
-                    contentType(ContentType.Application.Json)
-                    setBody(odoRequest)
-                }.let { response ->
-                    assertEquals(HttpStatusCode.OK, response.status)
-                    val apiResponse = response.body<ApiResponse<VehicleResponse>>()
-                    assertEquals(5000, apiResponse.data!!.mileageKm)
                 }
         }
 }
