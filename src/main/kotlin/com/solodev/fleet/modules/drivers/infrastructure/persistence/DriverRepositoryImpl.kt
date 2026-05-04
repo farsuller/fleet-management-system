@@ -34,10 +34,11 @@ class DriverRepositoryImpl : DriverRepository {
             licenseClass = this[DriversTable.licenseClass],
             address = this[DriversTable.address],
             city = this[DriversTable.city],
-            state = this[DriversTable.state],
+            province = this[DriversTable.province],
             postalCode = this[DriversTable.postalCode],
             country = this[DriversTable.country],
-            isActive = this[DriversTable.isActive],
+            status = this[DriversTable.status],
+            availabilityStatus = this[DriversTable.availabilityStatus],
             createdAt = this[DriversTable.createdAt],
         )
 
@@ -96,6 +97,15 @@ class DriverRepositoryImpl : DriverRepository {
                 .map { it.toDriver() }
         }
 
+    override suspend fun findPendingDrivers(): List<Driver> =
+        dbQuery {
+            DriversTable
+                .selectAll()
+                .where { DriversTable.status eq com.solodev.fleet.modules.drivers.domain.model.DriverStatus.PENDING }
+                .orderBy(DriversTable.createdAt, SortOrder.DESC)
+                .map { it.toDriver() }
+        }
+
     override suspend fun save(driver: Driver): Driver =
         dbQuery {
             val uuid = UUID.fromString(driver.id.value)
@@ -119,10 +129,11 @@ class DriverRepositoryImpl : DriverRepository {
                     it[licenseClass] = driver.licenseClass
                     it[address] = driver.address
                     it[city] = driver.city
-                    it[state] = driver.state
+                    it[province] = driver.province
                     it[postalCode] = driver.postalCode
                     it[country] = driver.country
-                    it[isActive] = driver.isActive
+                    it[status] = driver.status
+                    it[availabilityStatus] = driver.availabilityStatus
                     it[updatedAt] = now
                 }
             } else {
@@ -138,10 +149,11 @@ class DriverRepositoryImpl : DriverRepository {
                     it[licenseClass] = driver.licenseClass
                     it[address] = driver.address
                     it[city] = driver.city
-                    it[state] = driver.state
+                    it[province] = driver.province
                     it[postalCode] = driver.postalCode
                     it[country] = driver.country
-                    it[isActive] = driver.isActive
+                    it[status] = driver.status
+                    it[availabilityStatus] = driver.availabilityStatus
                     it[createdAt] = now
                     it[updatedAt] = now
                 }

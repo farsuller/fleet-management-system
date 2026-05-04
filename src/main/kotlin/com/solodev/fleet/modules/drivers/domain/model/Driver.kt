@@ -12,6 +12,12 @@ value class DriverId(
     }
 }
 
+enum class DriverStatus {
+    PENDING,
+    APPROVED,
+    REJECTED,
+}
+
 data class Driver(
     val id: DriverId,
     val userId: UUID? = null, // optional link to users table (mobile app login)
@@ -24,10 +30,11 @@ data class Driver(
     val licenseClass: String? = null,
     val address: String? = null,
     val city: String? = null,
-    val state: String? = null,
+    val province: String? = null,
     val postalCode: String? = null,
     val country: String? = null,
-    val isActive: Boolean = true,
+    val status: DriverStatus = DriverStatus.PENDING,
+    val availabilityStatus: Boolean = true,
     val createdAt: Instant = Instant.EPOCH,
 ) {
     init {

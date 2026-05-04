@@ -92,7 +92,7 @@ class RegisterDriverUseCase(
                 licenseClass = request.licenseClass,
                 address = request.address,
                 city = request.city,
-                state = request.state,
+                province = request.province,
                 postalCode = request.postalCode,
                 country = request.country,
             )

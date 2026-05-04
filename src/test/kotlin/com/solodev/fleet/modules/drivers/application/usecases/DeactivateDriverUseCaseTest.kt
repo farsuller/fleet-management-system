@@ -18,30 +18,30 @@ class DeactivateDriverUseCaseTest {
     @Test
     fun shouldDeactivateActiveDriver() =
         runBlocking {
-            val active = sampleDriver(isActive = true)
-            val deactivated = active.copy(isActive = false)
+            val active = sampleDriver(availabilityStatus = true)
+            val deactivated = active.copy(availabilityStatus = false)
             coEvery { repository.findById(DriverId("driver-001")) } returns active
             coEvery { repository.save(deactivated) } returns deactivated
 
             val result = useCase.execute("driver-001")
 
             assertThat(result).isNotNull()
-            assertThat(result!!.isActive).isFalse()
+            assertThat(result!!.availabilityStatus).isFalse()
             coVerify { repository.save(deactivated) }
         }
 
     @Test
     fun shouldReactivateInactiveDriver() =
         runBlocking {
-            val inactive = sampleDriver(isActive = false)
-            val reactivated = inactive.copy(isActive = true)
+            val inactive = sampleDriver(availabilityStatus = false)
+            val reactivated = inactive.copy(availabilityStatus = true)
             coEvery { repository.findById(DriverId("driver-001")) } returns inactive
             coEvery { repository.save(reactivated) } returns reactivated
 
             val result = useCase.execute("driver-001")
 
             assertThat(result).isNotNull()
-            assertThat(result!!.isActive).isTrue()
+            assertThat(result!!.availabilityStatus).isTrue()
             coVerify { repository.save(reactivated) }
         }
 
@@ -56,7 +56,7 @@ class DeactivateDriverUseCaseTest {
             coVerify(exactly = 0) { repository.save(any()) }
         }
 
-    private fun sampleDriver(isActive: Boolean = true) =
+    private fun sampleDriver(availabilityStatus: Boolean = true) =
         Driver(
             id = DriverId("driver-001"),
             firstName = "Pedro",
@@ -65,6 +65,6 @@ class DeactivateDriverUseCaseTest {
             phone = "+63917000001",
             licenseNumber = "LN-0001",
             licenseExpiry = Instant.parse("2030-01-01T00:00:00Z"),
-            isActive = isActive,
+            availabilityStatus = availabilityStatus,
         )
 }

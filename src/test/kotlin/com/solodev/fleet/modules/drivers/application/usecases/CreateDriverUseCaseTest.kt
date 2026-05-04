@@ -85,7 +85,7 @@ class CreateDriverUseCaseTest {
     }
 
     @Test
-    fun shouldSetIsActiveTrue_WhenDriverCreated() =
+    fun shouldSetAvailabilityStatusTrue_WhenDriverCreated() =
         runBlocking {
             val savedDriver = slot<Driver>()
             coEvery { repository.findByEmail("pedro@fleet.ph") } returns null
@@ -94,7 +94,7 @@ class CreateDriverUseCaseTest {
 
             useCase.execute(validRequest)
 
-            assertThat(savedDriver.captured.isActive).isTrue()
+            assertThat(savedDriver.captured.availabilityStatus).isTrue()
         }
 
     @Test

@@ -14,6 +14,8 @@ interface DriverRepository {
 
     suspend fun findAll(): List<Driver>
 
+    suspend fun findPendingDrivers(): List<Driver>
+
     suspend fun save(driver: Driver): Driver
 
     suspend fun deleteById(id: DriverId): Boolean

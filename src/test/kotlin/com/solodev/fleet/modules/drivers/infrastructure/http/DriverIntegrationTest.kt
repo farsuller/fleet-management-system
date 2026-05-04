@@ -54,7 +54,7 @@ class DriverIntegrationTest : IntegrationTestBase() {
                 it[phone] = "+639123456789"
                 it[licenseNumber] = license
                 it[licenseExpiry] = LocalDate.now().plusYears(5)
-                it[isActive] = true
+                it[availabilityStatus] = true
                 it[createdAt] = Instant.now()
                 it[updatedAt] = Instant.now()
             }
@@ -235,7 +235,7 @@ class DriverIntegrationTest : IntegrationTestBase() {
                     assertEquals(HttpStatusCode.OK, response.status)
                     val apiResponse = response.body<ApiResponse<DriverResponse>>()
                     assertTrue(apiResponse.success)
-                    assertEquals(false, apiResponse.data!!.isActive)
+                    assertEquals(false, apiResponse.data!!.availabilityStatus)
                 }
 
             // Toggle back
@@ -245,7 +245,7 @@ class DriverIntegrationTest : IntegrationTestBase() {
                 }.let { response ->
                     assertEquals(HttpStatusCode.OK, response.status)
                     val apiResponse = response.body<ApiResponse<DriverResponse>>()
-                    assertEquals(true, apiResponse.data!!.isActive)
+                    assertEquals(true, apiResponse.data!!.availabilityStatus)
                 }
         }
 }
