@@ -39,8 +39,12 @@ class NuntlyEmailService(
             if (sanitizedKey != apiKey) {
                 logger.warn("API Key had leading/trailing whitespace and was trimmed.")
             }
-            logger.info("Sending email via Nuntly. Key length: ${sanitizedKey.length}, Prefix: ${sanitizedKey.take(5)}, Suffix: ${sanitizedKey.takeLast(4)}")
-            
+            logger.info(
+                "Sending email via Nuntly. Key length: ${sanitizedKey.length}, Prefix: ${sanitizedKey.take(
+                    5,
+                )}, Suffix: ${sanitizedKey.takeLast(4)}",
+            )
+
             val response: NuntlyEmailResponse =
                 client
                     .post("$baseUrl/emails") {

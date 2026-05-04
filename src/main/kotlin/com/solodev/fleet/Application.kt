@@ -47,7 +47,7 @@ fun main(args: Array<String>) {
     val envFile = java.io.File(".env")
     println("[ENV] Current CWD: ${System.getProperty("user.dir")}")
     println("[ENV] Looking for .env at: ${envFile.absolutePath}")
-    
+
     if (envFile.exists()) {
         println("[ENV] .env file located successfully.")
         envFile.readLines().forEach { line ->
@@ -177,37 +177,57 @@ fun Application.module() {
         val httpClient =
             HttpClient(CIO) {
                 install(ContentNegotiation) {
-                    json(kotlinx.serialization.json.Json {
-                        ignoreUnknownKeys = true
-                        isLenient = true
-                    })
+                    json(
+                        kotlinx.serialization.json.Json {
+                            ignoreUnknownKeys = true
+                            isLenient = true
+                        },
+                    )
                 }
             }
-        val emailApiKey = environment.config.propertyOrNull("email.apiKey")?.getString()
-            ?.takeIf { it.isNotBlank() }
-            ?: System.getProperty("EMAIL_API_KEY") ?: ""
-        val emailSender = environment.config.propertyOrNull("email.sender")?.getString()
-            ?.takeIf { it.isNotBlank() }
-            ?: System.getProperty("EMAIL_SENDER") ?: "Fleet Drive <noreply@fleetdrive.com>"
-        val emailBaseUrl = environment.config.propertyOrNull("email.baseUrl")?.getString()
-            ?.takeIf { it.isNotBlank() }
-            ?: System.getProperty("EMAIL_BASE_URL") ?: "https://api.nuntly.com"
+        val emailApiKey =
+            environment.config
+                .propertyOrNull("email.apiKey")
+                ?.getString()
+                ?.takeIf { it.isNotBlank() }
+                ?: System.getProperty("EMAIL_API_KEY") ?: ""
+        val emailSender =
+            environment.config
+                .propertyOrNull("email.sender")
+                ?.getString()
+                ?.takeIf { it.isNotBlank() }
+                ?: System.getProperty("EMAIL_SENDER") ?: "Fleet Drive <noreply@fleetdrive.com>"
+        val emailBaseUrl =
+            environment.config
+                .propertyOrNull("email.baseUrl")
+                ?.getString()
+                ?.takeIf { it.isNotBlank() }
+                ?: System.getProperty("EMAIL_BASE_URL") ?: "https://api.nuntly.com"
 
-        val nuntlyService = NuntlyEmailService(
-            client = httpClient,
-            apiKey = emailApiKey,
-            sender = emailSender,
-            baseUrl = emailBaseUrl,
-        )
+        val nuntlyService =
+            NuntlyEmailService(
+                client = httpClient,
+                apiKey = emailApiKey,
+                sender = emailSender,
+                baseUrl = emailBaseUrl,
+            )
 
         // Wrapper to log token to console in development for easier testing
         object : com.solodev.fleet.shared.infrastructure.email.EmailService {
-            override suspend fun sendVerificationEmail(email: String, token: String, isOtp: Boolean) {
-                if (environment.config.propertyOrNull("ktor.deployment.environment")?.getString() == "development" || 
-                    System.getProperty("APP_ENV") == "development") {
+            override suspend fun sendVerificationEmail(
+                email: String,
+                token: String,
+                isOtp: Boolean,
+            ) {
+                if (environment.config.propertyOrNull("ktor.deployment.environment")?.getString() == "development" ||
+                    System.getProperty("APP_ENV") == "development"
+                ) {
                     println("\n[DEV MODE] Verification for $email:")
-                    if (isOtp) println("OTP CODE: $token") 
-                    else println("VERIFY LINK: http://localhost:8080/v1/auth/verify?token=$token")
+                    if (isOtp) {
+                        println("OTP CODE: $token")
+                    } else {
+                        println("VERIFY LINK: http://localhost:8080/v1/auth/verify?token=$token")
+                    }
                     println("")
                 }
                 nuntlyService.sendVerificationEmail(email, token, isOtp)
