@@ -176,7 +176,7 @@ fun Route.userRoutes(
                     if (authUserId != id && UserRole.ADMIN !in userRoles) {
                         return@get call.respond(
                             HttpStatusCode.Forbidden,
-                            ApiResponse.error("FORBIDDEN", "You can only access your own profile", call.requestId)
+                            ApiResponse.error("FORBIDDEN", "You can only access your own profile", call.requestId),
                         )
                     }
 
@@ -207,7 +207,7 @@ fun Route.userRoutes(
                         if (authUserId != id && UserRole.ADMIN !in userRoles) {
                             return@patch call.respond(
                                 HttpStatusCode.Forbidden,
-                                ApiResponse.error("FORBIDDEN", "You can only update your own profile", call.requestId)
+                                ApiResponse.error("FORBIDDEN", "You can only update your own profile", call.requestId),
                             )
                         }
 
