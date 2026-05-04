@@ -38,12 +38,15 @@ import com.solodev.fleet.shared.infrastructure.cache.RedisCacheManager
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.requestId
 import com.solodev.fleet.shared.utils.JwtService
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.application.call
 import io.ktor.server.auth.authenticate
 import io.ktor.server.plugins.ratelimit.RateLimitName
 import io.ktor.server.plugins.ratelimit.rateLimit
 import io.ktor.server.plugins.swagger.swaggerUI
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.micrometer.core.instrument.MeterRegistry
@@ -190,6 +193,11 @@ fun Application.configureRouting(
             call.respond(
                 ApiResponse.success(data = mapOf("status" to "OK"), requestId = call.requestId),
             )
+        }
+
+        // Dummy route for development tools (Vite/Webpack) heartbeats
+        get("/ws") {
+            call.respondText("OK", status = HttpStatusCode.OK)
         }
     }
 }

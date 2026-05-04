@@ -35,10 +35,18 @@ class NuntlyEmailService(
         val htmlContent = if (isOtp) generateOtpTemplate(token) else generateLinkTemplate(token)
 
         try {
+            val sanitizedKey = apiKey.trim()
+            if (sanitizedKey != apiKey) {
+                logger.warn("API Key had leading/trailing whitespace and was trimmed.")
+            }
+            logger.info("Sending email via Nuntly. Key length: ${sanitizedKey.length}, Prefix: ${sanitizedKey.take(5)}, Suffix: ${sanitizedKey.takeLast(4)}")
+            
             val response: NuntlyEmailResponse =
                 client
                     .post("$baseUrl/emails") {
-                        header(HttpHeaders.Authorization, "Bearer $apiKey")
+                        header(HttpHeaders.Authorization, "Bearer $sanitizedKey")
+                        // Fallback header used by some Nuntly versions
+                        header("X-API-Key", sanitizedKey)
                         contentType(ContentType.Application.Json)
                         setBody(
                             NuntlyEmailRequest(
@@ -51,7 +59,8 @@ class NuntlyEmailService(
                     }.body()
 
             if (response.error != null) {
-                logger.error("Failed to send email to $email: ${response.error.message}")
+                val errorMsg = response.error.message ?: response.error.title ?: "Unknown error"
+                logger.error("Failed to send email to $email: $errorMsg (Code: ${response.error.code}, Status: ${response.error.status})")
             } else {
                 logger.info("Successfully sent email to $email. ID: ${response.data?.id}")
             }
@@ -61,8 +70,8 @@ class NuntlyEmailService(
     }
 
     private fun generateLinkTemplate(token: String): String {
-        // In production, this would be a real domain
-        val link = "http://localhost:8080/v1/auth/verify?token=$token"
+        // Use the configured backend base URL for verification
+        val link = "$baseUrl/v1/auth/verify?token=$token"
         return """
             <html>
                 <body style="font-family: sans-serif; background-color: #f4f4f4; padding: 40px; text-align: center;">

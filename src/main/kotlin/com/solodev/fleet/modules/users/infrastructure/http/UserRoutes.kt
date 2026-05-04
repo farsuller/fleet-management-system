@@ -18,11 +18,16 @@ import com.solodev.fleet.modules.users.application.usecases.VerifyEmailUseCase
 import com.solodev.fleet.modules.users.domain.repository.UserRepository
 import com.solodev.fleet.modules.users.domain.repository.VerificationTokenRepository
 import com.solodev.fleet.shared.models.ApiResponse
+import com.solodev.fleet.shared.plugins.UserRole
+import com.solodev.fleet.shared.plugins.getRoles
 import com.solodev.fleet.shared.plugins.requestId
+import com.solodev.fleet.shared.plugins.withRoles
 import com.solodev.fleet.shared.utils.JwtService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.principal
 import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
@@ -140,16 +145,18 @@ fun Route.userRoutes(
         }
 
         authenticate("auth-jwt") {
-            get {
-                val users = listUsersUseCase.execute()
-                call.respond(ApiResponse.success(users.map { UserResponse.fromDomain(it) }, call.requestId))
-            }
+            withRoles(UserRole.ADMIN) {
+                get {
+                    val users = listUsersUseCase.execute()
+                    call.respond(ApiResponse.success(users.map { UserResponse.fromDomain(it) }, call.requestId))
+                }
 
-            get("/roles") {
-                val roles = listRolesUseCase.execute()
-                call.respond(
-                    ApiResponse.success(roles.map { RoleResponse.fromDomain(it) }, call.requestId),
-                )
+                get("/roles") {
+                    val roles = listRolesUseCase.execute()
+                    call.respond(
+                        ApiResponse.success(roles.map { RoleResponse.fromDomain(it) }, call.requestId),
+                    )
+                }
             }
 
             route("/{id}") {
@@ -158,12 +165,21 @@ fun Route.userRoutes(
                         call.parameters["id"]
                             ?: return@get call.respond(
                                 HttpStatusCode.BadRequest,
-                                ApiResponse.error(
-                                    "MISSING_ID",
-                                    "ID required",
-                                    call.requestId,
-                                ),
+                                ApiResponse.error("MISSING_ID", "ID required", call.requestId),
                             )
+
+                    // Sensitivity Check: Only ADMIN or the USER themselves can fetch this profile
+                    val principal = call.principal<JWTPrincipal>()
+                    val authUserId = principal?.payload?.getClaim("id")?.asString()
+                    val userRoles = principal?.getRoles() ?: emptyList()
+
+                    if (authUserId != id && UserRole.ADMIN !in userRoles) {
+                        return@get call.respond(
+                            HttpStatusCode.Forbidden,
+                            ApiResponse.error("FORBIDDEN", "You can only access your own profile", call.requestId)
+                        )
+                    }
+
                     val user = getUserProfileUseCase.execute(id)
                     user?.let {
                         call.respond(ApiResponse.success(UserResponse.fromDomain(it), call.requestId))
@@ -180,12 +196,21 @@ fun Route.userRoutes(
                             call.parameters["id"]
                                 ?: return@patch call.respond(
                                     HttpStatusCode.BadRequest,
-                                    ApiResponse.error(
-                                        "MISSING_ID",
-                                        "ID required",
-                                        call.requestId,
-                                    ),
+                                    ApiResponse.error("MISSING_ID", "ID required", call.requestId),
                                 )
+
+                        // Sensitivity Check: Only ADMIN or the USER themselves can update this profile
+                        val principal = call.principal<JWTPrincipal>()
+                        val authUserId = principal?.payload?.getClaim("id")?.asString()
+                        val userRoles = principal?.getRoles() ?: emptyList()
+
+                        if (authUserId != id && UserRole.ADMIN !in userRoles) {
+                            return@patch call.respond(
+                                HttpStatusCode.Forbidden,
+                                ApiResponse.error("FORBIDDEN", "You can only update your own profile", call.requestId)
+                            )
+                        }
+
                         val request = call.receive<UserUpdateRequest>()
                         val updated = updateUserUseCase.execute(id, request)
                         updated?.let {
@@ -209,76 +234,66 @@ fun Route.userRoutes(
                     }
                 }
 
-                delete {
-                    val id =
-                        call.parameters["id"]
-                            ?: return@delete call.respond(
-                                HttpStatusCode.BadRequest,
-                                ApiResponse.error(
-                                    "MISSING_ID",
-                                    "ID required",
-                                    call.requestId,
-                                ),
-                            )
-                    val deleted = deleteUserUseCase.execute(id)
-                    if (deleted) {
-                        call.respond(
-                            HttpStatusCode.OK,
-                            ApiResponse.success(
-                                mapOf("message" to "User deleted successfully"),
-                                call.requestId,
-                            ),
-                        )
-                    } else {
-                        call.respond(
-                            HttpStatusCode.NotFound,
-                            ApiResponse.error("NOT_FOUND", "User not found", call.requestId),
-                        )
-                    }
-                }
-
-                post("/roles") {
-                    val id =
-                        call.parameters["id"]
-                            ?: return@post call.respond(
-                                HttpStatusCode.BadRequest,
-                                ApiResponse.error(
-                                    "MISSING_ID",
-                                    "ID required",
-                                    call.requestId,
-                                ),
-                            )
-                    val roleName =
-                        call.receive<Map<String, String>>()["roleName"]
-                            ?: return@post call.respond(
-                                HttpStatusCode.BadRequest,
-                                ApiResponse.error(
-                                    "INVALID_BODY",
-                                    "roleName required",
-                                    call.requestId,
-                                ),
-                            )
-
-                    try {
-                        val updated = assignRoleUseCase.execute(id, roleName)
-                        updated?.let {
+                withRoles(UserRole.ADMIN) {
+                    delete {
+                        val id =
+                            call.parameters["id"]
+                                ?: return@delete call.respond(
+                                    HttpStatusCode.BadRequest,
+                                    ApiResponse.error("MISSING_ID", "ID required", call.requestId),
+                                )
+                        val deleted = deleteUserUseCase.execute(id)
+                        if (deleted) {
                             call.respond(
-                                ApiResponse.success(UserResponse.fromDomain(it), call.requestId),
+                                HttpStatusCode.OK,
+                                ApiResponse.success(
+                                    mapOf("message" to "User deleted successfully"),
+                                    call.requestId,
+                                ),
                             )
-                        }
-                            ?: call.respond(
+                        } else {
+                            call.respond(
                                 HttpStatusCode.NotFound,
                                 ApiResponse.error("NOT_FOUND", "User not found", call.requestId),
                             )
-                    } catch (e: IllegalArgumentException) {
-                        call.respond(
-                            HttpStatusCode.NotFound,
-                            ApiResponse.error(
-                                "ROLE_NOT_FOUND",
-                                e.message ?: "Role not found",
-                                call.requestId,
-                            ),
-                        )
+                        }
+                    }
+
+                    post("/roles") {
+                        val id =
+                            call.parameters["id"]
+                                ?: return@post call.respond(
+                                    HttpStatusCode.BadRequest,
+                                    ApiResponse.error("MISSING_ID", "ID required", call.requestId),
+                                )
+                        val roleName =
+                            call.receive<Map<String, String>>()["roleName"]
+                                ?: return@post call.respond(
+                                    HttpStatusCode.BadRequest,
+                                    ApiResponse.error("INVALID_BODY", "roleName required", call.requestId),
+                                )
+
+                        try {
+                            val updated = assignRoleUseCase.execute(id, roleName)
+                            updated?.let {
+                                call.respond(
+                                    ApiResponse.success(UserResponse.fromDomain(it), call.requestId),
+                                )
+                            }
+                                ?: call.respond(
+                                    HttpStatusCode.NotFound,
+                                    ApiResponse.error("NOT_FOUND", "User not found", call.requestId),
+                                )
+                        } catch (e: IllegalArgumentException) {
+                            call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiResponse.error(
+                                    "ROLE_NOT_FOUND",
+                                    e.message ?: "Role not found",
+                                    call.requestId,
+                                ),
+                            )
+                        }
                     }
                 }
             }

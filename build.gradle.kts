@@ -12,7 +12,7 @@ group = "com.example"
 version = "0.0.1"
 
 application {
-    mainClass = "io.ktor.server.netty.EngineMain"
+    mainClass.set("com.solodev.fleet.ApplicationKt")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=true", "-Xmx512m")
 }
 
@@ -44,6 +44,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 dependencies {
     // --- Ktor Server Runtime ---
     implementation(libs.ktor.server.core) // Core Ktor framework
+    implementation(libs.ktor.http) // HTTP constants and utilities
     implementation(libs.ktor.server.netty) // Netty engine for high-performance HTTP
     implementation(libs.ktor.server.status.pages) // Standardized error handling & status mapping
 
