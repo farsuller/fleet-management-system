@@ -24,6 +24,8 @@ data class NuntlyEmailData(
 
 @Serializable
 data class NuntlyEmailError(
-    val message: String,
+    val message: String? = null,
     val code: String? = null,
+    val status: Int? = null,
+    val title: String? = null,
 )

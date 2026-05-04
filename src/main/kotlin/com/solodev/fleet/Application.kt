@@ -43,6 +43,29 @@ import kotlin.time.Duration.Companion.seconds
  * application.yaml.
  */
 fun main(args: Array<String>) {
+    // Load .env file for local development
+    val envFile = java.io.File(".env")
+    println("[ENV] Current CWD: ${System.getProperty("user.dir")}")
+    println("[ENV] Looking for .env at: ${envFile.absolutePath}")
+    
+    if (envFile.exists()) {
+        println("[ENV] .env file located successfully.")
+        envFile.readLines().forEach { line ->
+            if (line.isNotBlank() && !line.startsWith("#")) {
+                val parts = line.split("=", limit = 2)
+                if (parts.size == 2) {
+                    val key = parts[0].trim()
+                    // Strip inline comments
+                    val rawValue = parts[1].split("#")[0].trim()
+                    // Always set System property for local dev to override defaults
+                    System.setProperty(key, rawValue)
+                    println("[ENV] Loaded $key (Length: ${rawValue.length})")
+                }
+            }
+        }
+    } else {
+        println("[ENV] .env file NOT FOUND in current directory.")
+    }
     EngineMain.main(args)
 }
 
@@ -154,19 +177,42 @@ fun Application.module() {
         val httpClient =
             HttpClient(CIO) {
                 install(ContentNegotiation) {
-                    json()
+                    json(kotlinx.serialization.json.Json {
+                        ignoreUnknownKeys = true
+                        isLenient = true
+                    })
                 }
             }
-        val emailApiKey = environment.config.propertyOrNull("email.apiKey")?.getString() ?: ""
-        val emailSender = environment.config.propertyOrNull("email.sender")?.getString() ?: "Fleet Drive <noreply@fleetdrive.com>"
-        val emailBaseUrl = environment.config.propertyOrNull("email.baseUrl")?.getString() ?: "https://api.nuntly.com"
+        val emailApiKey = environment.config.propertyOrNull("email.apiKey")?.getString()
+            ?.takeIf { it.isNotBlank() }
+            ?: System.getProperty("EMAIL_API_KEY") ?: ""
+        val emailSender = environment.config.propertyOrNull("email.sender")?.getString()
+            ?.takeIf { it.isNotBlank() }
+            ?: System.getProperty("EMAIL_SENDER") ?: "Fleet Drive <noreply@fleetdrive.com>"
+        val emailBaseUrl = environment.config.propertyOrNull("email.baseUrl")?.getString()
+            ?.takeIf { it.isNotBlank() }
+            ?: System.getProperty("EMAIL_BASE_URL") ?: "https://api.nuntly.com"
 
-        NuntlyEmailService(
+        val nuntlyService = NuntlyEmailService(
             client = httpClient,
             apiKey = emailApiKey,
             sender = emailSender,
             baseUrl = emailBaseUrl,
         )
+
+        // Wrapper to log token to console in development for easier testing
+        object : com.solodev.fleet.shared.infrastructure.email.EmailService {
+            override suspend fun sendVerificationEmail(email: String, token: String, isOtp: Boolean) {
+                if (environment.config.propertyOrNull("ktor.deployment.environment")?.getString() == "development" || 
+                    System.getProperty("APP_ENV") == "development") {
+                    println("\n[DEV MODE] Verification for $email:")
+                    if (isOtp) println("OTP CODE: $token") 
+                    else println("VERIFY LINK: http://localhost:8080/v1/auth/verify?token=$token")
+                    println("")
+                }
+                nuntlyService.sendVerificationEmail(email, token, isOtp)
+            }
+        }
     }
 
     // Phase 2: Background Cleanup Tasks
