@@ -37,12 +37,15 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import java.security.PrivateKey
 
 fun Route.userRoutes(
     userRepository: UserRepository,
     tokenRepository: VerificationTokenRepository,
     jwtService: JwtService,
     emailService: com.solodev.fleet.shared.infrastructure.email.EmailService,
+    publicKey: String? = null,
+    privateKey: PrivateKey? = null,
 ) {
     val registerUserUseCase = RegisterUserUseCase(userRepository, tokenRepository, emailService)
     val verifyEmailUseCase = VerifyEmailUseCase(userRepository, tokenRepository)
@@ -52,7 +55,20 @@ fun Route.userRoutes(
     val listUsersUseCase = ListUsersUseCase(userRepository)
     val listRolesUseCase = ListRolesUseCase(userRepository)
     val assignRoleUseCase = AssignRoleUseCase(userRepository)
-    val loginUserUseCase = LoginUserUseCase(userRepository, jwtService)
+    val loginUserUseCase = LoginUserUseCase(userRepository, jwtService, privateKey)
+
+    route("/v1/auth/public-key") {
+        get {
+            if (publicKey != null) {
+                call.respond(ApiResponse.success(mapOf("publicKey" to publicKey), call.requestId))
+            } else {
+                call.respond(
+                    HttpStatusCode.ServiceUnavailable,
+                    ApiResponse.error("NOT_CONFIGURED", "Encryption not configured", call.requestId),
+                )
+            }
+        }
+    }
 
     route("/v1/auth/verify") {
         get {

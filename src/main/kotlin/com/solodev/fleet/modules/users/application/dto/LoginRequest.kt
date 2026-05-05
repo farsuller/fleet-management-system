@@ -8,9 +8,12 @@ import kotlinx.serialization.Serializable
 data class LoginRequest(
     val email: String,
     @SerialName("password") val passwordRaw: String,
+    val isEncrypted: Boolean = false,
 ) {
     init {
-        ValidationUtils.validateEmail(email)
-        require(passwordRaw.isNotBlank()) { "Password cannot be blank" }
+        if (!isEncrypted) {
+            ValidationUtils.validateEmail(email)
+            require(passwordRaw.isNotBlank()) { "Password cannot be blank" }
+        }
     }
 }
