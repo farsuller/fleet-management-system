@@ -167,19 +167,19 @@ class UpdateDriverUseCaseTest {
         }
 
     @Test
-    fun shouldToggleActiveStatus_WhenIsActiveProvided() =
+    fun shouldToggleAvailabilityStatus_WhenAvailabilityStatusProvided() =
         runBlocking {
             // Arrange
-            val existing = sampleDriver(isActive = true)
+            val existing = sampleDriver(availabilityStatus = true)
             val savedSlot = slot<Driver>()
             coEvery { repository.findById(DriverId("driver-001")) } returns existing
             coEvery { repository.save(capture(savedSlot)) } returnsArgument 0
 
             // Act
-            val result = useCase.execute("driver-001", UpdateDriverRequest(isActive = false))
+            val result = useCase.execute("driver-001", UpdateDriverRequest(availabilityStatus = false))
 
             // Assert
-            assertThat(result.isActive).isFalse()
+            assertThat(result.availabilityStatus).isFalse()
         }
 
     @Test
@@ -202,7 +202,7 @@ class UpdateDriverUseCaseTest {
 
     // --- Helpers ---
 
-    private fun sampleDriver(isActive: Boolean = true) =
+    private fun sampleDriver(availabilityStatus: Boolean = true) =
         Driver(
             id = DriverId("driver-001"),
             firstName = "Juan",
@@ -214,6 +214,6 @@ class UpdateDriverUseCaseTest {
             licenseClass = "B",
             city = "Manila",
             country = "Philippines",
-            isActive = isActive,
+            availabilityStatus = availabilityStatus,
         )
 }

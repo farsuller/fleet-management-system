@@ -38,29 +38,29 @@ class DriverTest {
     @Test
     fun `Driver is active by default`() {
         val driver = sampleDriver()
-        assertTrue(driver.isActive)
+        assertTrue(driver.availabilityStatus)
     }
 
     @Test
     fun `Driver can be created as inactive`() {
-        val driver = sampleDriver(isActive = false)
-        assertFalse(driver.isActive)
+        val driver = sampleDriver(availabilityStatus = false)
+        assertFalse(driver.availabilityStatus)
     }
 
     @Test
-    fun `Driver copy with toggled isActive produces deactivated driver`() {
-        val active = sampleDriver(isActive = true)
-        val deactivated = active.copy(isActive = false)
-        assertFalse(deactivated.isActive)
+    fun `Driver copy with toggled availabilityStatus produces deactivated driver`() {
+        val active = sampleDriver(availabilityStatus = true)
+        val deactivated = active.copy(availabilityStatus = false)
+        assertFalse(deactivated.availabilityStatus)
         assertEquals(active.id, deactivated.id)
         assertEquals(active.email, deactivated.email)
     }
 
     @Test
-    fun `Driver copy with toggled isActive produces reactivated driver`() {
-        val inactive = sampleDriver(isActive = false)
-        val reactivated = inactive.copy(isActive = true)
-        assertTrue(reactivated.isActive)
+    fun `Driver copy with toggled availabilityStatus produces reactivated driver`() {
+        val inactive = sampleDriver(availabilityStatus = false)
+        val reactivated = inactive.copy(availabilityStatus = true)
+        assertTrue(reactivated.availabilityStatus)
         assertEquals(inactive.id, reactivated.id)
     }
 
@@ -111,7 +111,7 @@ class DriverTest {
             sampleDriver().copy(
                 address = "456 Rizal Ave",
                 city = "Cebu",
-                state = "Cebu",
+                province = "Cebu",
                 postalCode = "6000",
                 country = "Philippines",
             )
@@ -131,7 +131,7 @@ class DriverTest {
         email: String = "pedro@fleet.ph",
         phone: String = "+63917000001",
         licenseNumber: String = "LN-0001",
-        isActive: Boolean = true,
+        availabilityStatus: Boolean = true,
     ) = Driver(
         id = DriverId("driver-001"),
         firstName = firstName,
@@ -140,6 +140,6 @@ class DriverTest {
         phone = phone,
         licenseNumber = licenseNumber,
         licenseExpiry = Instant.parse("2030-01-01T00:00:00Z"),
-        isActive = isActive,
+        availabilityStatus = availabilityStatus,
     )
 }

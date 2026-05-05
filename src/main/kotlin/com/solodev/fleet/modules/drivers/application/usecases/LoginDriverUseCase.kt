@@ -36,8 +36,16 @@ class LoginDriverUseCase(
             driverRepository.findByEmail(email)
                 ?: throw IllegalStateException("Driver profile not found for this account")
 
-        if (!driver.isActive) {
+        if (!driver.availabilityStatus) {
             throw IllegalStateException("Your driver account has been deactivated. Contact support.")
+        }
+
+        when (driver.status) {
+            com.solodev.fleet.modules.drivers.domain.model.DriverStatus.PENDING ->
+                throw IllegalStateException("ACCOUNT_PENDING_APPROVAL")
+            com.solodev.fleet.modules.drivers.domain.model.DriverStatus.REJECTED ->
+                throw IllegalStateException("ACCOUNT_REGISTRATION_REJECTED")
+            else -> Unit // Approved
         }
 
         val roles = user.roles.map { it.name }

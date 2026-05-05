@@ -11,6 +11,7 @@ import com.solodev.fleet.modules.drivers.application.dto.RefreshTokenRequest
 import com.solodev.fleet.modules.drivers.application.dto.ShiftResponse
 import com.solodev.fleet.modules.drivers.application.dto.StartShiftRequest
 import com.solodev.fleet.modules.drivers.application.dto.UpdateDriverRequest
+import com.solodev.fleet.modules.drivers.application.usecases.ApproveDriverUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.CreateDriverUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.DeactivateDriverUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.DeleteDriverUseCase
@@ -18,8 +19,10 @@ import com.solodev.fleet.modules.drivers.application.usecases.EndShiftUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.GetActiveShiftUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.GetDriverUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.ListDriversUseCase
+import com.solodev.fleet.modules.drivers.application.usecases.ListPendingDriversUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.LoginDriverUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.RegisterDriverUseCase
+import com.solodev.fleet.modules.drivers.application.usecases.RejectDriverUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.StartShiftUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.UpdateDriverUseCase
 import com.solodev.fleet.modules.drivers.domain.repository.DriverRepository
@@ -63,6 +66,9 @@ fun Route.driverRoutes(
     val endShiftUseCase = EndShiftUseCase(driverRepository)
     val getActiveShiftUseCase = GetActiveShiftUseCase(driverRepository)
     val deleteDriverUseCase = DeleteDriverUseCase(driverRepository)
+    val approveDriverUseCase = ApproveDriverUseCase(driverRepository)
+    val rejectDriverUseCase = RejectDriverUseCase(driverRepository)
+    val listPendingDriversUseCase = ListPendingDriversUseCase(driverRepository)
 
     // ── Public: mobile-app driver self-registration ───────────────────────────
     route("/v1/drivers/register") {
@@ -166,6 +172,13 @@ fun Route.driverRoutes(
                         val assignment = driverRepository.findActiveAssignmentByDriver(d.id)
                         DriverResponse.fromDomain(d, assignment)
                     }
+                call.respond(ApiResponse.success(response, call.requestId))
+            }
+
+            // List only pending drivers (Back-office dashboard)
+            get("pending") {
+                val drivers = listPendingDriversUseCase.execute()
+                val response = drivers.map { DriverResponse.fromDomain(it) }
                 call.respond(ApiResponse.success(response, call.requestId))
             }
 
@@ -298,6 +311,20 @@ fun Route.driverRoutes(
                     call.respond(
                         ApiResponse.success(DriverResponse.fromDomain(driver), call.requestId),
                     )
+                }
+
+                // Approve driver
+                post("approve") {
+                    val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+                    val driver = approveDriverUseCase.execute(id)
+                    call.respond(ApiResponse.success(DriverResponse.fromDomain(driver), call.requestId))
+                }
+
+                // Reject driver
+                post("reject") {
+                    val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+                    val driver = rejectDriverUseCase.execute(id)
+                    call.respond(ApiResponse.success(DriverResponse.fromDomain(driver), call.requestId))
                 }
 
                 // Assign driver to a vehicle

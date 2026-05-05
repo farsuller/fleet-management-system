@@ -66,7 +66,7 @@ class DriverShiftIntegrationTest : IntegrationTestBase() {
                 it[phone] = "+639000000000"
                 it[licenseNumber] = "LIC-SHIFT-123"
                 it[licenseExpiry] = LocalDate.now().plusYears(5)
-                it[isActive] = true
+                it[availabilityStatus] = true
                 it[createdAt] = Instant.now()
                 it[updatedAt] = Instant.now()
             }

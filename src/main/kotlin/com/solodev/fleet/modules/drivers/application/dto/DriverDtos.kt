@@ -17,7 +17,7 @@ data class DriverRequest(
     val licenseClass: String? = null,
     val address: String? = null,
     val city: String? = null,
-    val state: String? = null,
+    val province: String? = null,
     val postalCode: String? = null,
     val country: String? = null,
 ) {
@@ -44,7 +44,7 @@ data class DriverRegistrationRequest(
     val licenseClass: String? = null,
     val address: String? = null,
     val city: String? = null,
-    val state: String? = null,
+    val province: String? = null,
     val postalCode: String? = null,
     val country: String? = null,
 ) {
@@ -102,10 +102,11 @@ data class DriverResponse(
     val licenseClass: String?,
     val address: String?,
     val city: String?,
-    val state: String?,
+    val province: String?,
     val postalCode: String?,
     val country: String?,
-    val isActive: Boolean,
+    val status: String,
+    val availabilityStatus: Boolean,
     val createdAt: Long,
     // Join detail: current vehicle assignment (null if not assigned)
     val currentAssignment: AssignmentResponse?,
@@ -131,10 +132,11 @@ data class DriverResponse(
             licenseClass = d.licenseClass,
             address = d.address,
             city = d.city,
-            state = d.state,
+            province = d.province,
             postalCode = d.postalCode,
             country = d.country,
-            isActive = d.isActive,
+            status = d.status.name,
+            availabilityStatus = d.availabilityStatus,
             createdAt = d.createdAt.toEpochMilli(),
             currentAssignment = currentAssignment?.let { AssignmentResponse.fromDomain(it) },
             vehicleType = vehicleType,
@@ -154,10 +156,10 @@ data class UpdateDriverRequest(
     val licenseClass: String? = null,
     val address: String? = null,
     val city: String? = null,
-    val state: String? = null,
+    val province: String? = null,
     val postalCode: String? = null,
     val country: String? = null,
-    val isActive: Boolean? = null,
+    val availabilityStatus: Boolean? = null,
 ) {
     init {
         email?.let { ValidationUtils.validateEmail(it) }

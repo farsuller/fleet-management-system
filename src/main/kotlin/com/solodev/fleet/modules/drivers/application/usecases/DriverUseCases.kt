@@ -42,7 +42,7 @@ class CreateDriverUseCase(
                 licenseClass = request.licenseClass,
                 address = request.address,
                 city = request.city,
-                state = request.state,
+                province = request.province,
                 postalCode = request.postalCode,
                 country = request.country,
             ),
@@ -67,7 +67,7 @@ class DeactivateDriverUseCase(
 ) {
     suspend fun execute(id: String): Driver? {
         val driver = driverRepository.findById(DriverId(id)) ?: return null
-        return driverRepository.save(driver.copy(isActive = !driver.isActive))
+        return driverRepository.save(driver.copy(availabilityStatus = !driver.availabilityStatus))
     }
 }
 
@@ -151,10 +151,10 @@ class UpdateDriverUseCase(
                 licenseClass = request.licenseClass ?: existing.licenseClass,
                 address = request.address ?: existing.address,
                 city = request.city ?: existing.city,
-                state = request.state ?: existing.state,
+                province = request.province ?: existing.province,
                 postalCode = request.postalCode ?: existing.postalCode,
                 country = request.country ?: existing.country,
-                isActive = request.isActive ?: existing.isActive,
+                availabilityStatus = request.availabilityStatus ?: existing.availabilityStatus,
             )
 
         return driverRepository.save(updated)

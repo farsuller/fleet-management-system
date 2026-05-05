@@ -17,10 +17,16 @@ object DriversTable : UUIDTable("drivers") {
     val licenseClass = varchar("license_class", 20).nullable()
     val address = text("address").nullable()
     val city = varchar("city", 100).nullable()
-    val state = varchar("state", 100).nullable()
+    val province = varchar("province", 100).nullable()
     val postalCode = varchar("postal_code", 20).nullable()
     val country = varchar("country", 100).nullable()
-    val isActive = bool("is_active").default(true)
+    val status =
+        enumerationByName(
+            "status",
+            20,
+            com.solodev.fleet.modules.drivers.domain.model.DriverStatus::class,
+        ).default(com.solodev.fleet.modules.drivers.domain.model.DriverStatus.PENDING)
+    val availabilityStatus = bool("availability_status").default(true)
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
 }
