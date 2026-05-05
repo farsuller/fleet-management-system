@@ -38,6 +38,7 @@ import com.solodev.fleet.shared.infrastructure.cache.RedisCacheManager
 import com.solodev.fleet.shared.models.ApiResponse
 import com.solodev.fleet.shared.plugins.requestId
 import com.solodev.fleet.shared.utils.JwtService
+import com.solodev.fleet.shared.utils.RsaDecryptor
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
@@ -153,11 +154,21 @@ fun Application.configureRouting(
         }
 
         rateLimit(RateLimitName("auth_strict")) {
+            val rsaPublicKey =
+                environment.config.propertyOrNull("rsa.publicKey")?.getString()
+                    ?: System.getenv("RSA_PUBLIC_KEY") ?: System.getProperty("RSA_PUBLIC_KEY")
+            val rsaPrivateKeyPem =
+                environment.config.propertyOrNull("rsa.privateKey")?.getString()
+                    ?: System.getenv("RSA_PRIVATE_KEY") ?: System.getProperty("RSA_PRIVATE_KEY")
+            val rsaPrivateKey = rsaPrivateKeyPem?.let { RsaDecryptor.loadPrivateKey(it) }
+
             userRoutes(
                 userRepository = userRepo,
                 tokenRepository = tokenRepo,
                 jwtService = jwtService,
                 emailService = emailService,
+                publicKey = rsaPublicKey,
+                privateKey = rsaPrivateKey,
             )
         }
 
