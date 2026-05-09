@@ -41,7 +41,7 @@ import com.solodev.fleet.shared.utils.JwtService
 import com.solodev.fleet.shared.utils.RsaDecryptor
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
-import io.ktor.server.application.call
+import io.ktor.server.application.log
 import io.ktor.server.auth.authenticate
 import io.ktor.server.plugins.ratelimit.RateLimitName
 import io.ktor.server.plugins.ratelimit.rateLimit
@@ -109,6 +109,34 @@ fun Application.configureRouting(
             historyRepository = locationHistoryRepository,
             receptionService = coordinateReceptionService,
         )
+    val rsaPublicKey =
+        environment.config.propertyOrNull("rsa.publicKey")?.getString()
+            ?: System.getenv("RSA_PUBLIC_KEY")
+            ?: System.getProperty("RSA_PUBLIC_KEY")
+
+    val rsaPrivateKeyPem =
+        environment.config.propertyOrNull("rsa.privateKey")?.getString()
+            ?: System.getenv("RSA_PRIVATE_KEY")
+            ?: System.getProperty("RSA_PRIVATE_KEY")
+
+    log.info("[AUTH] Loading RSA keys...")
+    log.info("[AUTH] Public Key present: ${rsaPublicKey != null} (Length: ${rsaPublicKey?.length ?: 0})")
+    log.info("[AUTH] Private Key present: ${rsaPrivateKeyPem != null} (Length: ${rsaPrivateKeyPem?.length ?: 0})")
+
+    val rsaPrivateKey =
+        try {
+            rsaPrivateKeyPem?.let { RsaDecryptor.loadPrivateKey(it) }
+        } catch (e: Exception) {
+            log.error("[AUTH] FAILED to load RSA Private Key", e)
+            null
+        }
+
+    if (rsaPublicKey == null || rsaPrivateKey == null) {
+        log.warn("[AUTH] RSA Encryption is NOT fully configured. Login will fail if encryption is enabled.")
+    } else {
+        log.info("[AUTH] RSA Encryption configured successfully.")
+    }
+
     routing {
         // Interactive API Documentation
         swaggerUI(path = "swagger", swaggerFile = "openapi.yaml")
@@ -154,14 +182,6 @@ fun Application.configureRouting(
         }
 
         rateLimit(RateLimitName("auth_strict")) {
-            val rsaPublicKey =
-                environment.config.propertyOrNull("rsa.publicKey")?.getString()
-                    ?: System.getenv("RSA_PUBLIC_KEY") ?: System.getProperty("RSA_PUBLIC_KEY")
-            val rsaPrivateKeyPem =
-                environment.config.propertyOrNull("rsa.privateKey")?.getString()
-                    ?: System.getenv("RSA_PRIVATE_KEY") ?: System.getProperty("RSA_PRIVATE_KEY")
-            val rsaPrivateKey = rsaPrivateKeyPem?.let { RsaDecryptor.loadPrivateKey(it) }
-
             userRoutes(
                 userRepository = userRepo,
                 tokenRepository = tokenRepo,
