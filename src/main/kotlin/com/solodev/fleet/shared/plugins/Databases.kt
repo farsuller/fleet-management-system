@@ -169,6 +169,7 @@ fun Application.configureDatabases() {
             "V039__add_car_to_vehicle_types.sql",
             "V040__add_driver_status.sql",
             "V041__rename_driver_fields.sql",
+            "V042__make_profile_fields_nullable.sql",
         )
 
     log.info("Extracting ${migrationFiles.size} migrations to: ${migrationDir.absolutePath}...")

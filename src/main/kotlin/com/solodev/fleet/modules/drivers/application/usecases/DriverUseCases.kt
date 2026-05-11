@@ -19,16 +19,20 @@ class CreateDriverUseCase(
         require(driverRepository.findByEmail(request.email) == null) {
             "Driver with email ${request.email} already exists"
         }
-        require(driverRepository.findByLicenseNumber(request.licenseNumber) == null) {
-            "Driver with license ${request.licenseNumber} already exists"
+        request.licenseNumber?.let { ln ->
+            require(driverRepository.findByLicenseNumber(ln) == null) {
+                "Driver with license $ln already exists"
+            }
         }
         val licenseExpiry =
-            try {
-                LocalDate.parse(request.licenseExpiry).atStartOfDay().toInstant(ZoneOffset.UTC)
-            } catch (e: Exception) {
-                throw IllegalArgumentException("Invalid license expiry date format. Expected YYYY-MM-DD")
+            request.licenseExpiry?.let {
+                try {
+                    LocalDate.parse(it).atStartOfDay().toInstant(ZoneOffset.UTC)
+                } catch (e: Exception) {
+                    throw IllegalArgumentException("Invalid license expiry date format. Expected YYYY-MM-DD")
+                }
             }
-        require(licenseExpiry.isAfter(Instant.now())) { "Driver license is expired" }
+        require(licenseExpiry == null || licenseExpiry.isAfter(Instant.now())) { "Driver license is expired" }
 
         return driverRepository.save(
             Driver(

@@ -47,7 +47,7 @@ fun Route.userRoutes(
     publicKey: String? = null,
     privateKey: PrivateKey? = null,
 ) {
-    val registerUserUseCase = RegisterUserUseCase(userRepository, tokenRepository, emailService)
+    val registerUserUseCase = RegisterUserUseCase(userRepository, tokenRepository, emailService, privateKey)
     val verifyEmailUseCase = VerifyEmailUseCase(userRepository, tokenRepository)
     val getUserProfileUseCase = GetUserProfileUseCase(userRepository)
     val updateUserUseCase = UpdateUserUseCase(userRepository)

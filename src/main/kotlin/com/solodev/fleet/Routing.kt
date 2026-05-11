@@ -167,6 +167,7 @@ fun Application.configureRouting(
                 jwtService = jwtService,
                 vehicleRepository = vehicleRepo,
                 emailService = emailService,
+                privateKey = rsaPrivateKey,
             )
             maintenanceRoutes(maintenanceRepository = maintenanceRepo, rentalRepository = rentalRepo)
             incidentRoutes(maintenanceRepository = maintenanceRepo, vehicleRepository = vehicleRepo)

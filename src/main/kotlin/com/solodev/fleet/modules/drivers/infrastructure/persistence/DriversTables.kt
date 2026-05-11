@@ -8,12 +8,12 @@ import org.jetbrains.exposed.sql.javatime.timestamp
 
 object DriversTable : UUIDTable("drivers") {
     val userId = uuid("user_id").nullable().uniqueIndex()
-    val firstName = varchar("first_name", 100)
-    val lastName = varchar("last_name", 100)
+    val firstName = varchar("first_name", 100).nullable()
+    val lastName = varchar("last_name", 100).nullable()
     val email = varchar("email", 255).uniqueIndex()
-    val phone = varchar("phone", 20)
-    val licenseNumber = varchar("license_number", 50).uniqueIndex()
-    val licenseExpiry = date("license_expiry")
+    val phone = varchar("phone", 20).nullable()
+    val licenseNumber = varchar("license_number", 50).uniqueIndex().nullable()
+    val licenseExpiry = date("license_expiry").nullable()
     val licenseClass = varchar("license_class", 20).nullable()
     val address = text("address").nullable()
     val city = varchar("city", 100).nullable()

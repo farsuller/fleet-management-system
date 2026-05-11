@@ -9,8 +9,8 @@ import org.jetbrains.exposed.sql.javatime.timestamp
 object UsersTable : UUIDTable("users") {
     val email = varchar("email", 255).uniqueIndex()
     val passwordHash = varchar("password_hash", 255)
-    val firstName = varchar("first_name", 100)
-    val lastName = varchar("last_name", 100)
+    val firstName = varchar("first_name", 100).nullable()
+    val lastName = varchar("last_name", 100).nullable()
     val phone = varchar("phone", 20).nullable()
     val isActive = bool("is_active").default(true)
     val isVerified = bool("is_verified").default(false)

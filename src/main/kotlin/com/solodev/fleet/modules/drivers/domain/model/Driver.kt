@@ -21,12 +21,12 @@ enum class DriverStatus {
 data class Driver(
     val id: DriverId,
     val userId: UUID? = null, // optional link to users table (mobile app login)
-    val firstName: String,
-    val lastName: String,
+    val firstName: String? = null,
+    val lastName: String? = null,
     val email: String,
-    val phone: String,
-    val licenseNumber: String,
-    val licenseExpiry: Instant,
+    val phone: String?,
+    val licenseNumber: String? = null,
+    val licenseExpiry: Instant? = null,
     val licenseClass: String? = null,
     val address: String? = null,
     val city: String? = null,
@@ -38,11 +38,11 @@ data class Driver(
     val createdAt: Instant = Instant.EPOCH,
 ) {
     init {
-        require(firstName.isNotBlank()) { "First name cannot be blank" }
-        require(lastName.isNotBlank()) { "Last name cannot be blank" }
+        require(firstName == null || firstName.isNotBlank()) { "First name cannot be blank" }
+        require(lastName == null || lastName.isNotBlank()) { "Last name cannot be blank" }
         require(email.isNotBlank()) { "Email cannot be blank" }
-        require(phone.isNotBlank()) { "Phone cannot be blank" }
-        require(licenseNumber.isNotBlank()) { "License number cannot be blank" }
+        require(phone == null || phone.isNotBlank()) { "Phone cannot be blank" }
+        require(licenseNumber == null || licenseNumber.isNotBlank()) { "License number cannot be blank" }
     }
 
     val fullName: String get() = "$firstName $lastName"
