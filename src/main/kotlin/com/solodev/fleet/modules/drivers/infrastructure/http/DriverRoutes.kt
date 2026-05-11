@@ -160,8 +160,8 @@ fun Route.driverRoutes(
                 call.respond(
                     ApiResponse.success(
                         mapOf("accessToken" to newAccessToken, "refreshToken" to newRefreshToken),
-                        call.requestId
-                    )
+                        call.requestId,
+                    ),
                 )
             } catch (e: Exception) {
                 call.respond(

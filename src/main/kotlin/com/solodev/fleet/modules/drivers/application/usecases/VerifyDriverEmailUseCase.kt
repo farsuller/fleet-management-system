@@ -11,13 +11,15 @@ class VerifyDriverEmailUseCase(
     private val userRepository: UserRepository,
 ) {
     suspend fun execute(driverId: String) {
-        val driver = driverRepository.findById(DriverId(driverId))
-            ?: throw NotFoundException("Driver not found: $driverId")
+        val driver =
+            driverRepository.findById(DriverId(driverId))
+                ?: throw NotFoundException("Driver not found: $driverId")
 
         val userId = driver.userId ?: throw IllegalStateException("Driver has no linked user account")
 
-        val user = userRepository.findById(UserId(userId.toString()))
-            ?: throw NotFoundException("Linked user not found: $userId")
+        val user =
+            userRepository.findById(UserId(userId.toString()))
+                ?: throw NotFoundException("Linked user not found: $userId")
 
         val verifiedUser = user.copy(isVerified = true)
         userRepository.save(verifiedUser)
