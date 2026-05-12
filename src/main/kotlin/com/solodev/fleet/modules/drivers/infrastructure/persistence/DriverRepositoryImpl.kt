@@ -282,38 +282,89 @@ class DriverRepositoryImpl : DriverRepository {
                 }
         }
 
-    override suspend fun findActiveShift(driverId: String): DriverShift? = null
+    private fun ResultRow.toDriverShift() =
+        DriverShift(
+            id = this[DriverShiftsTable.id],
+            driverId = this[DriverShiftsTable.driverId],
+            vehicleId = this[DriverShiftsTable.vehicleId],
+            startedAt = this[DriverShiftsTable.startedAt],
+            endedAt = this[DriverShiftsTable.endedAt],
+            notes = this[DriverShiftsTable.notes],
+        )
+
+    override suspend fun findActiveShift(driverId: String): DriverShift? =
+        dbQuery {
+            DriverShiftsTable
+                .selectAll()
+                .where {
+                    (DriverShiftsTable.driverId eq UUID.fromString(driverId)) and
+                        (DriverShiftsTable.endedAt.isNull())
+                }.map { it.toDriverShift() }
+                .singleOrNull()
+        }
 
     override suspend fun startShift(
         driverId: String,
         vehicleId: String,
         notes: String?,
-    ): DriverShift {
+    ): DriverShift =
         dbQuery {
+            val id = UUID.randomUUID()
+            val now = Instant.now()
+
             DriversTable.update({ DriversTable.id eq UUID.fromString(driverId) }) {
                 it[availabilityStatus] = false
             }
+
+            DriverShiftsTable.insert {
+                it[DriverShiftsTable.id] = id
+                it[DriverShiftsTable.driverId] = UUID.fromString(driverId)
+                it[DriverShiftsTable.vehicleId] = UUID.fromString(vehicleId)
+                it[startedAt] = now
+                it[DriverShiftsTable.notes] = notes
+            }
+
+            DriverShift(
+                id = id,
+                driverId = UUID.fromString(driverId),
+                vehicleId = UUID.fromString(vehicleId),
+                startedAt = now,
+                notes = notes,
+            )
         }
-        return DriverShift(
-            id = UUID.randomUUID(),
-            driverId = UUID.fromString(driverId),
-            vehicleId = UUID.fromString(vehicleId),
-            startedAt = Instant.now(),
-            notes = notes,
-        )
-    }
 
     override suspend fun endShift(
         driverId: String,
         notes: String?,
-    ): DriverShift? {
+    ): DriverShift? =
         dbQuery {
+            val now = Instant.now()
+            val active =
+                DriverShiftsTable
+                    .selectAll()
+                    .where {
+                        (DriverShiftsTable.driverId eq UUID.fromString(driverId)) and
+                            (DriverShiftsTable.endedAt.isNull())
+                    }.singleOrNull() ?: return@dbQuery null
+
             DriversTable.update({ DriversTable.id eq UUID.fromString(driverId) }) {
                 it[availabilityStatus] = true
             }
-        }
-        return null
-    }
 
-    override suspend fun findShiftHistory(driverId: String): List<DriverShift> = emptyList()
+            DriverShiftsTable.update({ DriverShiftsTable.id eq active[DriverShiftsTable.id] }) {
+                it[endedAt] = now
+                if (notes != null) it[DriverShiftsTable.notes] = notes
+            }
+
+            active.toDriverShift().copy(endedAt = now, notes = notes ?: active[DriverShiftsTable.notes])
+        }
+
+    override suspend fun findShiftHistory(driverId: String): List<DriverShift> =
+        dbQuery {
+            DriverShiftsTable
+                .selectAll()
+                .where { DriverShiftsTable.driverId eq UUID.fromString(driverId) }
+                .orderBy(DriverShiftsTable.startedAt to SortOrder.DESC)
+                .map { it.toDriverShift() }
+        }
 }
