@@ -9,11 +9,11 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class DriverRequest(
     val email: String,
-    val firstName: String,
-    val lastName: String,
-    val phone: String,
-    val licenseNumber: String,
-    val licenseExpiry: String, // YYYY-MM-DD
+    val firstName: String? = null,
+    val lastName: String? = null,
+    val phone: String? = null,
+    val licenseNumber: String? = null,
+    val licenseExpiry: String? = null, // YYYY-MM-DD
     val licenseClass: String? = null,
     val address: String? = null,
     val city: String? = null,
@@ -23,11 +23,9 @@ data class DriverRequest(
 ) {
     init {
         ValidationUtils.validateEmail(email)
-        ValidationUtils.validateName(firstName, "First name")
-        ValidationUtils.validateName(lastName, "Last name")
+        firstName?.let { ValidationUtils.validateName(it, "First name") }
+        lastName?.let { ValidationUtils.validateName(it, "Last name") }
         ValidationUtils.validatePhone(phone)
-        require(licenseNumber.isNotBlank()) { "License number cannot be blank" }
-        require(licenseExpiry.isNotBlank()) { "License expiry cannot be blank" }
     }
 }
 
@@ -36,26 +34,27 @@ data class DriverRequest(
 data class DriverRegistrationRequest(
     val email: String,
     val passwordRaw: String,
-    val firstName: String,
-    val lastName: String,
-    val phone: String,
-    val licenseNumber: String,
-    val licenseExpiry: String, // YYYY-MM-DD
+    val firstName: String? = null,
+    val lastName: String? = null,
+    val phone: String? = null,
+    val licenseNumber: String? = null,
+    val licenseExpiry: String? = null, // YYYY-MM-DD
     val licenseClass: String? = null,
     val address: String? = null,
     val city: String? = null,
     val province: String? = null,
     val postalCode: String? = null,
     val country: String? = null,
+    val isEncrypted: Boolean = false,
 ) {
     init {
-        ValidationUtils.validateEmail(email)
-        ValidationUtils.validatePassword(passwordRaw)
-        ValidationUtils.validateName(firstName, "First name")
-        ValidationUtils.validateName(lastName, "Last name")
-        ValidationUtils.validatePhone(phone)
-        require(licenseNumber.isNotBlank()) { "License number cannot be blank" }
-        require(licenseExpiry.isNotBlank()) { "License expiry cannot be blank" }
+        if (!isEncrypted) {
+            ValidationUtils.validateEmail(email)
+            ValidationUtils.validatePassword(passwordRaw)
+            firstName?.let { ValidationUtils.validateName(it, "First name") }
+            lastName?.let { ValidationUtils.validateName(it, "Last name") }
+            ValidationUtils.validatePhone(phone)
+        }
     }
 }
 
@@ -93,12 +92,12 @@ data class AssignmentResponse(
 data class DriverResponse(
     val id: String,
     val userId: String?,
-    val firstName: String,
-    val lastName: String,
+    val firstName: String? = null,
+    val lastName: String? = null,
     val email: String,
-    val phone: String,
-    val licenseNumber: String,
-    val licenseExpiryMs: Long,
+    val phone: String?,
+    val licenseNumber: String? = null,
+    val licenseExpiryMs: Long?,
     val licenseClass: String?,
     val address: String?,
     val city: String?,
@@ -107,6 +106,7 @@ data class DriverResponse(
     val country: String?,
     val status: String,
     val availabilityStatus: Boolean,
+    val isEmailVerified: Boolean = false,
     val createdAt: Long,
     // Join detail: current vehicle assignment (null if not assigned)
     val currentAssignment: AssignmentResponse?,
@@ -120,6 +120,7 @@ data class DriverResponse(
             currentAssignment: VehicleDriverAssignment? = null,
             vehicleType: String? = null,
             vehiclePlate: String? = null,
+            isEmailVerified: Boolean = false,
         ) = DriverResponse(
             id = d.id.value,
             userId = d.userId?.toString(),
@@ -128,7 +129,7 @@ data class DriverResponse(
             email = d.email,
             phone = d.phone,
             licenseNumber = d.licenseNumber,
-            licenseExpiryMs = d.licenseExpiry.toEpochMilli(),
+            licenseExpiryMs = d.licenseExpiry?.toEpochMilli(),
             licenseClass = d.licenseClass,
             address = d.address,
             city = d.city,
@@ -137,6 +138,7 @@ data class DriverResponse(
             country = d.country,
             status = d.status.name,
             availabilityStatus = d.availabilityStatus,
+            isEmailVerified = isEmailVerified,
             createdAt = d.createdAt.toEpochMilli(),
             currentAssignment = currentAssignment?.let { AssignmentResponse.fromDomain(it) },
             vehicleType = vehicleType,

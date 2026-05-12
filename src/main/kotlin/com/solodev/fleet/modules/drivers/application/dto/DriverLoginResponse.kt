@@ -14,10 +14,13 @@ data class DriverLoginResponse(
 data class DriverLoginRequest(
     val email: String,
     val password: String,
+    val isEncrypted: Boolean = false,
 ) {
     init {
-        ValidationUtils.validateEmail(email)
-        require(password.isNotBlank()) { "Password cannot be blank" }
+        if (!isEncrypted) {
+            ValidationUtils.validateEmail(email)
+            require(password.isNotBlank()) { "Password cannot be blank" }
+        }
     }
 }
 

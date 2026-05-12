@@ -8,8 +8,8 @@ import kotlinx.serialization.Serializable
 data class CustomerDriverSummary(
     val driverId: String,
     val driverName: String,
-    val licenseNumber: String,
-    val phone: String,
+    val licenseNumber: String?,
+    val phone: String?,
 )
 
 /** Lightweight summary of the vehicle used in this customer's active rental. */
@@ -27,12 +27,12 @@ data class CustomerVehicleSummary(
 data class CustomerDetailResponse(
     val id: String,
     val userId: String?,
-    val firstName: String,
-    val lastName: String,
+    val firstName: String?,
+    val lastName: String?,
     val email: String,
-    val phone: String,
-    val driverLicenseNumber: String,
-    val licenseExpiryMs: Long,
+    val phone: String?,
+    val driverLicenseNumber: String?,
+    val licenseExpiryMs: Long?,
     val address: String?,
     val city: String?,
     val state: String?,
@@ -56,7 +56,7 @@ data class CustomerDetailResponse(
             email = c.email,
             phone = c.phone,
             driverLicenseNumber = c.driverLicenseNumber,
-            licenseExpiryMs = c.driverLicenseExpiry.toEpochMilli(),
+            licenseExpiryMs = c.driverLicenseExpiry?.toEpochMilli(),
             address = c.address,
             city = c.city,
             state = c.state,
@@ -74,12 +74,12 @@ data class CustomerDetailResponse(
 data class CustomerResponse(
     val id: String,
     val userId: String?,
-    val firstName: String,
-    val lastName: String,
+    val firstName: String?,
+    val lastName: String?,
     val email: String,
-    val phone: String,
-    val driverLicenseNumber: String,
-    val licenseExpiryMs: Long,
+    val phone: String?,
+    val driverLicenseNumber: String?,
+    val licenseExpiryMs: Long?,
     val isActive: Boolean,
     val createdAt: Long,
 ) {
@@ -93,7 +93,7 @@ data class CustomerResponse(
                 email = c.email,
                 phone = c.phone,
                 driverLicenseNumber = c.driverLicenseNumber,
-                licenseExpiryMs = c.driverLicenseExpiry.toEpochMilli(),
+                licenseExpiryMs = c.driverLicenseExpiry?.toEpochMilli(),
                 isActive = c.isActive,
                 createdAt = c.createdAt.toEpochMilli(),
             )

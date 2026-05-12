@@ -7,9 +7,9 @@ import kotlinx.serialization.Serializable
 data class UserResponse(
     val id: String,
     val email: String,
-    val firstName: String,
-    val lastName: String,
-    val fullName: String,
+    val firstName: String?,
+    val lastName: String?,
+    val fullName: String?,
     val phone: String?,
     val isActive: Boolean,
     val isVerified: Boolean,

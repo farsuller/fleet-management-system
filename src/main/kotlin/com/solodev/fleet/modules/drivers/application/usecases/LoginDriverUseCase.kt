@@ -5,16 +5,34 @@ import com.solodev.fleet.modules.drivers.domain.repository.DriverRepository
 import com.solodev.fleet.modules.users.domain.repository.UserRepository
 import com.solodev.fleet.shared.utils.JwtService
 import com.solodev.fleet.shared.utils.PasswordHasher
+import com.solodev.fleet.shared.utils.RsaDecryptor
+import java.security.PrivateKey
 
 class LoginDriverUseCase(
     private val userRepository: UserRepository,
     private val driverRepository: DriverRepository,
     private val jwtService: JwtService,
+    private val privateKey: PrivateKey? = null,
 ) {
     suspend fun execute(
-        email: String,
-        password: String,
+        emailRaw: String,
+        passwordRaw: String,
+        isEncrypted: Boolean = false,
     ): DriverLoginResponse {
+        val email =
+            if (isEncrypted && privateKey != null) {
+                RsaDecryptor.decrypt(emailRaw, privateKey)
+            } else {
+                emailRaw
+            }
+
+        val password =
+            if (isEncrypted && privateKey != null) {
+                RsaDecryptor.decrypt(passwordRaw, privateKey)
+            } else {
+                passwordRaw
+            }
+
         val user =
             userRepository.findByEmail(email)
                 ?: throw IllegalArgumentException("Invalid email or password")

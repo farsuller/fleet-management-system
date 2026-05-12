@@ -4,18 +4,31 @@ import com.solodev.fleet.modules.users.application.dto.UserRegistrationRequest
 import com.solodev.fleet.modules.users.domain.model.User
 import com.solodev.fleet.modules.users.domain.model.UserId
 import com.solodev.fleet.modules.users.domain.repository.UserRepository
+import com.solodev.fleet.shared.utils.RsaDecryptor
+import org.slf4j.LoggerFactory
+import java.security.PrivateKey
 import java.util.UUID
 
 class RegisterUserUseCase(
     private val repository: UserRepository,
     private val tokenRepository: com.solodev.fleet.modules.users.domain.repository.VerificationTokenRepository,
     private val emailService: com.solodev.fleet.shared.infrastructure.email.EmailService,
+    private val privateKey: PrivateKey? = null,
 ) {
+    private val logger = LoggerFactory.getLogger(RegisterUserUseCase::class.java)
+
     suspend fun execute(request: UserRegistrationRequest): User {
+        val email =
+            if (request.isEncrypted && privateKey != null) {
+                RsaDecryptor.decrypt(request.email, privateKey)
+            } else {
+                request.email
+            }
+
         // Business Rule: Email must be unique
-        repository.findByEmail(request.email)?.let {
+        repository.findByEmail(email)?.let {
             throw IllegalStateException(
-                "User with email ${request.email} already exists",
+                "User with email $email already exists",
             )
         }
 
@@ -25,13 +38,20 @@ class RegisterUserUseCase(
                     "Default CUSTOMER_SUPPORT role not found in database",
                 )
 
+        val password =
+            if (request.isEncrypted && privateKey != null) {
+                RsaDecryptor.decrypt(request.passwordRaw, privateKey)
+            } else {
+                request.passwordRaw
+            }
+
         val user =
             User(
                 id = UserId(UUID.randomUUID().toString()),
-                email = request.email,
+                email = email,
                 passwordHash =
                     com.solodev.fleet.shared.utils.PasswordHasher.hash(
-                        request.passwordRaw,
+                        password,
                     ),
                 firstName = request.firstName,
                 lastName = request.lastName,
@@ -56,6 +76,7 @@ class RegisterUserUseCase(
                         .plus(24, java.time.temporal.ChronoUnit.HOURS),
             )
         tokenRepository.save(verificationToken)
+        logger.info("[AUTH] Verification token generated for {}: {}", savedUser.email, token)
 
         // Send real verification email via Nuntly
         emailService.sendVerificationEmail(savedUser.email, token)

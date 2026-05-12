@@ -11,6 +11,9 @@ import com.solodev.fleet.modules.users.domain.model.VerificationToken
 import com.solodev.fleet.modules.users.domain.repository.UserRepository
 import com.solodev.fleet.modules.users.domain.repository.VerificationTokenRepository
 import com.solodev.fleet.shared.utils.PasswordHasher
+import com.solodev.fleet.shared.utils.RsaDecryptor
+import org.slf4j.LoggerFactory
+import java.security.PrivateKey
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -29,36 +32,57 @@ class RegisterDriverUseCase(
     private val userRepository: UserRepository,
     private val tokenRepository: VerificationTokenRepository,
     private val emailService: com.solodev.fleet.shared.infrastructure.email.EmailService,
+    private val privateKey: PrivateKey? = null,
 ) {
+    private val logger = LoggerFactory.getLogger(RegisterDriverUseCase::class.java)
+
     suspend fun execute(request: DriverRegistrationRequest): Driver {
-        require(driverRepository.findByEmail(request.email) == null) {
-            "Driver with email ${request.email} already exists"
+        val email =
+            if (request.isEncrypted && privateKey != null) {
+                RsaDecryptor.decrypt(request.email, privateKey)
+            } else {
+                request.email
+            }
+
+        require(driverRepository.findByEmail(email) == null) {
+            "Driver with email $email already exists"
         }
-        require(driverRepository.findByLicenseNumber(request.licenseNumber) == null) {
-            "Driver with license number ${request.licenseNumber} already exists"
+        request.licenseNumber?.let { ln ->
+            require(driverRepository.findByLicenseNumber(ln) == null) {
+                "Driver with license number $ln already exists"
+            }
         }
-        require(userRepository.findByEmail(request.email) == null) {
-            "An account with email ${request.email} already exists"
+        require(userRepository.findByEmail(email) == null) {
+            "An account with email $email already exists"
         }
 
         val licenseExpiry =
-            try {
-                LocalDate.parse(request.licenseExpiry).atStartOfDay().toInstant(ZoneOffset.UTC)
-            } catch (e: Exception) {
-                throw IllegalArgumentException("Invalid license expiry date format. Expected YYYY-MM-DD")
+            request.licenseExpiry?.let {
+                try {
+                    LocalDate.parse(it).atStartOfDay().toInstant(ZoneOffset.UTC)
+                } catch (e: Exception) {
+                    throw IllegalArgumentException("Invalid license expiry date format. Expected YYYY-MM-DD")
+                }
             }
-        require(licenseExpiry.isAfter(Instant.now())) { "Driver license is expired" }
+        require(licenseExpiry == null || licenseExpiry.isAfter(Instant.now())) { "Driver license is expired" }
 
         val driverRole =
             userRepository.findRoleByName("DRIVER")
                 ?: throw IllegalStateException("DRIVER role not found in database")
 
+        val password =
+            if (request.isEncrypted && privateKey != null) {
+                RsaDecryptor.decrypt(request.passwordRaw, privateKey)
+            } else {
+                request.passwordRaw
+            }
+
         val userId = UserId(UUID.randomUUID().toString())
         val user =
             User(
                 id = userId,
-                email = request.email,
-                passwordHash = PasswordHasher.hash(request.passwordRaw),
+                email = email,
+                passwordHash = PasswordHasher.hash(password),
                 firstName = request.firstName,
                 lastName = request.lastName,
                 phone = request.phone,
@@ -76,6 +100,7 @@ class RegisterDriverUseCase(
                 expiresAt = Instant.now().plus(24, ChronoUnit.HOURS),
             ),
         )
+        logger.info("[AUTH] Verification token generated for {}: {}", savedUser.email, token)
         // Send real verification email via Nuntly
         emailService.sendVerificationEmail(savedUser.email, token)
 
@@ -85,8 +110,8 @@ class RegisterDriverUseCase(
                 userId = UUID.fromString(savedUser.id.value),
                 firstName = request.firstName,
                 lastName = request.lastName,
-                email = request.email,
-                phone = request.phone ?: "",
+                email = email,
+                phone = request.phone,
                 licenseNumber = request.licenseNumber,
                 licenseExpiry = licenseExpiry,
                 licenseClass = request.licenseClass,

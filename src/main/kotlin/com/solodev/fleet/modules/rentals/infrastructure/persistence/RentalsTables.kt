@@ -9,12 +9,12 @@ import org.jetbrains.exposed.sql.javatime.timestamp
 /** Exposed table definition for customers. */
 object CustomersTable : UUIDTable("customers") {
     val userId = uuid("user_id").nullable().uniqueIndex()
-    val firstName = varchar("first_name", 100)
-    val lastName = varchar("last_name", 100)
+    val firstName = varchar("first_name", 100).nullable()
+    val lastName = varchar("last_name", 100).nullable()
     val email = varchar("email", 255).uniqueIndex()
-    val phone = varchar("phone", 20)
-    val driverLicenseNumber = varchar("driver_license_number", 50).uniqueIndex()
-    val driverLicenseExpiry = date("driver_license_expiry")
+    val phone = varchar("phone", 20).nullable()
+    val driverLicenseNumber = varchar("driver_license_number", 50).uniqueIndex().nullable()
+    val driverLicenseExpiry = date("driver_license_expiry").nullable()
     val address = text("address").nullable()
     val city = varchar("city", 100).nullable()
     val state = varchar("state", 100).nullable()

@@ -49,6 +49,5 @@ object ValidationUtils {
         require(password.any { it.isLowerCase() }) { "Password must contain a small letter" }
         require(password.any { it.isDigit() }) { "Password must contain a digit" }
         require(hasSpecial) { "Password must contain a special character" }
-        require(!duplicateSpecial) { "Password cannot have duplicate special characters" }
     }
 }

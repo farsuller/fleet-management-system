@@ -7,12 +7,12 @@ import java.util.UUID
 data class Customer(
     val id: CustomerId,
     val userId: UUID? = null,
-    val firstName: String,
-    val lastName: String,
+    val firstName: String? = null,
+    val lastName: String? = null,
     val email: String,
-    val phone: String,
-    val driverLicenseNumber: String,
-    val driverLicenseExpiry: Instant,
+    val phone: String?,
+    val driverLicenseNumber: String? = null,
+    val driverLicenseExpiry: Instant? = null,
     val address: String? = null,
     val city: String? = null,
     val state: String? = null,
@@ -22,11 +22,11 @@ data class Customer(
     val createdAt: Instant = Instant.EPOCH,
 ) {
     init {
-        require(firstName.isNotBlank()) { "First name cannot be blank" }
-        require(lastName.isNotBlank()) { "Last name cannot be blank" }
+        require(firstName == null || firstName.isNotBlank()) { "First name cannot be blank" }
+        require(lastName == null || lastName.isNotBlank()) { "Last name cannot be blank" }
         require(email.isNotBlank()) { "Email cannot be blank" }
-        require(phone.isNotBlank()) { "Phone cannot be blank" }
-        require(driverLicenseNumber.isNotBlank()) { "Driver license number cannot be blank" }
+        require(phone == null || phone.isNotBlank()) { "Phone cannot be blank" }
+        require(driverLicenseNumber == null || driverLicenseNumber.isNotBlank()) { "Driver license number cannot be blank" }
     }
 
     val fullName: String

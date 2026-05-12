@@ -26,10 +26,7 @@ class CustomerRepositoryImpl : CustomerRepository {
             email = this[CustomersTable.email],
             phone = this[CustomersTable.phone],
             driverLicenseNumber = this[CustomersTable.driverLicenseNumber],
-            driverLicenseExpiry =
-                this[CustomersTable.driverLicenseExpiry]
-                    .atStartOfDay()
-                    .toInstant(ZoneOffset.UTC),
+            driverLicenseExpiry = this[CustomersTable.driverLicenseExpiry]?.atStartOfDay()?.toInstant(ZoneOffset.UTC),
             address = this[CustomersTable.address],
             city = this[CustomersTable.city],
             state = this[CustomersTable.state],
@@ -82,8 +79,7 @@ class CustomerRepositoryImpl : CustomerRepository {
                     it[email] = customer.email
                     it[phone] = customer.phone
                     it[driverLicenseNumber] = customer.driverLicenseNumber
-                    it[driverLicenseExpiry] =
-                        LocalDate.ofInstant(customer.driverLicenseExpiry, ZoneOffset.UTC)
+                    it[driverLicenseExpiry] = customer.driverLicenseExpiry?.let { LocalDate.ofInstant(it, ZoneOffset.UTC) }
                     it[address] = customer.address
                     it[city] = customer.city
                     it[state] = customer.state
@@ -101,8 +97,7 @@ class CustomerRepositoryImpl : CustomerRepository {
                     it[email] = customer.email
                     it[phone] = customer.phone
                     it[driverLicenseNumber] = customer.driverLicenseNumber
-                    it[driverLicenseExpiry] =
-                        LocalDate.ofInstant(customer.driverLicenseExpiry, ZoneOffset.UTC)
+                    it[driverLicenseExpiry] = customer.driverLicenseExpiry?.let { LocalDate.ofInstant(it, ZoneOffset.UTC) }
                     it[address] = customer.address
                     it[city] = customer.city
                     it[state] = customer.state

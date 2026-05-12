@@ -25,8 +25,8 @@ data class User(
     val id: UserId,
     val email: String,
     val passwordHash: String,
-    val firstName: String,
-    val lastName: String,
+    val firstName: String? = null,
+    val lastName: String? = null,
     val phone: String? = null,
     val isActive: Boolean = true,
     val isVerified: Boolean = false,
@@ -34,7 +34,13 @@ data class User(
     val staffProfile: StaffProfile? = null,
 ) {
     val fullName: String
-        get() = "$firstName $lastName"
+        get() =
+            when {
+                firstName != null && lastName != null -> "$firstName $lastName"
+                firstName != null -> firstName
+                lastName != null -> lastName
+                else -> email
+            }
 }
 
 data class Role(

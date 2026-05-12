@@ -33,24 +33,28 @@ class RegisterCustomerUseCase(
         require(customerRepository.findByEmail(request.email) == null) {
             "Customer with email ${request.email} already exists"
         }
-        require(customerRepository.findByDriverLicense(request.driversLicense) == null) {
-            "Customer with license ${request.driversLicense} already exists"
+        request.driversLicense?.let { dl ->
+            require(customerRepository.findByDriverLicense(dl) == null) {
+                "Customer with license $dl already exists"
+            }
         }
         require(userRepository.findByEmail(request.email) == null) {
             "An account with email ${request.email} already exists"
         }
 
         val licenseExpiry =
-            try {
-                LocalDate.parse(request.driverLicenseExpiry).atStartOfDay().toInstant(ZoneOffset.UTC)
-            } catch (e: Exception) {
-                throw IllegalArgumentException("Invalid license expiry date format. Expected YYYY-MM-DD")
+            request.driverLicenseExpiry?.let {
+                try {
+                    LocalDate.parse(it).atStartOfDay().toInstant(ZoneOffset.UTC)
+                } catch (e: Exception) {
+                    throw IllegalArgumentException("Invalid license expiry date format. Expected YYYY-MM-DD")
+                }
             }
-        require(licenseExpiry.isAfter(Instant.now())) { "Driver license is expired" }
+        require(licenseExpiry == null || licenseExpiry.isAfter(Instant.now())) { "Driver license is expired" }
 
         val customerRole =
             userRepository.findRoleByName("CUSTOMER")
-                ?: throw IllegalStateException("CUSTOMER role not found in database — check V022 migration")
+                ?: throw IllegalStateException("CUSTOMER role not found in database — check migrations")
 
         val userId = UserId(UUID.randomUUID().toString())
         val user =

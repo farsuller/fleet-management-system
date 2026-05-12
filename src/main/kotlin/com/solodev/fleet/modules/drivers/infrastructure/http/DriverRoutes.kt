@@ -25,7 +25,9 @@ import com.solodev.fleet.modules.drivers.application.usecases.RegisterDriverUseC
 import com.solodev.fleet.modules.drivers.application.usecases.RejectDriverUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.StartShiftUseCase
 import com.solodev.fleet.modules.drivers.application.usecases.UpdateDriverUseCase
+import com.solodev.fleet.modules.drivers.application.usecases.VerifyDriverEmailUseCase
 import com.solodev.fleet.modules.drivers.domain.repository.DriverRepository
+import com.solodev.fleet.modules.users.domain.model.UserId
 import com.solodev.fleet.modules.users.domain.repository.UserRepository
 import com.solodev.fleet.modules.users.domain.repository.VerificationTokenRepository
 import com.solodev.fleet.modules.vehicles.domain.model.VehicleId
@@ -53,10 +55,17 @@ fun Route.driverRoutes(
     jwtService: JwtService,
     vehicleRepository: VehicleRepository,
     emailService: com.solodev.fleet.shared.infrastructure.email.EmailService,
+    privateKey: java.security.PrivateKey? = null,
 ) {
     val registerDriverUseCase =
-        RegisterDriverUseCase(driverRepository, userRepository, tokenRepository, emailService)
-    val loginDriverUseCase = LoginDriverUseCase(userRepository, driverRepository, jwtService)
+        RegisterDriverUseCase(
+            driverRepository,
+            userRepository,
+            tokenRepository,
+            emailService,
+            privateKey,
+        )
+    val loginDriverUseCase = LoginDriverUseCase(userRepository, driverRepository, jwtService, privateKey)
     val createDriverUseCase = CreateDriverUseCase(driverRepository)
     val getDriverUseCase = GetDriverUseCase(driverRepository)
     val listDriversUseCase = ListDriversUseCase(driverRepository)
@@ -69,6 +78,7 @@ fun Route.driverRoutes(
     val approveDriverUseCase = ApproveDriverUseCase(driverRepository)
     val rejectDriverUseCase = RejectDriverUseCase(driverRepository)
     val listPendingDriversUseCase = ListPendingDriversUseCase(driverRepository)
+    val verifyDriverEmailUseCase = VerifyDriverEmailUseCase(driverRepository, userRepository)
 
     // ── Public: mobile-app driver self-registration ───────────────────────────
     route("/v1/drivers/register") {
@@ -107,8 +117,8 @@ fun Route.driverRoutes(
         post {
             try {
                 val request = call.receive<DriverLoginRequest>()
-                val response = loginDriverUseCase.execute(request.email, request.password)
-                call.respond(response)
+                val response = loginDriverUseCase.execute(request.email, request.password, request.isEncrypted)
+                call.respond(ApiResponse.success(response, call.requestId))
             } catch (e: IllegalArgumentException) {
                 call.respond(
                     HttpStatusCode.Unauthorized,
@@ -146,8 +156,13 @@ fun Route.driverRoutes(
                 val (id, email, roles) = claims
                 val newAccessToken = jwtService.generateToken(id = id, email = email, roles = roles)
                 val newRefreshToken = jwtService.generateRefreshToken(id = id, email = email, roles = roles)
-                // Return only token fields; driverId is already held by the client
-                call.respond(mapOf("accessToken" to newAccessToken, "refreshToken" to newRefreshToken))
+                // Return wrapped tokens; driverId is already held by the client
+                call.respond(
+                    ApiResponse.success(
+                        mapOf("accessToken" to newAccessToken, "refreshToken" to newRefreshToken),
+                        call.requestId,
+                    ),
+                )
             } catch (e: Exception) {
                 call.respond(
                     HttpStatusCode.Unauthorized,
@@ -170,7 +185,12 @@ fun Route.driverRoutes(
                 val response =
                     drivers.map { d ->
                         val assignment = driverRepository.findActiveAssignmentByDriver(d.id)
-                        DriverResponse.fromDomain(d, assignment)
+                        val user = d.userId?.let { userRepository.findById(UserId(it.toString())) }
+                        DriverResponse.fromDomain(
+                            d,
+                            assignment,
+                            isEmailVerified = user?.isVerified ?: false,
+                        )
                     }
                 call.respond(ApiResponse.success(response, call.requestId))
             }
@@ -178,7 +198,11 @@ fun Route.driverRoutes(
             // List only pending drivers (Back-office dashboard)
             get("pending") {
                 val drivers = listPendingDriversUseCase.execute()
-                val response = drivers.map { DriverResponse.fromDomain(it) }
+                val response =
+                    drivers.map { d ->
+                        val user = d.userId?.let { userRepository.findById(UserId(it.toString())) }
+                        DriverResponse.fromDomain(d, isEmailVerified = user?.isVerified ?: false)
+                    }
                 call.respond(ApiResponse.success(response, call.requestId))
             }
 
@@ -240,6 +264,7 @@ fun Route.driverRoutes(
                         assignment?.let {
                             vehicleRepository.findById(VehicleId(it.vehicleId))
                         }
+                    val user = driver.userId?.let { userRepository.findById(UserId(it.toString())) }
                     call.respond(
                         ApiResponse.success(
                             DriverResponse.fromDomain(
@@ -247,6 +272,7 @@ fun Route.driverRoutes(
                                 assignment,
                                 vehicleType = vehicle?.vehicleType?.name,
                                 vehiclePlate = vehicle?.licensePlate,
+                                isEmailVerified = user?.isVerified ?: false,
                             ),
                             call.requestId,
                         ),
@@ -325,6 +351,13 @@ fun Route.driverRoutes(
                     val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
                     val driver = rejectDriverUseCase.execute(id)
                     call.respond(ApiResponse.success(DriverResponse.fromDomain(driver), call.requestId))
+                }
+
+                // Verify driver email manually
+                post("verify-email") {
+                    val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+                    verifyDriverEmailUseCase.execute(id)
+                    call.respond(ApiResponse.success(mapOf("message" to "Email verified successfully"), call.requestId))
                 }
 
                 // Assign driver to a vehicle

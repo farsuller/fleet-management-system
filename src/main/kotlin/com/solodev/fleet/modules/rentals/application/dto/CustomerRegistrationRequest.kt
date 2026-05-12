@@ -3,16 +3,16 @@ package com.solodev.fleet.modules.rentals.application.dto
 import com.solodev.fleet.shared.utils.ValidationUtils
 import kotlinx.serialization.Serializable
 
-/** Public registration endpoint — creates a user (CUSTOMER role) + customer record atomically. */
+/** Public registration endpoint â€” creates a user (CUSTOMER role) + customer record atomically. */
 @Serializable
 data class CustomerRegistrationRequest(
     val email: String,
     val passwordRaw: String,
-    val firstName: String,
-    val lastName: String,
+    val firstName: String? = null,
+    val lastName: String? = null,
     val phone: String,
-    val driversLicense: String,
-    val driverLicenseExpiry: String, // YYYY-MM-DD
+    val driversLicense: String? = null,
+    val driverLicenseExpiry: String? = null, // YYYY-MM-DD
     val address: String? = null,
     val city: String? = null,
     val state: String? = null,
@@ -22,10 +22,10 @@ data class CustomerRegistrationRequest(
     init {
         ValidationUtils.validateEmail(email)
         ValidationUtils.validatePassword(passwordRaw)
-        ValidationUtils.validateName(firstName, "First name")
-        ValidationUtils.validateName(lastName, "Last name")
+        firstName?.let { ValidationUtils.validateName(it, "First name") }
+        lastName?.let { ValidationUtils.validateName(it, "Last name") }
         ValidationUtils.validatePhone(phone)
-        require(driversLicense.isNotBlank()) { "Driver's license cannot be blank" }
-        require(driverLicenseExpiry.isNotBlank()) { "License expiry cannot be blank" }
+        require(driversLicense == null || driversLicense.isNotBlank()) { "Driver's license cannot be blank" }
+        require(driverLicenseExpiry == null || driverLicenseExpiry.isNotBlank()) { "License expiry cannot be blank" }
     }
 }

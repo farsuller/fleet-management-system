@@ -7,15 +7,18 @@ import kotlinx.serialization.Serializable
 data class UserRegistrationRequest(
     val email: String,
     val passwordRaw: String,
-    val firstName: String,
-    val lastName: String,
+    val firstName: String? = null,
+    val lastName: String? = null,
     val phone: String? = null,
+    val isEncrypted: Boolean = false,
 ) {
     init {
-        ValidationUtils.validateEmail(email)
-        ValidationUtils.validatePassword(passwordRaw)
-        ValidationUtils.validateName(firstName, "First name")
-        ValidationUtils.validateName(lastName, "Last name")
-        ValidationUtils.validatePhone(phone)
+        if (!isEncrypted) {
+            ValidationUtils.validateEmail(email)
+            ValidationUtils.validatePassword(passwordRaw)
+            firstName?.let { ValidationUtils.validateName(it, "First name") }
+            lastName?.let { ValidationUtils.validateName(it, "Last name") }
+            ValidationUtils.validatePhone(phone)
+        }
     }
 }
